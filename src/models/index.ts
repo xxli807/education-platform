@@ -1,0 +1,1 @@
+export type supportedSubject = 'english' | 'method' | 'science';

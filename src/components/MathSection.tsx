@@ -2,14 +2,13 @@ import {
   Button,
   Card,
   CardContent,
-  Container,
-  Divider,
-  Grid,
+  Grid2,
   TextField,
   Typography,
 } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Question } from '../types';
+import SectionContainer from './SectionContainer';
 
 function generateMathQuestions(): Question[] {
   const questions: Question[] = [];
@@ -84,35 +83,25 @@ function MathSection() {
     setQuestions(generateMathQuestions());
   }, []);
 
-  const handleAnswerChange = (id: number, value: string) => {
+  const handleAnswerChange = useCallback((id: number, value: string) => {
     setAnswers(prev => ({ ...prev, [id]: value }));
-  };
+  }, []);
 
-  const handleCheckAnswers = () => {
+  const handleCheckAnswers = useCallback(() => {
     setShowAnswers(true);
-  };
+  }, []);
 
-  const handleMoreQuestions = () => {
+  const handleMoreQuestions = useCallback(() => {
     setQuestions(generateMathQuestions());
     setAnswers({});
     setShowAnswers(false);
-  };
+  }, []);
 
   return (
-    <Container
-      maxWidth="md"
-      className="min-h-screen bg-gradient-to-r from-yellow-200 to-orange-200 py-8"
-    >
-      <Typography
-        variant="h3"
-        className="text-center text-red-600 font-bold !mb-[10px] !mt-[10px]"
-      >
-        Hello Lucas, Math Fun Zone
-      </Typography>
-      <Divider />
-      <Grid container spacing={4}>
+    <SectionContainer name="method">
+      <Grid2 container spacing={4}>
         {questions.map(question => (
-          <Grid item xs={12} sm={6} md={3} key={question.id}>
+          <Grid2 size={{ xs: 12, sm: 6, md: 3 }} key={question.id}>
             <Card className="bg-white">
               <CardContent>
                 <Typography variant="h6" className="text-red-600 mb-2">
@@ -147,9 +136,9 @@ function MathSection() {
                 )}
               </CardContent>
             </Card>
-          </Grid>
+          </Grid2>
         ))}
-      </Grid>
+      </Grid2>
       <div className="mt-[20px] mb-[20px]">
         <Button
           variant="contained"
@@ -168,7 +157,7 @@ function MathSection() {
           More Questions
         </Button>
       </div>
-    </Container>
+    </SectionContainer>
   );
 }
 
