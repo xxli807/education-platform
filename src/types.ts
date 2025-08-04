@@ -7,3 +7,10 @@ export interface User {
     text: string;
     answer: string | number;
   }
+
+  export interface ReadingPage {
+    id: number;
+    title: string;
+    text: string;
+    comprehensionQuestions: string[];
+  }
