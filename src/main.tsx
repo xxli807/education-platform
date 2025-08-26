@@ -5,6 +5,8 @@ import './styles/tailwind.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
+    {/* <StyledEngineProvider injectFirst> */}
     <App />
+    {/* </StyledEngineProvider> */}
   </React.StrictMode>
 );

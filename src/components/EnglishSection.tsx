@@ -79,8 +79,8 @@ function EnglishSection() {
     <SectionContainer name="English">
       <Card className="!mb-6">
         <Tabs value={activeTab} onChange={handleTabChange} centered>
-          <Tab label="📚 Reading Adventures" />
-          <Tab label="✍️ Writing Tasks" />
+          <Tab label="📚 Reading" />
+          <Tab label="✍️ Writing" />
         </Tabs>
       </Card>
 

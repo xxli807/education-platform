@@ -6,9 +6,10 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Question } from '../types';
 import SectionContainer from './SectionContainer';
+import YouTubeReward from './Video';
 
 function generateMathQuestions(): Question[] {
   const questions: Question[] = [];
@@ -78,6 +79,7 @@ function MathSection() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
   const [showAnswers, setShowAnswers] = useState(false);
+  const [allCorrect, setAllCorrect] = useState(false);
 
   useEffect(() => {
     setQuestions(generateMathQuestions());
@@ -87,18 +89,28 @@ function MathSection() {
     setAnswers(prev => ({ ...prev, [id]: value }));
   }, []);
 
-  const handleCheckAnswers = useCallback(() => {
-    setShowAnswers(true);
-  }, []);
-
   const handleMoreQuestions = useCallback(() => {
     setQuestions(generateMathQuestions());
     setAnswers({});
     setShowAnswers(false);
   }, []);
 
+  const isEveryAnswerCorrect = useMemo(() => {
+    if (!questions.length) return false;
+    return questions.every(q => {
+      const val = answers[q.id];
+      if (val === undefined || val === null || val === '') return false;
+      return Number(val) === q.answer;
+    });
+  }, [answers, questions]);
+
+  const handleCheckAnswers = useCallback(() => {
+    setShowAnswers(true);
+    setAllCorrect(isEveryAnswerCorrect);
+  }, [isEveryAnswerCorrect]);
+
   return (
-    <SectionContainer name="method">
+    <SectionContainer name="Math">
       <Grid2 container spacing={4}>
         {questions.map(question => (
           <Grid2 size={{ xs: 12, sm: 6, md: 3 }} key={question.id}>
@@ -119,20 +131,21 @@ function MathSection() {
                   InputProps={{ className: 'bg-yellow-50' }}
                 />
                 {showAnswers && (
-                  <Typography
-                    className={
-                      answers[question.id]?.toString() ===
-                      question.answer.toString()
-                        ? 'text-green-600'
-                        : 'text-red-600'
-                    }
-                  >
+                  // <div
+                  // className={
+                  // answers[question.id]?.toString() ===
+                  // question.answer.toString()
+                  //   ? '!text-green-600 !font-bold mb-[3px] mt-[3px]'
+                  //   : '!text-red-600 !font-bold mb-[3px] mt-[3px]'
+                  // }
+                  // >
+                  <div className="!text-red-600 !font-bold mt-[30px] ">
                     Answer: {question.answer}{' '}
                     {answers[question.id]?.toString() ===
                     question.answer.toString()
                       ? '(Correct)'
                       : '(Incorrect)'}
-                  </Typography>
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -156,6 +169,15 @@ function MathSection() {
         >
           More Questions
         </Button>
+
+        <YouTubeReward
+          visible={allCorrect}
+          title="Great job! All answers are correct 🎉"
+          description="Enjoy your reward: search for a ~5 minute YouTube video to watch."
+          minDurationSec={1 * 60}
+          maxDurationSec={15 * 60}
+          className="mt-4"
+        />
       </div>
     </SectionContainer>
   );
