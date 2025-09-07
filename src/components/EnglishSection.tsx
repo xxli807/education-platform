@@ -1,10 +1,13 @@
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import HistoryIcon from '@mui/icons-material/History';
 import {
+  Alert,
   Box,
   Button,
   Card,
   CardContent,
+  Chip,
   LinearProgress,
   Tab,
   Tabs,
@@ -12,11 +15,12 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   challengingReadings,
   englishWritingTasks,
 } from '../data/englishContent';
+import { db, type ComprehensionAnswer, type WritingTask } from '../db/database';
 import SectionContainer from './SectionContainer';
 
 interface TabPanelProps {
@@ -46,6 +50,46 @@ function EnglishSection() {
   const [comprehensionAnswers, setComprehensionAnswers] = useState<{
     [key: string]: string;
   }>({});
+  const [writingResponses, setWritingResponses] = useState<{
+    [key: string]: string;
+  }>({});
+
+  const [savedComprehensions, setSavedComprehensions] = useState<
+    ComprehensionAnswer[]
+  >([]);
+  const [savedWritings, setSavedWritings] = useState<WritingTask[]>([]);
+  const [submitStatus, setSubmitStatus] = useState<{
+    type: 'success' | 'error' | null;
+    message: string;
+  }>({ type: null, message: '' });
+
+  const userId = 'lucas'; // Current user
+
+  // Load saved data on component mount
+  useEffect(() => {
+    loadSavedData();
+  }, []);
+
+  const loadSavedData = async () => {
+    try {
+      const comprehensions = await db.comprehensionAnswers
+        .where('userId')
+        .equals(userId)
+        .reverse()
+        .sortBy('submittedAt');
+
+      const writings = await db.writingTasks
+        .where('userId')
+        .equals(userId)
+        .reverse()
+        .sortBy('submittedAt');
+
+      setSavedComprehensions(comprehensions);
+      setSavedWritings(writings);
+    } catch (error) {
+      console.error('Error loading saved data:', error);
+    }
+  };
 
   const handleNextPage = useCallback(() => {
     setCurrentPage(prev => (prev + 1) % challengingReadings.length);
@@ -59,7 +103,7 @@ function EnglishSection() {
   }, []);
 
   const handleTabChange = useCallback(
-    (event: React.SyntheticEvent, newValue: number) => {
+    (_: React.SyntheticEvent, newValue: number) => {
       setActiveTab(newValue);
     },
     []
@@ -73,14 +117,140 @@ function EnglishSection() {
     [currentPage]
   );
 
+  const handleWritingResponse = useCallback(
+    (taskIndex: number, value: string) => {
+      setWritingResponses(prev => ({ ...prev, [taskIndex]: value }));
+    },
+    []
+  );
+
+  const submitComprehensionAnswers = async () => {
+    try {
+      const currentStory = challengingReadings[currentPage];
+      const answersToSave: Omit<ComprehensionAnswer, 'id'>[] = [];
+
+      currentStory.comprehensionQuestions.forEach((question, index) => {
+        const key = `${currentPage}-${index}`;
+        const answer = comprehensionAnswers[key];
+
+        if (answer && answer.trim()) {
+          answersToSave.push({
+            storyIndex: currentPage,
+            questionIndex: index,
+            question,
+            answer: answer.trim(),
+            storyTitle: currentStory.title,
+            submittedAt: new Date(),
+            userId,
+          });
+        }
+      });
+
+      if (answersToSave.length === 0) {
+        setSubmitStatus({
+          type: 'error',
+          message: 'Please answer at least one question before submitting.',
+        });
+        return;
+      }
+
+      await db.comprehensionAnswers.bulkAdd(answersToSave);
+
+      // Clear current answers
+      const clearedAnswers = { ...comprehensionAnswers };
+      currentStory.comprehensionQuestions.forEach((_, index) => {
+        delete clearedAnswers[`${currentPage}-${index}`];
+      });
+      setComprehensionAnswers(clearedAnswers);
+
+      setSubmitStatus({
+        type: 'success',
+        message: `Successfully saved ${answersToSave.length} comprehension answers!`,
+      });
+
+      // Reload saved data
+      await loadSavedData();
+    } catch (error) {
+      console.error('Error saving comprehension answers:', error);
+      setSubmitStatus({
+        type: 'error',
+        message: 'Failed to save answers. Please try again.',
+      });
+    }
+
+    // Clear status after 3 seconds
+    setTimeout(() => setSubmitStatus({ type: null, message: '' }), 3000);
+  };
+
+  const submitWritingTask = async (taskIndex: number) => {
+    try {
+      const response = writingResponses[taskIndex];
+      if (!response || !response.trim()) {
+        setSubmitStatus({
+          type: 'error',
+          message: 'Please write a response before submitting.',
+        });
+        return;
+      }
+
+      const task = englishWritingTasks[taskIndex];
+      await db.writingTasks.add({
+        taskIndex,
+        prompt: task.prompt,
+        response: response.trim(),
+        submittedAt: new Date(),
+        userId,
+      });
+
+      // Clear the response
+      setWritingResponses(prev => ({ ...prev, [taskIndex]: '' }));
+
+      setSubmitStatus({
+        type: 'success',
+        message: 'Writing task submitted successfully!',
+      });
+
+      // Reload saved data
+      await loadSavedData();
+    } catch (error) {
+      console.error('Error saving writing task:', error);
+      setSubmitStatus({
+        type: 'error',
+        message: 'Failed to save writing task. Please try again.',
+      });
+    }
+
+    // Clear status after 3 seconds
+    setTimeout(() => setSubmitStatus({ type: null, message: '' }), 3000);
+  };
+
   const progress = ((currentPage + 1) / challengingReadings.length) * 100;
 
   return (
     <SectionContainer name="English">
+      {/* Status Alert */}
+      {submitStatus.type && (
+        <Alert
+          severity={submitStatus.type}
+          className="mb-4"
+          onClose={() => setSubmitStatus({ type: null, message: '' })}
+        >
+          {submitStatus.message}
+        </Alert>
+      )}
+
       <Card className="!mb-6">
         <Tabs value={activeTab} onChange={handleTabChange} centered>
           <Tab label="📚 Reading" />
           <Tab label="✍️ Writing" />
+          <Tab
+            label={
+              <Box className="flex items-center gap-1">
+                <HistoryIcon fontSize="small" />
+                History
+              </Box>
+            }
+          />
         </Tabs>
       </Card>
 
@@ -154,6 +324,17 @@ function EnglishSection() {
                     </div>
                   )
                 )}
+
+                {/* Submit Button for Comprehension */}
+                <Box className="mt-4 text-center">
+                  <Button
+                    onClick={submitComprehensionAnswers}
+                    variant="contained"
+                    className="!bg-green-500 hover:!bg-green-600 !text-white"
+                  >
+                    Submit Comprehension Answers
+                  </Button>
+                </Box>
               </CardContent>
             </Card>
           </CardContent>
@@ -199,21 +380,111 @@ function EnglishSection() {
               <TextareaAutosize
                 minRows={3}
                 maxRows={8}
-                value={comprehensionAnswers[`${currentPage}-${index}`] || ''}
-                onChange={e => handleComprehensionAnswer(index, e.target.value)}
+                value={writingResponses[index] || ''}
+                onChange={e => handleWritingResponse(index, e.target.value)}
                 placeholder="Write your detailed answer here..."
                 className="w-full font-sans text-sm leading-relaxed p-2.5 border border-yellow-400 rounded-md bg-white resize-y outline-none box-border focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500"
               />
-              <Button
-                variant="contained"
-                color="primary"
-                className="bg-blue-500 hover:bg-blue-600 text-white"
-              >
-                Submit
-              </Button>
+              <Box className="mt-3">
+                <Button
+                  onClick={() => submitWritingTask(index)}
+                  variant="contained"
+                  className="!bg-blue-500 hover:!bg-blue-600 !text-white"
+                >
+                  Submit Writing Task
+                </Button>
+              </Box>
             </CardContent>
           </Card>
         ))}
+      </TabPanel>
+
+      {/* History Tab */}
+      <TabPanel value={activeTab} index={2}>
+        <Typography variant="h5" className="text-blue-600 mb-4">
+          📚 Your Learning History
+        </Typography>
+
+        {/* Comprehension History */}
+        <Card className="mb-6">
+          <CardContent>
+            <Typography variant="h6" className="text-blue-600 mb-3">
+              📖 Reading Comprehension ({savedComprehensions.length}{' '}
+              submissions)
+            </Typography>
+            {savedComprehensions.length === 0 ? (
+              <Typography variant="body2" className="text-gray-500">
+                No comprehension answers submitted yet.
+              </Typography>
+            ) : (
+              savedComprehensions.map(item => (
+                <Card key={item.id} className="mb-3 bg-blue-50">
+                  <CardContent className="py-3">
+                    <Box className="flex justify-between items-start mb-2">
+                      <Typography
+                        variant="subtitle1"
+                        className="font-semibold text-blue-700"
+                      >
+                        {item.storyTitle}
+                      </Typography>
+                      <Chip
+                        label={new Date(item.submittedAt).toLocaleDateString()}
+                        size="small"
+                        className="bg-blue-200"
+                      />
+                    </Box>
+                    <Typography variant="body2" className="text-gray-600 mb-1">
+                      Q{item.questionIndex + 1}: {item.question}
+                    </Typography>
+                    <Typography variant="body2" className="text-gray-800">
+                      <strong>Answer:</strong> {item.answer}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Writing History */}
+        <Card>
+          <CardContent>
+            <Typography variant="h6" className="text-blue-600 mb-3">
+              ✍️ Writing Tasks ({savedWritings.length} submissions)
+            </Typography>
+            {savedWritings.length === 0 ? (
+              <Typography variant="body2" className="text-gray-500">
+                No writing tasks submitted yet.
+              </Typography>
+            ) : (
+              savedWritings.map(item => (
+                <Card key={item.id} className="mb-3 bg-green-50">
+                  <CardContent className="py-3">
+                    <Box className="flex justify-between items-start mb-2">
+                      <Typography
+                        variant="subtitle1"
+                        className="font-semibold text-green-700"
+                      >
+                        Writing Task {item.taskIndex + 1}
+                      </Typography>
+                      <Chip
+                        label={new Date(item.submittedAt).toLocaleDateString()}
+                        size="small"
+                        className="bg-green-200"
+                      />
+                    </Box>
+                    <Typography variant="body2" className="text-gray-600 mb-2">
+                      <strong>Prompt:</strong> {item.prompt}
+                    </Typography>
+                    <Typography variant="body2" className="text-gray-800">
+                      <strong>Response:</strong> {item.response}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </CardContent>
+        </Card>
       </TabPanel>
     </SectionContainer>
   );
