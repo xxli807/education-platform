@@ -1,12 +1,12 @@
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { Container, Divider, IconButton, Typography } from '@mui/material';
-import { useCallback } from 'react';
+import { useCallback, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supportedSubject } from '../models';
 
 export interface SectionProps {
   name: supportedSubject;
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 function SectionContainer({ name, children }: SectionProps) {

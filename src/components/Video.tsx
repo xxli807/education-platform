@@ -3,7 +3,7 @@ import {
   Button,
   Card,
   CardContent,
-  Grid2,
+  Grid,
   TextField,
   Typography,
 } from '@mui/material';
@@ -223,9 +223,9 @@ export default function YouTubeReward({
             <Typography variant="subtitle1" className="!font-semibold mb-3">
               Choose a video to watch ({ytResults.length} found):
             </Typography>
-            <Grid2 container spacing={2}>
+            <Grid container spacing={2}>
               {ytResults.map(video => (
-                <Grid2 key={video.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+                <Grid key={video.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
                   <Card
                     className="cursor-pointer hover:shadow-lg transition-shadow border-2 border-transparent hover:border-blue-300"
                     onClick={() => handleVideoSelect(video)}
@@ -250,9 +250,9 @@ export default function YouTubeReward({
                       </Typography>
                     </CardContent>
                   </Card>
-                </Grid2>
+                </Grid>
               ))}
-            </Grid2>
+            </Grid>
           </div>
         )}
 

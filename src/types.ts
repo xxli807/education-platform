@@ -13,4 +13,5 @@ export interface User {
     title: string;
     text: string;
     comprehensionQuestions: string[];
+    vocabulary?: { word: string; definition: string }[];
   }

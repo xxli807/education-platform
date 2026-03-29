@@ -20,17 +20,46 @@ interface WritingTask {
   userId?: string;
 }
 
+interface MathSessionResult {
+  id?: number;
+  difficulty: 'standard' | 'advanced' | 'challenge';
+  totalQuestions: number;
+  correctCount: number;
+  score: number;
+  timeTakenSeconds: number;
+  questionsData: string;
+  completedAt: Date;
+  userId: string;
+}
+
+interface ScienceSessionResult {
+  id?: number;
+  totalQuestions: number;
+  correctCount: number;
+  score: number;
+  questionsData: string;
+  completedAt: Date;
+  userId: string;
+}
+
 const db = new Dexie('EnglishLearningApp') as Dexie & {
   comprehensionAnswers: EntityTable<ComprehensionAnswer, 'id'>;
   writingTasks: EntityTable<WritingTask, 'id'>;
+  mathSessionResults: EntityTable<MathSessionResult, 'id'>;
+  scienceSessionResults: EntityTable<ScienceSessionResult, 'id'>;
 };
 
-// Schema definition
 db.version(1).stores({
   comprehensionAnswers: '++id, storyIndex, questionIndex, question, answer, storyTitle, submittedAt, userId',
   writingTasks: '++id, taskIndex, prompt, response, submittedAt, userId'
 });
 
-export { db };
-export type { ComprehensionAnswer, WritingTask };
+db.version(2).stores({
+  comprehensionAnswers: '++id, storyIndex, questionIndex, question, answer, storyTitle, submittedAt, userId',
+  writingTasks: '++id, taskIndex, prompt, response, submittedAt, userId',
+  mathSessionResults: '++id, difficulty, score, completedAt, userId',
+  scienceSessionResults: '++id, score, completedAt, userId'
+});
 
+export { db };
+export type { ComprehensionAnswer, WritingTask, MathSessionResult, ScienceSessionResult };
