@@ -60,7 +60,6 @@ function generateMathQuestions(difficulty: Difficulty): Question[] {
 
   for (let i = 1; i <= totalQuestions; i++) {
     if (difficulty === 'challenge') {
-      // Challenge: mix in word problems, missing-number, and half problems
       if (i <= 4) {
         const wp = generateWordProblem();
         wp.id = i;
@@ -86,7 +85,7 @@ function generateMathQuestions(difficulty: Difficulty): Question[] {
     let answer = 0;
 
     switch (operationIndex) {
-      case 0: // Addition
+      case 0:
         if (difficulty === 'challenge') {
           num1 = Math.floor(Math.random() * 900) + 100;
           num2 = Math.floor(Math.random() * 900) + 100;
@@ -101,7 +100,7 @@ function generateMathQuestions(difficulty: Difficulty): Question[] {
         answer = num1 + num2;
         break;
 
-      case 1: // Subtraction
+      case 1:
         if (difficulty === 'challenge') {
           num1 = Math.floor(Math.random() * 900) + 100;
           num2 = Math.floor(Math.random() * num1) + 1;
@@ -116,7 +115,7 @@ function generateMathQuestions(difficulty: Difficulty): Question[] {
         answer = num1 - num2;
         break;
 
-      case 2: { // Multiplication
+      case 2: {
         if (difficulty === 'challenge') {
           num1 = Math.floor(Math.random() * 20) + 2;
           num2 = Math.floor(Math.random() * 9) + 2;
@@ -133,7 +132,7 @@ function generateMathQuestions(difficulty: Difficulty): Question[] {
         break;
       }
 
-      case 3: { // Division
+      case 3: {
         if (difficulty === 'challenge') {
           num2 = Math.floor(Math.random() * 11) + 2;
           const multiplier = Math.floor(Math.random() * 12) + 2;
@@ -157,7 +156,6 @@ function generateMathQuestions(difficulty: Difficulty): Question[] {
         break;
     }
 
-    // For advanced difficulty, convert some regular questions to two-step
     if (difficulty === 'advanced' && i % 4 === 0) {
       const num3 = Math.floor(Math.random() * 20) + 1;
       const op2 = Math.random() > 0.5 ? '+' : '-';
@@ -184,6 +182,14 @@ function formatTime(seconds: number): string {
   if (mins === 0) return `${secs}s`;
   return `${mins}m ${secs}s`;
 }
+
+// Dark theme styles
+const darkCard = {
+  borderRadius: '16px',
+  boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
+  transition: 'transform 0.2s',
+  '&:hover': { transform: 'scale(1.02)' },
+};
 
 function MathSection() {
   const [difficulty, setDifficulty] = useState<Difficulty>('standard');
@@ -265,7 +271,6 @@ function MathSection() {
     setShowAnswers(true);
     setAllCorrect(isEveryAnswerCorrect);
 
-    // Generate feedback messages
     const messages: { [key: number]: string } = {};
     questions.forEach(q => {
       const isCorrect =
@@ -276,7 +281,6 @@ function MathSection() {
     });
     setFeedbackMessages(messages);
 
-    // Save to IndexedDB
     const count = questions.filter(q => {
       const val = answers[q.id];
       if (val === undefined || val === null || val === '') return false;
@@ -306,18 +310,11 @@ function MathSection() {
     loadHistory();
   }, [startTime, isEveryAnswerCorrect, questions, answers, difficulty]);
 
-  const cardStyle = {
-    borderRadius: '16px',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-    transition: 'transform 0.2s',
-    '&:hover': { transform: 'scale(1.02)' },
-  };
-
   return (
     <SectionContainer name="Math">
       {/* Difficulty Selector */}
       <Box sx={{ mb: 3, textAlign: 'center' }}>
-        <Typography variant="h6" sx={{ mb: 1, color: '#e91e63', fontWeight: 'bold' }}>
+        <Typography variant="h6" sx={{ mb: 1, color: '#ff8a80', fontWeight: 'bold' }}>
           🎯 Choose Your Level
         </Typography>
         <ToggleButtonGroup
@@ -332,14 +329,16 @@ function MathSection() {
               mx: 0.5,
               fontWeight: 'bold',
               fontSize: '1rem',
-              border: '2px solid !important',
+              border: '2px solid rgba(255,255,255,0.2) !important',
+              color: '#b0bec5',
+              '&:hover': { bgcolor: 'rgba(255,255,255,0.08)' },
             },
           }}
         >
           <ToggleButton
             value="standard"
             sx={{
-              '&.Mui-selected': { bgcolor: '#fff3e0', color: '#e65100', borderColor: '#e65100 !important' },
+              '&.Mui-selected': { bgcolor: 'rgba(255,167,38,0.2) !important', color: '#ffa726 !important', borderColor: '#ffa726 !important' },
             }}
           >
             ⭐ Standard
@@ -347,7 +346,7 @@ function MathSection() {
           <ToggleButton
             value="advanced"
             sx={{
-              '&.Mui-selected': { bgcolor: '#e3f2fd', color: '#1565c0', borderColor: '#1565c0 !important' },
+              '&.Mui-selected': { bgcolor: 'rgba(66,165,245,0.2) !important', color: '#64b5f6 !important', borderColor: '#42a5f5 !important' },
             }}
           >
             🌟 Advanced
@@ -355,7 +354,7 @@ function MathSection() {
           <ToggleButton
             value="challenge"
             sx={{
-              '&.Mui-selected': { bgcolor: '#fce4ec', color: '#c62828', borderColor: '#c62828 !important' },
+              '&.Mui-selected': { bgcolor: 'rgba(239,83,80,0.2) !important', color: '#ef5350 !important', borderColor: '#ef5350 !important' },
             }}
           >
             🔥 Challenge
@@ -363,7 +362,7 @@ function MathSection() {
         </ToggleButtonGroup>
       </Box>
 
-      {/* Score Summary (after checking) */}
+      {/* Score Summary */}
       {showAnswers && (
         <Box
           sx={{
@@ -371,21 +370,22 @@ function MathSection() {
             p: 3,
             borderRadius: '16px',
             background: allCorrect
-              ? 'linear-gradient(135deg, #a8e063 0%, #56ab2f 100%)'
-              : 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)',
+              ? 'linear-gradient(135deg, rgba(76,175,80,0.3) 0%, rgba(56,142,60,0.4) 100%)'
+              : 'linear-gradient(135deg, rgba(255,152,0,0.2) 0%, rgba(239,83,80,0.2) 100%)',
+            border: allCorrect ? '2px solid #4caf50' : '2px solid rgba(255,152,0,0.4)',
             textAlign: 'center',
           }}
         >
-          <Typography variant="h4" sx={{ fontWeight: 'bold', color: allCorrect ? '#fff' : '#333' }}>
+          <Typography variant="h4" sx={{ fontWeight: 'bold', color: allCorrect ? '#a5d6a7' : '#ffcc80' }}>
             {allCorrect
               ? '🎉 AMAZING! You\'re a superstar! 🌟'
               : `${correctCount}/${questions.length} correct! Keep going! 💪`}
           </Typography>
           {timeTaken !== null && (
             <Chip
-              icon={<TimerIcon />}
+              icon={<TimerIcon sx={{ color: '#ffd54f !important' }} />}
               label={`Time: ${formatTime(timeTaken)}`}
-              sx={{ mt: 1, fontSize: '1rem', py: 2, px: 1, bgcolor: 'rgba(255,255,255,0.7)' }}
+              sx={{ mt: 1, fontSize: '1rem', py: 2, px: 1, bgcolor: 'rgba(255,255,255,0.1)', color: '#e0e0e0' }}
             />
           )}
         </Box>
@@ -403,24 +403,25 @@ function MathSection() {
             <Grid size={{ xs: 12, sm: 6, md: 3 }} key={question.id}>
               <Card
                 sx={{
-                  ...cardStyle,
+                  ...darkCard,
                   bgcolor: showAnswers
                     ? isCorrect
-                      ? '#e8f5e9'
-                      : '#ffebee'
-                    : '#fff8e1',
+                      ? 'rgba(76,175,80,0.15)'
+                      : 'rgba(239,83,80,0.15)'
+                    : 'rgba(255,255,255,0.06)',
                   border: showAnswers
                     ? isCorrect
                       ? '2px solid #4caf50'
                       : '2px solid #ef5350'
-                    : '2px solid #ffca28',
+                    : '2px solid rgba(255,255,255,0.12)',
+                  backdropFilter: 'blur(10px)',
                 }}
               >
                 <CardContent>
                   <Typography
                     variant="h6"
                     sx={{
-                      color: '#e91e63',
+                      color: '#ffcc80',
                       fontWeight: 'bold',
                       mb: 2,
                       fontSize: '1.1rem',
@@ -439,15 +440,21 @@ function MathSection() {
                       mb: 1,
                       '& .MuiOutlinedInput-root': {
                         borderRadius: '12px',
-                        bgcolor: '#fffde7',
+                        bgcolor: 'rgba(255,255,255,0.06)',
+                        color: '#fff',
+                        '& fieldset': { borderColor: 'rgba(255,255,255,0.2)' },
+                        '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.4)' },
+                        '&.Mui-focused fieldset': { borderColor: '#ffa726' },
                       },
+                      '& .MuiInputLabel-root': { color: '#90a4ae' },
+                      '& .MuiInputLabel-root.Mui-focused': { color: '#ffa726' },
                     }}
                     fullWidth
                   />
                   {showAnswers && (
                     <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 0.5 }}>
                       {isCorrect ? (
-                        <CheckIcon sx={{ color: '#4caf50' }} />
+                        <CheckIcon sx={{ color: '#66bb6a' }} />
                       ) : (
                         <WrongIcon sx={{ color: '#ef5350' }} />
                       )}
@@ -455,7 +462,7 @@ function MathSection() {
                         sx={{
                           fontWeight: 'bold',
                           fontSize: '0.9rem',
-                          color: isCorrect ? '#2e7d32' : '#c62828',
+                          color: isCorrect ? '#a5d6a7' : '#ef9a9a',
                         }}
                       >
                         {isCorrect
@@ -485,6 +492,7 @@ function MathSection() {
             bgcolor: '#e91e63',
             '&:hover': { bgcolor: '#c2185b' },
             textTransform: 'none',
+            boxShadow: '0 4px 15px rgba(233,30,99,0.3)',
           }}
         >
           ✅ Check Answers
@@ -501,6 +509,7 @@ function MathSection() {
             bgcolor: '#ff9800',
             '&:hover': { bgcolor: '#f57c00' },
             textTransform: 'none',
+            boxShadow: '0 4px 15px rgba(255,152,0,0.3)',
           }}
         >
           🔄 More Questions
@@ -526,7 +535,7 @@ function MathSection() {
             borderRadius: '20px',
             textTransform: 'none',
             fontWeight: 'bold',
-            color: '#e91e63',
+            color: '#ff8a80',
             fontSize: '1rem',
           }}
         >
@@ -536,7 +545,7 @@ function MathSection() {
           <Grid container spacing={2} sx={{ mt: 1 }}>
             {history.map(result => (
               <Grid size={{ xs: 12, sm: 6, md: 4 }} key={result.id}>
-                <Card sx={{ ...cardStyle, bgcolor: '#fce4ec' }}>
+                <Card sx={{ ...darkCard, bgcolor: 'rgba(255,255,255,0.06)', border: '2px solid rgba(239,83,80,0.3)' }}>
                   <CardContent>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
                       <Chip
@@ -546,32 +555,32 @@ function MathSection() {
                           fontWeight: 'bold',
                           bgcolor:
                             result.difficulty === 'challenge'
-                              ? '#ef5350'
+                              ? 'rgba(239,83,80,0.3)'
                               : result.difficulty === 'advanced'
-                                ? '#42a5f5'
-                                : '#ffa726',
+                                ? 'rgba(66,165,245,0.3)'
+                                : 'rgba(255,167,38,0.3)',
                           color: '#fff',
                         }}
                       />
-                      <Typography variant="body2" sx={{ color: '#888' }}>
+                      <Typography variant="body2" sx={{ color: '#90a4ae' }}>
                         {new Date(result.completedAt).toLocaleDateString()}
                       </Typography>
                     </Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       {result.score === 100 ? (
-                        <TrophyIcon sx={{ color: '#ffc107' }} />
+                        <TrophyIcon sx={{ color: '#ffd54f' }} />
                       ) : (
-                        <StarIcon sx={{ color: '#ff9800' }} />
+                        <StarIcon sx={{ color: '#ffa726' }} />
                       )}
-                      <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                      <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#e0e0e0' }}>
                         {result.correctCount}/{result.totalQuestions} ({result.score}%)
                       </Typography>
                     </Box>
                     <Chip
-                      icon={<TimerIcon />}
+                      icon={<TimerIcon sx={{ color: '#90a4ae !important' }} />}
                       label={formatTime(result.timeTakenSeconds)}
                       size="small"
-                      sx={{ mt: 1 }}
+                      sx={{ mt: 1, bgcolor: 'rgba(255,255,255,0.08)', color: '#b0bec5' }}
                     />
                   </CardContent>
                 </Card>
@@ -579,7 +588,7 @@ function MathSection() {
             ))}
             {history.length === 0 && (
               <Grid size={{ xs: 12 }}>
-                <Typography sx={{ color: '#999', textAlign: 'center', py: 2 }}>
+                <Typography sx={{ color: '#78909c', textAlign: 'center', py: 2 }}>
                   No results yet. Complete a session to see your history! 📝
                 </Typography>
               </Grid>

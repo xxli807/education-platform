@@ -13,12 +13,15 @@ import {
   Tabs,
   TextareaAutosize,
   TextField,
+  ToggleButton,
+  ToggleButtonGroup,
   Typography,
 } from '@mui/material';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  challengingReadings,
-  englishWritingTasks,
+  generateWritingPrompts,
+  getReadingsByYear,
+  type WritingPrompt,
 } from '../data/englishContent';
 import { db, type ComprehensionAnswer, type WritingTask } from '../db/database';
 import SectionContainer from './SectionContainer';
@@ -44,7 +47,35 @@ function TabPanel(props: TabPanelProps) {
   );
 }
 
+const darkCard = {
+  borderRadius: '16px',
+  boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
+};
+
+const darkTextField = {
+  '& .MuiOutlinedInput-root': {
+    borderRadius: '12px',
+    bgcolor: 'rgba(255,255,255,0.06)',
+    color: '#fff',
+    '& fieldset': { borderColor: 'rgba(255,255,255,0.2)' },
+    '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.4)' },
+    '&.Mui-focused fieldset': { borderColor: '#64b5f6' },
+  },
+  '& .MuiInputLabel-root': { color: '#90a4ae' },
+  '& .MuiInputLabel-root.Mui-focused': { color: '#64b5f6' },
+};
+
+const darkButton = {
+  borderRadius: '25px',
+  px: 4,
+  py: 1.5,
+  fontSize: '1rem',
+  fontWeight: 'bold',
+  textTransform: 'none' as const,
+};
+
 function EnglishSection() {
+  const [yearLevel, setYearLevel] = useState<2 | 3>(2);
   const [currentPage, setCurrentPage] = useState(0);
   const [activeTab, setActiveTab] = useState(0);
   const [comprehensionAnswers, setComprehensionAnswers] = useState<{
@@ -67,6 +98,9 @@ function EnglishSection() {
   }>({ type: null, message: '' });
 
   const userId = 'lucas';
+
+  const readings = getReadingsByYear(yearLevel);
+  const [writingTasks, setWritingTasks] = useState<WritingPrompt[]>(() => generateWritingPrompts(2, 4));
 
   const loadSavedData = async () => {
     try {
@@ -93,16 +127,28 @@ function EnglishSection() {
     loadSavedData();
   }, []);
 
+  const handleYearChange = useCallback(
+    (_: React.MouseEvent<HTMLElement>, newYear: (2 | 3) | null) => {
+      if (newYear) {
+        setYearLevel(newYear);
+        setCurrentPage(0);
+        setComprehensionAnswers({});
+        setVocabSentences({});
+        setWritingTasks(generateWritingPrompts(newYear, 4));
+      }
+    },
+    []
+  );
+
   const handleNextPage = useCallback(() => {
-    setCurrentPage(prev => (prev + 1) % challengingReadings.length);
-  }, []);
+    setCurrentPage(prev => (prev + 1) % readings.length);
+  }, [readings.length]);
 
   const handlePreviousPage = useCallback(() => {
     setCurrentPage(
-      prev =>
-        (prev - 1 + challengingReadings.length) % challengingReadings.length
+      prev => (prev - 1 + readings.length) % readings.length
     );
-  }, []);
+  }, [readings.length]);
 
   const handleTabChange = useCallback(
     (_: React.SyntheticEvent, newValue: number) => {
@@ -113,34 +159,34 @@ function EnglishSection() {
 
   const handleComprehensionAnswer = useCallback(
     (questionIndex: number, value: string) => {
-      const key = `${currentPage}-${questionIndex}`;
+      const key = `${yearLevel}-${currentPage}-${questionIndex}`;
       setComprehensionAnswers(prev => ({ ...prev, [key]: value }));
     },
-    [currentPage]
+    [currentPage, yearLevel]
   );
 
   const handleWritingResponse = useCallback(
     (taskIndex: number, value: string) => {
-      setWritingResponses(prev => ({ ...prev, [taskIndex]: value }));
+      setWritingResponses(prev => ({ ...prev, [`${yearLevel}-${taskIndex}`]: value }));
     },
-    []
+    [yearLevel]
   );
 
   const handleVocabSentence = useCallback(
     (wordIndex: number, value: string) => {
-      const key = `${currentPage}-vocab-${wordIndex}`;
+      const key = `${yearLevel}-${currentPage}-vocab-${wordIndex}`;
       setVocabSentences(prev => ({ ...prev, [key]: value }));
     },
-    [currentPage]
+    [currentPage, yearLevel]
   );
 
   const submitComprehensionAnswers = async () => {
     try {
-      const currentStory = challengingReadings[currentPage];
+      const currentStory = readings[currentPage];
       const answersToSave: Omit<ComprehensionAnswer, 'id'>[] = [];
 
       currentStory.comprehensionQuestions.forEach((question, index) => {
-        const key = `${currentPage}-${index}`;
+        const key = `${yearLevel}-${currentPage}-${index}`;
         const answer = comprehensionAnswers[key];
 
         if (answer && answer.trim()) {
@@ -168,7 +214,7 @@ function EnglishSection() {
 
       const clearedAnswers = { ...comprehensionAnswers };
       currentStory.comprehensionQuestions.forEach((_, index) => {
-        delete clearedAnswers[`${currentPage}-${index}`];
+        delete clearedAnswers[`${yearLevel}-${currentPage}-${index}`];
       });
       setComprehensionAnswers(clearedAnswers);
 
@@ -191,7 +237,7 @@ function EnglishSection() {
 
   const submitWritingTask = async (taskIndex: number) => {
     try {
-      const response = writingResponses[taskIndex];
+      const response = writingResponses[`${yearLevel}-${taskIndex}`];
       if (!response || !response.trim()) {
         setSubmitStatus({
           type: 'error',
@@ -200,7 +246,7 @@ function EnglishSection() {
         return;
       }
 
-      const task = englishWritingTasks[taskIndex];
+      const task = writingTasks[taskIndex];
       await db.writingTasks.add({
         taskIndex,
         prompt: task.prompt,
@@ -209,7 +255,7 @@ function EnglishSection() {
         userId,
       });
 
-      setWritingResponses(prev => ({ ...prev, [taskIndex]: '' }));
+      setWritingResponses(prev => ({ ...prev, [`${yearLevel}-${taskIndex}`]: '' }));
 
       setSubmitStatus({
         type: 'success',
@@ -228,25 +274,53 @@ function EnglishSection() {
     setTimeout(() => setSubmitStatus({ type: null, message: '' }), 3000);
   };
 
-  const progress = ((currentPage + 1) / challengingReadings.length) * 100;
-  const currentStory = challengingReadings[currentPage];
-
-  const cardStyle = {
-    borderRadius: '16px',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-  };
-
-  const buttonStyle = {
-    borderRadius: '25px',
-    px: 4,
-    py: 1.5,
-    fontSize: '1rem',
-    fontWeight: 'bold',
-    textTransform: 'none' as const,
-  };
+  const progress = readings.length > 0 ? ((currentPage + 1) / readings.length) * 100 : 0;
+  const currentStory = readings[currentPage];
 
   return (
     <SectionContainer name="English">
+      {/* Year Level Selector */}
+      <Box sx={{ mb: 3, textAlign: 'center' }}>
+        <Typography variant="h6" sx={{ mb: 1, color: '#82b1ff', fontWeight: 'bold' }}>
+          🎓 Choose Your Year Level
+        </Typography>
+        <ToggleButtonGroup
+          value={yearLevel}
+          exclusive
+          onChange={handleYearChange}
+          sx={{
+            '& .MuiToggleButton-root': {
+              borderRadius: '20px !important',
+              px: 4,
+              py: 1,
+              mx: 0.5,
+              fontWeight: 'bold',
+              fontSize: '1rem',
+              border: '2px solid rgba(255,255,255,0.2) !important',
+              color: '#b0bec5',
+              '&:hover': { bgcolor: 'rgba(255,255,255,0.08)' },
+            },
+          }}
+        >
+          <ToggleButton
+            value={2}
+            sx={{
+              '&.Mui-selected': { bgcolor: 'rgba(66,165,245,0.2) !important', color: '#64b5f6 !important', borderColor: '#42a5f5 !important' },
+            }}
+          >
+            ⭐ Year 2
+          </ToggleButton>
+          <ToggleButton
+            value={3}
+            sx={{
+              '&.Mui-selected': { bgcolor: 'rgba(156,39,176,0.2) !important', color: '#ce93d8 !important', borderColor: '#ce93d8 !important' },
+            }}
+          >
+            🌟 Year 3
+          </ToggleButton>
+        </ToggleButtonGroup>
+      </Box>
+
       {/* Status Alert */}
       {submitStatus.type && (
         <Alert
@@ -258,7 +332,7 @@ function EnglishSection() {
         </Alert>
       )}
 
-      <Card sx={{ ...cardStyle, mb: 3 }}>
+      <Card sx={{ ...darkCard, mb: 3, bgcolor: 'rgba(255,255,255,0.04)', border: '2px solid rgba(255,255,255,0.1)' }}>
         <Tabs
           value={activeTab}
           onChange={handleTabChange}
@@ -269,9 +343,13 @@ function EnglishSection() {
               fontWeight: 'bold',
               textTransform: 'none',
               py: 2,
+              color: '#78909c',
             },
             '& .Mui-selected': {
-              color: '#1565c0 !important',
+              color: '#64b5f6 !important',
+            },
+            '& .MuiTabs-indicator': {
+              bgcolor: '#64b5f6',
             },
           }}
         >
@@ -290,238 +368,259 @@ function EnglishSection() {
 
       {/* Reading Tab */}
       <TabPanel value={activeTab} index={0}>
-        {/* Progress Bar */}
-        <Box sx={{ mb: 3 }}>
-          <Typography sx={{ color: '#1565c0', fontWeight: 'bold', mb: 1 }}>
-            📖 Story {currentPage + 1} of {challengingReadings.length}
-          </Typography>
-          <LinearProgress
-            variant="determinate"
-            value={progress}
-            sx={{
-              height: 10,
-              borderRadius: 5,
-              bgcolor: '#bbdefb',
-              '& .MuiLinearProgress-bar': {
-                backgroundColor: '#1565c0',
-                borderRadius: 5,
-              },
-            }}
-          />
-        </Box>
-
-        {/* Reading Card */}
-        <Card sx={{ ...cardStyle, mb: 3, border: '2px solid #90caf9', bgcolor: '#fff' }}>
-          <CardContent sx={{ p: 4 }}>
-            <Typography
-              variant="h4"
-              sx={{
-                color: '#1565c0',
-                fontWeight: 'bold',
-                mb: 3,
-                textAlign: 'center',
-              }}
-            >
-              {currentStory.title}
-            </Typography>
-
-            <Typography
-              variant="body1"
-              sx={{
-                color: '#333',
-                fontSize: '1.15rem',
-                lineHeight: 2,
-                mb: 3,
-                fontFamily: 'Georgia, serif',
-              }}
-            >
-              {currentStory.text}
-            </Typography>
-
-            {/* Vocabulary Section */}
-            {currentStory.vocabulary && currentStory.vocabulary.length > 0 && (
-              <Card
+        {currentStory && (
+          <>
+            {/* Progress Bar */}
+            <Box sx={{ mb: 3 }}>
+              <Typography sx={{ color: '#64b5f6', fontWeight: 'bold', mb: 1 }}>
+                📖 Story {currentPage + 1} of {readings.length}
+              </Typography>
+              <LinearProgress
+                variant="determinate"
+                value={progress}
                 sx={{
-                  ...cardStyle,
-                  bgcolor: '#e8f5e9',
-                  border: '2px solid #81c784',
-                  mb: 3,
+                  height: 10,
+                  borderRadius: 5,
+                  bgcolor: 'rgba(255,255,255,0.08)',
+                  '& .MuiLinearProgress-bar': {
+                    backgroundColor: '#64b5f6',
+                    borderRadius: 5,
+                  },
                 }}
-              >
-                <CardContent>
-                  <Typography
-                    variant="h6"
-                    sx={{ color: '#2e7d32', fontWeight: 'bold', mb: 2 }}
-                  >
-                    📝 Vocabulary Challenge
-                  </Typography>
-                  {currentStory.vocabulary.map((vocab, index) => (
-                    <Box
-                      key={index}
-                      sx={{
-                        mb: 3,
-                        p: 2,
-                        bgcolor: '#f1f8e9',
-                        borderRadius: '12px',
-                        border: '1px solid #c8e6c9',
-                      }}
-                    >
-                      <Typography sx={{ fontWeight: 'bold', color: '#1b5e20', fontSize: '1.1rem' }}>
-                        🔤 {vocab.word}
-                      </Typography>
-                      <Typography sx={{ color: '#555', mb: 1.5, fontStyle: 'italic' }}>
-                        Meaning: {vocab.definition}
-                      </Typography>
-                      <TextField
-                        fullWidth
-                        size="small"
-                        value={vocabSentences[`${currentPage}-vocab-${index}`] || ''}
-                        onChange={e => handleVocabSentence(index, e.target.value)}
-                        placeholder={`Write a sentence using the word "${vocab.word}"...`}
-                        sx={{
-                          '& .MuiOutlinedInput-root': {
-                            borderRadius: '12px',
-                            bgcolor: '#fff',
-                          },
-                        }}
-                      />
-                    </Box>
-                  ))}
-                </CardContent>
-              </Card>
-            )}
+              />
+            </Box>
 
-            {/* Comprehension Questions */}
-            <Card
-              sx={{
-                ...cardStyle,
-                bgcolor: '#fff8e1',
-                border: '2px solid #ffca28',
-              }}
-            >
-              <CardContent>
+            {/* Reading Card */}
+            <Card sx={{ ...darkCard, mb: 3, bgcolor: 'rgba(255,255,255,0.05)', border: '2px solid rgba(66,165,245,0.3)' }}>
+              <CardContent sx={{ p: 4 }}>
                 <Typography
-                  variant="h6"
-                  sx={{ color: '#f57f17', fontWeight: 'bold', mb: 2 }}
+                  variant="h4"
+                  sx={{
+                    color: '#82b1ff',
+                    fontWeight: 'bold',
+                    mb: 3,
+                    textAlign: 'center',
+                  }}
                 >
-                  🤔 Comprehension Questions
+                  {currentStory.title}
                 </Typography>
-                {currentStory.comprehensionQuestions.map(
-                  (question, index) => (
-                    <Box key={index} sx={{ mb: 3 }}>
-                      <Typography
-                        sx={{ color: '#e65100', mb: 1, fontWeight: 'bold', fontSize: '1rem' }}
-                      >
-                        {index + 1}. {question}
-                      </Typography>
-                      <TextField
-                        fullWidth
-                        multiline
-                        rows={2}
-                        value={
-                          comprehensionAnswers[`${currentPage}-${index}`] || ''
-                        }
-                        onChange={e =>
-                          handleComprehensionAnswer(index, e.target.value)
-                        }
-                        placeholder="Write your answer here..."
-                        variant="outlined"
-                        size="small"
-                        sx={{
-                          '& .MuiOutlinedInput-root': {
-                            borderRadius: '12px',
-                            bgcolor: '#fffde7',
-                          },
-                        }}
-                      />
-                    </Box>
-                  )
-                )}
 
-                <Box sx={{ textAlign: 'center', mt: 2 }}>
-                  <Button
-                    onClick={submitComprehensionAnswers}
-                    variant="contained"
+                <Typography
+                  variant="body1"
+                  sx={{
+                    color: '#cfd8dc',
+                    fontSize: '1.15rem',
+                    lineHeight: 2,
+                    mb: 3,
+                    fontFamily: 'Georgia, serif',
+                  }}
+                >
+                  {currentStory.text}
+                </Typography>
+
+                {/* Vocabulary Section */}
+                {currentStory.vocabulary && currentStory.vocabulary.length > 0 && (
+                  <Card
                     sx={{
-                      ...buttonStyle,
-                      bgcolor: '#4caf50',
-                      '&:hover': { bgcolor: '#388e3c' },
+                      ...darkCard,
+                      bgcolor: 'rgba(76,175,80,0.08)',
+                      border: '2px solid rgba(76,175,80,0.3)',
+                      mb: 3,
                     }}
                   >
-                    ✅ Submit Answers
-                  </Button>
-                </Box>
+                    <CardContent>
+                      <Typography
+                        variant="h6"
+                        sx={{ color: '#a5d6a7', fontWeight: 'bold', mb: 2 }}
+                      >
+                        📝 Vocabulary Challenge
+                      </Typography>
+                      {currentStory.vocabulary.map((vocab, index) => (
+                        <Box
+                          key={index}
+                          sx={{
+                            mb: 3,
+                            p: 2,
+                            bgcolor: 'rgba(255,255,255,0.03)',
+                            borderRadius: '12px',
+                            border: '1px solid rgba(76,175,80,0.2)',
+                          }}
+                        >
+                          <Typography sx={{ fontWeight: 'bold', color: '#a5d6a7', fontSize: '1.1rem' }}>
+                            🔤 {vocab.word}
+                          </Typography>
+                          <Typography sx={{ color: '#90a4ae', mb: 1.5, fontStyle: 'italic' }}>
+                            Meaning: {vocab.definition}
+                          </Typography>
+                          <TextField
+                            fullWidth
+                            size="small"
+                            value={vocabSentences[`${yearLevel}-${currentPage}-vocab-${index}`] || ''}
+                            onChange={e => handleVocabSentence(index, e.target.value)}
+                            placeholder={`Write a sentence using the word "${vocab.word}"...`}
+                            sx={darkTextField}
+                          />
+                        </Box>
+                      ))}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Comprehension Questions */}
+                <Card
+                  sx={{
+                    ...darkCard,
+                    bgcolor: 'rgba(255,152,0,0.08)',
+                    border: '2px solid rgba(255,152,0,0.3)',
+                  }}
+                >
+                  <CardContent>
+                    <Typography
+                      variant="h6"
+                      sx={{ color: '#ffcc80', fontWeight: 'bold', mb: 2 }}
+                    >
+                      🤔 Comprehension Questions
+                    </Typography>
+                    {currentStory.comprehensionQuestions.map(
+                      (question, index) => (
+                        <Box key={index} sx={{ mb: 3 }}>
+                          <Typography
+                            sx={{ color: '#ffb74d', mb: 1, fontWeight: 'bold', fontSize: '1rem' }}
+                          >
+                            {index + 1}. {question}
+                          </Typography>
+                          <TextField
+                            fullWidth
+                            multiline
+                            rows={2}
+                            value={
+                              comprehensionAnswers[`${yearLevel}-${currentPage}-${index}`] || ''
+                            }
+                            onChange={e =>
+                              handleComprehensionAnswer(index, e.target.value)
+                            }
+                            placeholder="Write your answer here..."
+                            variant="outlined"
+                            size="small"
+                            sx={darkTextField}
+                          />
+                        </Box>
+                      )
+                    )}
+
+                    <Box sx={{ textAlign: 'center', mt: 2 }}>
+                      <Button
+                        onClick={submitComprehensionAnswers}
+                        variant="contained"
+                        sx={{
+                          ...darkButton,
+                          bgcolor: '#4caf50',
+                          '&:hover': { bgcolor: '#388e3c' },
+                          boxShadow: '0 4px 15px rgba(76,175,80,0.3)',
+                        }}
+                      >
+                        ✅ Submit Answers
+                      </Button>
+                    </Box>
+                  </CardContent>
+                </Card>
               </CardContent>
             </Card>
-          </CardContent>
-        </Card>
 
-        {/* Navigation Buttons */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Button
-            onClick={handlePreviousPage}
-            variant="contained"
-            startIcon={<ArrowBackIosIcon />}
-            sx={{
-              ...buttonStyle,
-              bgcolor: '#7b1fa2',
-              '&:hover': { bgcolor: '#6a1b9a' },
-            }}
-          >
-            Previous Story
-          </Button>
+            {/* Navigation Buttons */}
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Button
+                onClick={handlePreviousPage}
+                variant="contained"
+                startIcon={<ArrowBackIosIcon />}
+                sx={{
+                  ...darkButton,
+                  bgcolor: '#7b1fa2',
+                  '&:hover': { bgcolor: '#6a1b9a' },
+                  boxShadow: '0 4px 15px rgba(123,31,162,0.3)',
+                }}
+              >
+                Previous Story
+              </Button>
 
-          <Typography
-            variant="h6"
-            sx={{ color: '#1565c0', fontWeight: 'bold' }}
-          >
-            📚 Reading Collection
-          </Typography>
+              <Typography
+                variant="h6"
+                sx={{ color: '#82b1ff', fontWeight: 'bold' }}
+              >
+                📚 Reading Collection
+              </Typography>
 
-          <Button
-            onClick={handleNextPage}
-            variant="contained"
-            endIcon={<ArrowForwardIcon />}
-            sx={{
-              ...buttonStyle,
-              bgcolor: '#e91e63',
-              '&:hover': { bgcolor: '#c2185b' },
-            }}
-          >
-            Next Story
-          </Button>
-        </Box>
+              <Button
+                onClick={handleNextPage}
+                variant="contained"
+                endIcon={<ArrowForwardIcon />}
+                sx={{
+                  ...darkButton,
+                  bgcolor: '#e91e63',
+                  '&:hover': { bgcolor: '#c2185b' },
+                  boxShadow: '0 4px 15px rgba(233,30,99,0.3)',
+                }}
+              >
+                Next Story
+              </Button>
+            </Box>
+          </>
+        )}
       </TabPanel>
 
       {/* Writing Tab */}
       <TabPanel value={activeTab} index={1}>
-        <Typography
-          variant="h5"
-          sx={{ color: '#1565c0', fontWeight: 'bold', mb: 3, textAlign: 'center' }}
-        >
-          ✍️ Creative Writing Tasks
-        </Typography>
-        {englishWritingTasks.map((task, index) => (
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+          <Typography
+            variant="h5"
+            sx={{ color: '#82b1ff', fontWeight: 'bold' }}
+          >
+            ✍️ Creative Writing Tasks
+          </Typography>
+          <Button
+            variant="outlined"
+            onClick={() => setWritingTasks(generateWritingPrompts(yearLevel, 4))}
+            sx={{
+              borderRadius: '20px',
+              px: 3,
+              fontWeight: 'bold',
+              textTransform: 'none',
+              borderColor: 'rgba(130,177,255,0.4)',
+              color: '#82b1ff',
+              '&:hover': { borderColor: '#82b1ff', bgcolor: 'rgba(130,177,255,0.08)' },
+            }}
+          >
+            🔄 New Prompts
+          </Button>
+        </Box>
+        {writingTasks.map((task: WritingPrompt, index: number) => (
           <Card
             key={index}
             sx={{
-              ...cardStyle,
+              ...darkCard,
               mb: 3,
-              bgcolor: '#e3f2fd',
-              border: '2px solid #90caf9',
+              bgcolor: 'rgba(255,255,255,0.05)',
+              border: '2px solid rgba(66,165,245,0.25)',
             }}
           >
             <CardContent sx={{ p: 3 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                <Chip
+                  label={task.genre}
+                  size="small"
+                  sx={{ bgcolor: 'rgba(130,177,255,0.15)', color: '#82b1ff', fontWeight: 'bold', fontSize: '0.8rem' }}
+                />
+              </Box>
               <Typography
                 variant="h6"
-                sx={{ color: '#1565c0', fontWeight: 'bold', mb: 2, fontSize: '1.1rem' }}
+                sx={{ color: '#cfd8dc', fontWeight: 'bold', mb: 2, fontSize: '1.05rem', lineHeight: 1.5 }}
               >
-                ✏️ {task.prompt}
+                {task.prompt}
               </Typography>
               <TextareaAutosize
                 minRows={4}
                 maxRows={10}
-                value={writingResponses[index] || ''}
+                value={writingResponses[`${yearLevel}-${index}`] || ''}
                 onChange={e => handleWritingResponse(index, e.target.value)}
                 placeholder="Let your imagination flow! Write your story here..."
                 style={{
@@ -530,9 +629,10 @@ function EnglishSection() {
                   fontSize: '1rem',
                   lineHeight: '1.8',
                   padding: '12px 16px',
-                  border: '2px solid #90caf9',
+                  border: '2px solid rgba(255,255,255,0.15)',
                   borderRadius: '12px',
-                  backgroundColor: '#fff',
+                  backgroundColor: 'rgba(255,255,255,0.04)',
+                  color: '#e0e0e0',
                   resize: 'vertical',
                   outline: 'none',
                   boxSizing: 'border-box',
@@ -543,9 +643,10 @@ function EnglishSection() {
                   onClick={() => submitWritingTask(index)}
                   variant="contained"
                   sx={{
-                    ...buttonStyle,
+                    ...darkButton,
                     bgcolor: '#1565c0',
                     '&:hover': { bgcolor: '#0d47a1' },
+                    boxShadow: '0 4px 15px rgba(21,101,192,0.3)',
                   }}
                 >
                   📤 Submit Writing
@@ -560,29 +661,29 @@ function EnglishSection() {
       <TabPanel value={activeTab} index={2}>
         <Typography
           variant="h5"
-          sx={{ color: '#1565c0', fontWeight: 'bold', mb: 3, textAlign: 'center' }}
+          sx={{ color: '#82b1ff', fontWeight: 'bold', mb: 3, textAlign: 'center' }}
         >
           📊 Your Learning History
         </Typography>
 
         {/* Comprehension History */}
-        <Card sx={{ ...cardStyle, mb: 3, border: '2px solid #90caf9' }}>
+        <Card sx={{ ...darkCard, mb: 3, bgcolor: 'rgba(255,255,255,0.04)', border: '2px solid rgba(66,165,245,0.25)' }}>
           <CardContent>
             <Typography
               variant="h6"
-              sx={{ color: '#1565c0', fontWeight: 'bold', mb: 2 }}
+              sx={{ color: '#64b5f6', fontWeight: 'bold', mb: 2 }}
             >
               📖 Reading Comprehension ({savedComprehensions.length} submissions)
             </Typography>
             {savedComprehensions.length === 0 ? (
-              <Typography sx={{ color: '#999', textAlign: 'center', py: 2 }}>
+              <Typography sx={{ color: '#78909c', textAlign: 'center', py: 2 }}>
                 No comprehension answers yet. Start reading to fill this up! 📚
               </Typography>
             ) : (
               savedComprehensions.map(item => (
                 <Card
                   key={item.id}
-                  sx={{ ...cardStyle, mb: 2, bgcolor: '#e3f2fd' }}
+                  sx={{ ...darkCard, mb: 2, bgcolor: 'rgba(66,165,245,0.08)', border: '1px solid rgba(66,165,245,0.2)' }}
                 >
                   <CardContent sx={{ py: 2 }}>
                     <Box
@@ -593,19 +694,19 @@ function EnglishSection() {
                         mb: 1,
                       }}
                     >
-                      <Typography sx={{ fontWeight: 'bold', color: '#1565c0' }}>
+                      <Typography sx={{ fontWeight: 'bold', color: '#82b1ff' }}>
                         {item.storyTitle}
                       </Typography>
                       <Chip
                         label={new Date(item.submittedAt).toLocaleDateString()}
                         size="small"
-                        sx={{ bgcolor: '#bbdefb' }}
+                        sx={{ bgcolor: 'rgba(66,165,245,0.2)', color: '#90caf9' }}
                       />
                     </Box>
-                    <Typography variant="body2" sx={{ color: '#555', mb: 0.5 }}>
+                    <Typography variant="body2" sx={{ color: '#90a4ae', mb: 0.5 }}>
                       Q{item.questionIndex + 1}: {item.question}
                     </Typography>
-                    <Typography variant="body2" sx={{ color: '#333' }}>
+                    <Typography variant="body2" sx={{ color: '#cfd8dc' }}>
                       <strong>Answer:</strong> {item.answer}
                     </Typography>
                   </CardContent>
@@ -616,23 +717,23 @@ function EnglishSection() {
         </Card>
 
         {/* Writing History */}
-        <Card sx={{ ...cardStyle, border: '2px solid #81c784' }}>
+        <Card sx={{ ...darkCard, bgcolor: 'rgba(255,255,255,0.04)', border: '2px solid rgba(76,175,80,0.25)' }}>
           <CardContent>
             <Typography
               variant="h6"
-              sx={{ color: '#2e7d32', fontWeight: 'bold', mb: 2 }}
+              sx={{ color: '#a5d6a7', fontWeight: 'bold', mb: 2 }}
             >
               ✍️ Writing Tasks ({savedWritings.length} submissions)
             </Typography>
             {savedWritings.length === 0 ? (
-              <Typography sx={{ color: '#999', textAlign: 'center', py: 2 }}>
+              <Typography sx={{ color: '#78909c', textAlign: 'center', py: 2 }}>
                 No writing tasks yet. Time to get creative! ✍️
               </Typography>
             ) : (
               savedWritings.map(item => (
                 <Card
                   key={item.id}
-                  sx={{ ...cardStyle, mb: 2, bgcolor: '#e8f5e9' }}
+                  sx={{ ...darkCard, mb: 2, bgcolor: 'rgba(76,175,80,0.08)', border: '1px solid rgba(76,175,80,0.2)' }}
                 >
                   <CardContent sx={{ py: 2 }}>
                     <Box
@@ -643,19 +744,19 @@ function EnglishSection() {
                         mb: 1,
                       }}
                     >
-                      <Typography sx={{ fontWeight: 'bold', color: '#2e7d32' }}>
+                      <Typography sx={{ fontWeight: 'bold', color: '#a5d6a7' }}>
                         Writing Task {item.taskIndex + 1}
                       </Typography>
                       <Chip
                         label={new Date(item.submittedAt).toLocaleDateString()}
                         size="small"
-                        sx={{ bgcolor: '#c8e6c9' }}
+                        sx={{ bgcolor: 'rgba(76,175,80,0.2)', color: '#a5d6a7' }}
                       />
                     </Box>
-                    <Typography variant="body2" sx={{ color: '#555', mb: 1 }}>
+                    <Typography variant="body2" sx={{ color: '#90a4ae', mb: 1 }}>
                       <strong>Prompt:</strong> {item.prompt}
                     </Typography>
-                    <Typography variant="body2" sx={{ color: '#333' }}>
+                    <Typography variant="body2" sx={{ color: '#cfd8dc' }}>
                       <strong>Response:</strong> {item.response}
                     </Typography>
                   </CardContent>

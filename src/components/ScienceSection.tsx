@@ -7,6 +7,8 @@ import {
   Collapse,
   Grid,
   TextField,
+  ToggleButton,
+  ToggleButtonGroup,
   Typography,
 } from '@mui/material';
 import {
@@ -17,8 +19,14 @@ import {
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
 } from '@mui/icons-material';
-import { useCallback, useEffect, useState } from 'react';
-import { scienceQuestions } from '../data/scienceQuestions';
+import React, { useCallback, useEffect, useState } from 'react';
+import {
+  type ScienceQuestion,
+  type YearLevel,
+  getRandomQuestionsByYear,
+  getRandomQuestionsByTopic,
+  getTopicsForYear,
+} from '../data/scienceQuestions';
 import { db } from '../db/database';
 import type { ScienceSessionResult } from '../db/database';
 import SectionContainer from './SectionContainer';
@@ -43,19 +51,38 @@ function getRandomEncouragement(correct: boolean): string {
   return list[Math.floor(Math.random() * list.length)];
 }
 
-function getRandomQuestions(count: number) {
-  const shuffled = [...scienceQuestions].sort(() => 0.5 - Math.random());
-  return shuffled.slice(0, count);
-}
+const darkCard = {
+  borderRadius: '16px',
+  boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
+  transition: 'transform 0.2s',
+  '&:hover': { transform: 'scale(1.02)' },
+};
+
+const darkTextField = {
+  '& .MuiOutlinedInput-root': {
+    borderRadius: '12px',
+    bgcolor: 'rgba(255,255,255,0.06)',
+    color: '#fff',
+    '& fieldset': { borderColor: 'rgba(255,255,255,0.2)' },
+    '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.4)' },
+    '&.Mui-focused fieldset': { borderColor: '#66bb6a' },
+  },
+  '& .MuiInputLabel-root': { color: '#90a4ae' },
+  '& .MuiInputLabel-root.Mui-focused': { color: '#66bb6a' },
+};
 
 function ScienceSection() {
+  const [yearLevel, setYearLevel] = useState<YearLevel>(2);
+  const [selectedTopic, setSelectedTopic] = useState<string>('all');
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
   const [showAnswers, setShowAnswers] = useState(false);
-  const [questions, setQuestions] = useState(getRandomQuestions(10));
+  const [questions, setQuestions] = useState<ScienceQuestion[]>(() => getRandomQuestionsByYear(2, 10));
   const [allCorrect, setAllCorrect] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [history, setHistory] = useState<ScienceSessionResult[]>([]);
   const [feedbackMessages, setFeedbackMessages] = useState<{ [key: number]: string }>({});
+
+  const topics = getTopicsForYear(yearLevel);
 
   useEffect(() => {
     loadHistory();
@@ -69,6 +96,37 @@ function ScienceSection() {
       .sortBy('completedAt');
     setHistory(results.slice(0, 10));
   };
+
+  const loadQuestions = useCallback((year: YearLevel, topic: string) => {
+    if (topic === 'all') {
+      setQuestions(getRandomQuestionsByYear(year, 10));
+    } else {
+      setQuestions(getRandomQuestionsByTopic(year, topic, 10));
+    }
+    setAnswers({});
+    setShowAnswers(false);
+    setAllCorrect(false);
+    setFeedbackMessages({});
+  }, []);
+
+  const handleYearChange = useCallback(
+    (_: React.MouseEvent<HTMLElement>, newYear: YearLevel | null) => {
+      if (newYear) {
+        setYearLevel(newYear);
+        setSelectedTopic('all');
+        loadQuestions(newYear, 'all');
+      }
+    },
+    [loadQuestions]
+  );
+
+  const handleTopicChange = useCallback(
+    (topic: string) => {
+      setSelectedTopic(topic);
+      loadQuestions(yearLevel, topic);
+    },
+    [yearLevel, loadQuestions]
+  );
 
   const handleAnswerChange = useCallback((id: number, value: string) => {
     setAnswers(prev => ({ ...prev, [id]: value }));
@@ -84,7 +142,6 @@ function ScienceSection() {
 
     setAllCorrect(correctCount === questions.length);
 
-    // Generate feedback messages
     const messages: { [key: number]: string } = {};
     questions.forEach(q => {
       const isCorrect =
@@ -93,7 +150,6 @@ function ScienceSection() {
     });
     setFeedbackMessages(messages);
 
-    // Save to IndexedDB
     const questionsData = JSON.stringify(
       questions.map(q => ({
         text: q.text,
@@ -117,12 +173,8 @@ function ScienceSection() {
   }, [questions, answers]);
 
   const handleMoreQuestions = useCallback(() => {
-    setAnswers({});
-    setShowAnswers(false);
-    setAllCorrect(false);
-    setQuestions(getRandomQuestions(10));
-    setFeedbackMessages({});
-  }, []);
+    loadQuestions(yearLevel, selectedTopic);
+  }, [yearLevel, selectedTopic, loadQuestions]);
 
   const correctCount = showAnswers
     ? questions.filter(q =>
@@ -130,15 +182,86 @@ function ScienceSection() {
       ).length
     : 0;
 
-  const cardStyle = {
-    borderRadius: '16px',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-    transition: 'transform 0.2s',
-    '&:hover': { transform: 'scale(1.02)' },
-  };
-
   return (
     <SectionContainer name="Science">
+      {/* Year Level Selector */}
+      <Box sx={{ mb: 2, textAlign: 'center' }}>
+        <Typography variant="h6" sx={{ mb: 1, color: '#a5d6a7', fontWeight: 'bold' }}>
+          🎓 Choose Your Year Level
+        </Typography>
+        <ToggleButtonGroup
+          value={yearLevel}
+          exclusive
+          onChange={handleYearChange}
+          sx={{
+            '& .MuiToggleButton-root': {
+              borderRadius: '20px !important',
+              px: 4,
+              py: 1,
+              mx: 0.5,
+              fontWeight: 'bold',
+              fontSize: '1rem',
+              border: '2px solid rgba(255,255,255,0.2) !important',
+              color: '#b0bec5',
+              '&:hover': { bgcolor: 'rgba(255,255,255,0.08)' },
+            },
+          }}
+        >
+          <ToggleButton
+            value={2}
+            sx={{
+              '&.Mui-selected': { bgcolor: 'rgba(76,175,80,0.2) !important', color: '#66bb6a !important', borderColor: '#66bb6a !important' },
+            }}
+          >
+            ⭐ Year 2
+          </ToggleButton>
+          <ToggleButton
+            value={3}
+            sx={{
+              '&.Mui-selected': { bgcolor: 'rgba(156,39,176,0.2) !important', color: '#ce93d8 !important', borderColor: '#ce93d8 !important' },
+            }}
+          >
+            🌟 Year 3
+          </ToggleButton>
+        </ToggleButtonGroup>
+      </Box>
+
+      {/* Topic Selector */}
+      <Box sx={{ mb: 3, textAlign: 'center' }}>
+        <Typography variant="body1" sx={{ mb: 1, color: '#90a4ae' }}>
+          🔬 Choose a Topic
+        </Typography>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center' }}>
+          <Chip
+            label="All Topics"
+            onClick={() => handleTopicChange('all')}
+            sx={{
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              bgcolor: selectedTopic === 'all' ? 'rgba(76,175,80,0.3)' : 'rgba(255,255,255,0.08)',
+              color: selectedTopic === 'all' ? '#a5d6a7' : '#90a4ae',
+              border: selectedTopic === 'all' ? '2px solid #66bb6a' : '2px solid transparent',
+              '&:hover': { bgcolor: 'rgba(76,175,80,0.2)' },
+            }}
+          />
+          {topics.map(topic => (
+            <Chip
+              key={topic}
+              label={topic}
+              onClick={() => handleTopicChange(topic)}
+              sx={{
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                bgcolor: selectedTopic === topic ? 'rgba(76,175,80,0.3)' : 'rgba(255,255,255,0.08)',
+                color: selectedTopic === topic ? '#a5d6a7' : '#90a4ae',
+                border: selectedTopic === topic ? '2px solid #66bb6a' : '2px solid transparent',
+                '&:hover': { bgcolor: 'rgba(76,175,80,0.2)' },
+              }}
+            />
+          ))}
+        </Box>
+      </Box>
+
       {/* Score Summary */}
       {showAnswers && (
         <Box
@@ -147,14 +270,15 @@ function ScienceSection() {
             p: 3,
             borderRadius: '16px',
             background: allCorrect
-              ? 'linear-gradient(135deg, #a8e063 0%, #56ab2f 100%)'
-              : 'linear-gradient(135deg, #e0f7fa 0%, #80deea 100%)',
+              ? 'linear-gradient(135deg, rgba(76,175,80,0.3) 0%, rgba(56,142,60,0.4) 100%)'
+              : 'linear-gradient(135deg, rgba(0,150,136,0.2) 0%, rgba(38,166,154,0.2) 100%)',
+            border: allCorrect ? '2px solid #4caf50' : '2px solid rgba(0,150,136,0.4)',
             textAlign: 'center',
           }}
         >
           <Typography
             variant="h4"
-            sx={{ fontWeight: 'bold', color: allCorrect ? '#fff' : '#333' }}
+            sx={{ fontWeight: 'bold', color: allCorrect ? '#a5d6a7' : '#80cbc4' }}
           >
             {allCorrect
               ? '🎉 AMAZING! You\'re a science superstar! 🔬'
@@ -174,24 +298,35 @@ function ScienceSection() {
             <Grid size={{ xs: 12, sm: 6, md: 4 }} key={question.id}>
               <Card
                 sx={{
-                  ...cardStyle,
+                  ...darkCard,
                   bgcolor: showAnswers
                     ? isCorrect
-                      ? '#e8f5e9'
-                      : '#ffebee'
-                    : '#e8f5e9',
+                      ? 'rgba(76,175,80,0.15)'
+                      : 'rgba(239,83,80,0.15)'
+                    : 'rgba(255,255,255,0.06)',
                   border: showAnswers
                     ? isCorrect
                       ? '2px solid #4caf50'
                       : '2px solid #ef5350'
-                    : '2px solid #81c784',
+                    : '2px solid rgba(255,255,255,0.12)',
+                  backdropFilter: 'blur(10px)',
                 }}
               >
                 <CardContent>
+                  <Chip
+                    label={question.topic}
+                    size="small"
+                    sx={{
+                      mb: 1,
+                      bgcolor: 'rgba(76,175,80,0.2)',
+                      color: '#a5d6a7',
+                      fontSize: '0.7rem',
+                    }}
+                  />
                   <Typography
                     variant="h6"
                     sx={{
-                      color: '#2e7d32',
+                      color: '#a5d6a7',
                       fontWeight: 'bold',
                       mb: 2,
                       fontSize: '1.1rem',
@@ -207,13 +342,7 @@ function ScienceSection() {
                     onChange={e =>
                       handleAnswerChange(question.id, e.target.value)
                     }
-                    sx={{
-                      mb: 1,
-                      '& .MuiOutlinedInput-root': {
-                        borderRadius: '12px',
-                        bgcolor: '#f1f8e9',
-                      },
-                    }}
+                    sx={{ ...darkTextField, mb: 1 }}
                     fullWidth
                   />
                   {showAnswers && (
@@ -226,7 +355,7 @@ function ScienceSection() {
                       }}
                     >
                       {isCorrect ? (
-                        <CheckIcon sx={{ color: '#4caf50' }} />
+                        <CheckIcon sx={{ color: '#66bb6a' }} />
                       ) : (
                         <WrongIcon sx={{ color: '#ef5350' }} />
                       )}
@@ -234,7 +363,7 @@ function ScienceSection() {
                         sx={{
                           fontWeight: 'bold',
                           fontSize: '0.9rem',
-                          color: isCorrect ? '#2e7d32' : '#c62828',
+                          color: isCorrect ? '#a5d6a7' : '#ef9a9a',
                         }}
                       >
                         {isCorrect
@@ -264,6 +393,7 @@ function ScienceSection() {
             bgcolor: '#4caf50',
             '&:hover': { bgcolor: '#388e3c' },
             textTransform: 'none',
+            boxShadow: '0 4px 15px rgba(76,175,80,0.3)',
           }}
         >
           ✅ Check Answers
@@ -280,6 +410,7 @@ function ScienceSection() {
             bgcolor: '#009688',
             '&:hover': { bgcolor: '#00796b' },
             textTransform: 'none',
+            boxShadow: '0 4px 15px rgba(0,150,136,0.3)',
           }}
         >
           🔄 More Questions
@@ -305,7 +436,7 @@ function ScienceSection() {
             borderRadius: '20px',
             textTransform: 'none',
             fontWeight: 'bold',
-            color: '#2e7d32',
+            color: '#a5d6a7',
             fontSize: '1rem',
           }}
         >
@@ -315,7 +446,7 @@ function ScienceSection() {
           <Grid container spacing={2} sx={{ mt: 1 }}>
             {history.map(result => (
               <Grid size={{ xs: 12, sm: 6, md: 4 }} key={result.id}>
-                <Card sx={{ ...cardStyle, bgcolor: '#e8f5e9' }}>
+                <Card sx={{ ...darkCard, bgcolor: 'rgba(255,255,255,0.06)', border: '2px solid rgba(76,175,80,0.3)' }}>
                   <CardContent>
                     <Box
                       sx={{
@@ -328,19 +459,19 @@ function ScienceSection() {
                       <Chip
                         label="Science"
                         size="small"
-                        sx={{ fontWeight: 'bold', bgcolor: '#4caf50', color: '#fff' }}
+                        sx={{ fontWeight: 'bold', bgcolor: 'rgba(76,175,80,0.3)', color: '#a5d6a7' }}
                       />
-                      <Typography variant="body2" sx={{ color: '#888' }}>
+                      <Typography variant="body2" sx={{ color: '#90a4ae' }}>
                         {new Date(result.completedAt).toLocaleDateString()}
                       </Typography>
                     </Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       {result.score === 100 ? (
-                        <TrophyIcon sx={{ color: '#ffc107' }} />
+                        <TrophyIcon sx={{ color: '#ffd54f' }} />
                       ) : (
-                        <StarIcon sx={{ color: '#ff9800' }} />
+                        <StarIcon sx={{ color: '#ffa726' }} />
                       )}
-                      <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                      <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#e0e0e0' }}>
                         {result.correctCount}/{result.totalQuestions} (
                         {result.score}%)
                       </Typography>
@@ -352,7 +483,7 @@ function ScienceSection() {
             {history.length === 0 && (
               <Grid size={{ xs: 12 }}>
                 <Typography
-                  sx={{ color: '#999', textAlign: 'center', py: 2 }}
+                  sx={{ color: '#78909c', textAlign: 'center', py: 2 }}
                 >
                   No results yet. Complete a session to see your history! 🔬
                 </Typography>
