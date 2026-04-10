@@ -8,10 +8,18 @@
 /* Tailwind v4 auto-injects everything via the Vite plugin */
 
 /* Optional: Custom styles for your app */
+html {
+  overscroll-behavior: none;
+}
+
 body {
   margin: 0;
   font-family:
     -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  overscroll-behavior: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 /* For MUI compatibility - prevent conflicts */

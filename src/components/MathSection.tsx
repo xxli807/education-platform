@@ -5,7 +5,10 @@ import {
   CardContent,
   Chip,
   Collapse,
+  FormControl,
   Grid,
+  MenuItem,
+  Select,
   TextField,
   ToggleButton,
   ToggleButtonGroup,
@@ -19,8 +22,14 @@ import {
   Timer as TimerIcon,
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
+  EditNote as WhiteboardIcon,
+  Delete as EraseIcon,
+  Replay as ReplayIcon,
+  DeleteOutline as DeleteOutlineIcon,
 } from '@mui/icons-material';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import SessionReviewDialog, { type ReviewQuestion } from './SessionReviewDialog';
+import ConfirmDeleteDialog from './ConfirmDeleteDialog';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Question } from '../types';
 import { db } from '../db/database';
 import type { MathSessionResult } from '../db/database';
@@ -170,7 +179,9 @@ function generateMathQuestions(difficulty: Difficulty): Question[] {
       }
     }
 
-    questions.push({ id: i, text, answer });
+    // Add MCQ options for ~40% of advanced and challenge questions
+    const useMCQ = (difficulty === 'advanced' || difficulty === 'challenge') && Math.random() < 0.4;
+    questions.push({ id: i, text, answer, options: useMCQ ? mathOptions(Number(answer)) : undefined });
   }
 
   return questions;
@@ -183,6 +194,19 @@ function formatTime(seconds: number): string {
   return `${mins}m ${secs}s`;
 }
 
+// ─── MCQ option generator for math ───────────────────────────────────────────
+function mathOptions(correct: number): string[] {
+  const ans = Number(correct);
+  const wrong = new Set<number>();
+  const spread = Math.max(3, Math.round(Math.abs(ans) * 0.15) + 2);
+  while (wrong.size < 3) {
+    const delta = Math.floor(Math.random() * spread * 2 + 1) * (Math.random() < 0.5 ? 1 : -1);
+    const candidate = ans + delta;
+    if (candidate !== ans && !wrong.has(candidate)) wrong.add(candidate);
+  }
+  return [ans, ...[...wrong]].map(String).sort(() => Math.random() - 0.5);
+}
+
 // Dark theme styles
 const darkCard = {
   borderRadius: '16px',
@@ -190,6 +214,303 @@ const darkCard = {
   transition: 'transform 0.2s',
   '&:hover': { transform: 'scale(1.02)' },
 };
+
+// ─── Whiteboard (floating, top-right) ────────────────────────────────────────
+function Whiteboard() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const drawing = useRef(false);
+  const lastPos = useRef<{ x: number; y: number } | null>(null);
+  const [expanded, setExpanded] = useState(false);
+  const [position, setPosition] = useState({ top: 80, right: 16 });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStart = useRef({ x: 0, y: 0, startTop: 0, startRight: 0 });
+  const dragDistance = useRef(0);
+  const DRAG_THRESHOLD = 10;
+
+  const getPos = (e: React.MouseEvent | React.TouchEvent, canvas: HTMLCanvasElement) => {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    if ('touches' in e) {
+      const t = e.touches[0];
+      return { x: (t.clientX - rect.left) * scaleX, y: (t.clientY - rect.top) * scaleY };
+    }
+    return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
+  };
+
+  const startDraw = (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    drawing.current = true;
+    lastPos.current = getPos(e, canvas);
+  };
+
+  const draw = (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    if (!drawing.current) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const pos = getPos(e, canvas);
+    if (lastPos.current) {
+      ctx.beginPath();
+      ctx.moveTo(lastPos.current.x, lastPos.current.y);
+      ctx.lineTo(pos.x, pos.y);
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 3;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.stroke();
+    }
+    lastPos.current = pos;
+  };
+
+  const stopDraw = () => {
+    drawing.current = false;
+    lastPos.current = null;
+  };
+
+  const erase = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  };
+
+  // Size canvas whenever it becomes visible and fill with white background
+  useEffect(() => {
+    if (!expanded) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const size = () => {
+      const { width, height } = canvas.getBoundingClientRect();
+      if (width > 0 && height > 0) {
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+      }
+    };
+    // small delay so the expand animation has settled
+    const t = setTimeout(size, 50);
+    window.addEventListener('resize', size);
+    return () => { clearTimeout(t); window.removeEventListener('resize', size); };
+  }, [expanded]);
+
+  const stopDrag = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
+  const handleDragMove = useCallback((clientX: number, clientY: number) => {
+    const deltaX = clientX - dragStart.current.x;
+    const deltaY = clientY - dragStart.current.y;
+    setPosition({
+      top: Math.max(0, dragStart.current.startTop + deltaY),
+      right: Math.max(0, dragStart.current.startRight - deltaX),
+    });
+  }, []);
+
+  const startDrag = (clientX: number, clientY: number) => {
+    setIsDragging(true);
+    dragStart.current = {
+      x: clientX,
+      y: clientY,
+      startTop: position.top,
+      startRight: position.right,
+    };
+  };
+
+  const startMouseDrag = (e: React.MouseEvent) => {
+    e.preventDefault();
+    startDrag(e.clientX, e.clientY);
+  };
+
+  const startTouchDrag = (e: React.TouchEvent) => {
+    e.preventDefault();
+    const touch = e.touches[0];
+    startDrag(touch.clientX, touch.clientY);
+  };
+
+  // Add document-level drag handlers
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const onMouseMove = (e: MouseEvent) => handleDragMove(e.clientX, e.clientY);
+    const onTouchMove = (e: TouchEvent) => {
+      const touch = e.touches[0];
+      handleDragMove(touch.clientX, touch.clientY);
+    };
+    const onMouseUp = () => stopDrag();
+    const onTouchEnd = () => stopDrag();
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('touchmove', onTouchMove, { passive: false });
+    document.addEventListener('mouseup', onMouseUp);
+    document.addEventListener('touchend', onTouchEnd);
+
+    return () => {
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('touchmove', onTouchMove);
+      document.removeEventListener('mouseup', onMouseUp);
+      document.removeEventListener('touchend', onTouchEnd);
+    };
+  }, [isDragging, handleDragMove, stopDrag]);
+
+  return (
+    <Box
+      sx={{
+        position: 'fixed',
+        top: position.top,
+        right: position.right,
+        zIndex: 1200,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'flex-end',
+      }}
+    >
+      {/* Collapsed pill / toggle button */}
+      {!expanded && (
+        <Box
+          onClick={() => setExpanded(true)}
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            px: 2,
+            py: 1,
+            borderRadius: '24px',
+            bgcolor: 'rgba(10,14,26,0.92)',
+            border: '2px solid rgba(255,213,79,0.6)',
+            boxShadow: '0 0 12px rgba(255,213,79,0.3)',
+            cursor: 'pointer',
+            userSelect: 'none',
+            backdropFilter: 'blur(8px)',
+            '&:hover': {
+              border: '2px solid #ffd54f',
+              boxShadow: '0 0 20px rgba(255,213,79,0.5)',
+            },
+            transition: 'all 0.2s',
+          }}
+        >
+          <WhiteboardIcon sx={{ color: '#ffd54f', fontSize: '1.2rem' }} />
+          <Typography sx={{ color: '#ffd54f', fontWeight: 'bold', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
+            ✏️ Whiteboard
+          </Typography>
+        </Box>
+      )}
+
+      {/* Expanded panel */}
+      {expanded && (
+        <Box
+          sx={{
+            width: { xs: '80vw', sm: '45vw', md: '50vw' },
+            height: '90vh',
+            display: 'flex',
+            flexDirection: 'column',
+            bgcolor: 'rgba(10,14,26,0.95)',
+            border: '2px solid rgba(255,213,79,0.5)',
+            borderRadius: '16px',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.6), 0 0 20px rgba(255,213,79,0.2)',
+            backdropFilter: 'blur(12px)',
+            overflow: 'hidden',
+          }}
+        >
+          {/* Header */}
+          <Box
+            onMouseDown={startMouseDrag}
+            onTouchStart={startTouchDrag}
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              px: 2,
+              py: 1,
+              borderBottom: '1px solid rgba(255,213,79,0.25)',
+              bgcolor: 'rgba(255,213,79,0.07)',
+              flexShrink: 0,
+              cursor: 'grab',
+              userSelect: 'none',
+              touchAction: 'none',
+              '&:active': { cursor: 'grabbing' },
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <WhiteboardIcon sx={{ color: '#ffd54f', fontSize: '1.1rem' }} />
+              <Typography sx={{ color: '#ffd54f', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                Whiteboard
+              </Typography>
+            </Box>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button
+                size="small"
+                startIcon={<EraseIcon sx={{ fontSize: '1rem !important' }} />}
+                onClick={erase}
+                sx={{
+                  borderRadius: '14px',
+                  textTransform: 'none',
+                  fontSize: '0.75rem',
+                  fontWeight: 'bold',
+                  color: '#ffd54f',
+                  border: '1px solid rgba(255,213,79,0.4)',
+                  px: 1.5,
+                  py: 0.5,
+                  minWidth: 0,
+                  '&:hover': { bgcolor: 'rgba(255,213,79,0.1)', borderColor: '#ffd54f' },
+                }}
+              >
+                Clear
+              </Button>
+              <Button
+                size="small"
+                startIcon={<ExpandLessIcon sx={{ fontSize: '1rem !important' }} />}
+                onClick={() => setExpanded(false)}
+                sx={{
+                  borderRadius: '14px',
+                  textTransform: 'none',
+                  fontSize: '0.75rem',
+                  fontWeight: 'bold',
+                  color: '#90a4ae',
+                  border: '1px solid rgba(144,164,174,0.3)',
+                  px: 1.5,
+                  py: 0.5,
+                  minWidth: 0,
+                  '&:hover': { bgcolor: 'rgba(144,164,174,0.1)', borderColor: '#90a4ae' },
+                }}
+              >
+                Minimize
+              </Button>
+            </Box>
+          </Box>
+
+          {/* Canvas */}
+          <Box sx={{ touchAction: 'none', cursor: 'crosshair', flex: 1, display: 'flex', flexDirection: 'column' }}>
+            <canvas
+              ref={canvasRef}
+              style={{ width: '100%', flex: 1, display: 'block' }}
+              onMouseDown={startDraw}
+              onMouseMove={draw}
+              onMouseUp={stopDraw}
+              onMouseLeave={stopDraw}
+              onTouchStart={startDraw}
+              onTouchMove={draw}
+              onTouchEnd={stopDraw}
+            />
+            <Typography sx={{ color: '#37474f', fontSize: '0.7rem', textAlign: 'center', pb: 0.5, flexShrink: 0 }}>
+              draw with finger or mouse
+            </Typography>
+          </Box>
+        </Box>
+      )}
+    </Box>
+  );
+}
 
 function MathSection() {
   const [difficulty, setDifficulty] = useState<Difficulty>('standard');
@@ -203,11 +524,20 @@ function MathSection() {
   const [timeTaken, setTimeTaken] = useState<number | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [history, setHistory] = useState<MathSessionResult[]>([]);
+  const [reviewResult, setReviewResult] = useState<MathSessionResult | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<MathSessionResult | null>(null);
   const [feedbackMessages, setFeedbackMessages] = useState<{ [key: number]: string }>({});
 
   useEffect(() => {
     loadHistory();
   }, []);
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget?.id) return;
+    await db.mathSessionResults.delete(deleteTarget.id);
+    setDeleteTarget(null);
+    loadHistory();
+  };
 
   const loadHistory = async () => {
     const results = await db.mathSessionResults
@@ -219,17 +549,15 @@ function MathSection() {
   };
 
   const handleDifficultyChange = useCallback(
-    (_: React.MouseEvent<HTMLElement>, newDifficulty: Difficulty | null) => {
-      if (newDifficulty) {
-        setDifficulty(newDifficulty);
-        setQuestions(generateMathQuestions(newDifficulty));
-        setAnswers({});
-        setShowAnswers(false);
-        setAllCorrect(false);
-        setStartTime(Date.now());
-        setTimeTaken(null);
-        setFeedbackMessages({});
-      }
+    (_: React.SyntheticEvent, newDifficulty: Difficulty) => {
+      setDifficulty(newDifficulty);
+      setQuestions(generateMathQuestions(newDifficulty));
+      setAnswers({});
+      setShowAnswers(false);
+      setAllCorrect(false);
+      setStartTime(Date.now());
+      setTimeTaken(null);
+      setFeedbackMessages({});
     },
     []
   );
@@ -253,7 +581,7 @@ function MathSection() {
     return questions.every(q => {
       const val = answers[q.id];
       if (val === undefined || val === null || val === '') return false;
-      return Number(val) === q.answer;
+      return Number(val) === Number(q.answer);
     });
   }, [answers, questions]);
 
@@ -261,7 +589,7 @@ function MathSection() {
     return questions.filter(q => {
       const val = answers[q.id];
       if (val === undefined || val === null || val === '') return false;
-      return Number(val) === q.answer;
+      return Number(val) === Number(q.answer);
     }).length;
   }, [answers, questions]);
 
@@ -276,7 +604,7 @@ function MathSection() {
       const isCorrect =
         answers[q.id] !== undefined &&
         answers[q.id] !== '' &&
-        Number(answers[q.id]) === q.answer;
+        Number(answers[q.id]) === Number(q.answer);
       messages[q.id] = getRandomEncouragement(isCorrect);
     });
     setFeedbackMessages(messages);
@@ -284,7 +612,7 @@ function MathSection() {
     const count = questions.filter(q => {
       const val = answers[q.id];
       if (val === undefined || val === null || val === '') return false;
-      return Number(val) === q.answer;
+      return Number(val) === Number(q.answer);
     }).length;
 
     const questionsData = JSON.stringify(
@@ -292,7 +620,7 @@ function MathSection() {
         text: q.text,
         correctAnswer: q.answer,
         userAnswer: answers[q.id] || '',
-        isCorrect: Number(answers[q.id]) === q.answer,
+        isCorrect: Number(answers[q.id]) === Number(q.answer),
       }))
     );
 
@@ -314,7 +642,7 @@ function MathSection() {
     <SectionContainer name="Math">
       {/* Difficulty Selector */}
       <Box sx={{ mb: 3, textAlign: 'center' }}>
-        <Typography variant="h6" sx={{ mb: 1, color: '#ff8a80', fontWeight: 'bold' }}>
+        <Typography variant="h6" sx={{ mb: 2, color: '#ff8a80', fontWeight: 'bold' }}>
           🎯 Choose Your Level
         </Typography>
         <ToggleButtonGroup
@@ -322,43 +650,30 @@ function MathSection() {
           exclusive
           onChange={handleDifficultyChange}
           sx={{
+            gap: 1,
             '& .MuiToggleButton-root': {
-              borderRadius: '20px !important',
-              px: 3,
-              py: 1,
-              mx: 0.5,
+              borderRadius: '12px',
+              border: '2px solid rgba(239,83,80,0.3)',
+              color: '#ff8a80',
+              textTransform: 'none',
               fontWeight: 'bold',
-              fontSize: '1rem',
-              border: '2px solid rgba(255,255,255,0.2) !important',
-              color: '#b0bec5',
-              '&:hover': { bgcolor: 'rgba(255,255,255,0.08)' },
+              fontSize: '0.95rem',
+              px: 3,
+              py: 1.2,
+              transition: 'all 0.3s',
+              '&:hover': { bgcolor: 'rgba(239,83,80,0.1)' },
+              '&.Mui-selected': {
+                bgcolor: 'rgba(239,83,80,0.2)',
+                borderColor: '#ef5350',
+                color: '#ff8a80',
+                '&:hover': { bgcolor: 'rgba(239,83,80,0.3)' },
+              },
             },
           }}
         >
-          <ToggleButton
-            value="standard"
-            sx={{
-              '&.Mui-selected': { bgcolor: 'rgba(255,167,38,0.2) !important', color: '#ffa726 !important', borderColor: '#ffa726 !important' },
-            }}
-          >
-            ⭐ Standard
-          </ToggleButton>
-          <ToggleButton
-            value="advanced"
-            sx={{
-              '&.Mui-selected': { bgcolor: 'rgba(66,165,245,0.2) !important', color: '#64b5f6 !important', borderColor: '#42a5f5 !important' },
-            }}
-          >
-            🌟 Advanced
-          </ToggleButton>
-          <ToggleButton
-            value="challenge"
-            sx={{
-              '&.Mui-selected': { bgcolor: 'rgba(239,83,80,0.2) !important', color: '#ef5350 !important', borderColor: '#ef5350 !important' },
-            }}
-          >
-            🔥 Challenge
-          </ToggleButton>
+          <ToggleButton value="standard">⭐ Standard</ToggleButton>
+          <ToggleButton value="advanced">🌟 Advanced</ToggleButton>
+          <ToggleButton value="challenge">🔥 Challenge</ToggleButton>
         </ToggleButtonGroup>
       </Box>
 
@@ -398,7 +713,7 @@ function MathSection() {
             showAnswers &&
             answers[question.id] !== undefined &&
             answers[question.id] !== '' &&
-            Number(answers[question.id]) === question.answer;
+            Number(answers[question.id]) === Number(question.answer);
           return (
             <Grid size={{ xs: 12, sm: 6, md: 3 }} key={question.id}>
               <Card
@@ -425,32 +740,86 @@ function MathSection() {
                       fontWeight: 'bold',
                       mb: 2,
                       fontSize: '1.1rem',
-                      minHeight: '3em',
                     }}
                   >
                     {question.text}
                   </Typography>
-                  <TextField
-                    label="Your Answer"
-                    variant="outlined"
-                    type="number"
-                    value={answers[question.id] || ''}
-                    onChange={e => handleAnswerChange(question.id, e.target.value)}
-                    sx={{
-                      mb: 1,
-                      '& .MuiOutlinedInput-root': {
-                        borderRadius: '12px',
-                        bgcolor: 'rgba(255,255,255,0.06)',
-                        color: '#fff',
-                        '& fieldset': { borderColor: 'rgba(255,255,255,0.2)' },
-                        '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.4)' },
-                        '&.Mui-focused fieldset': { borderColor: '#ffa726' },
-                      },
-                      '& .MuiInputLabel-root': { color: '#90a4ae' },
-                      '& .MuiInputLabel-root.Mui-focused': { color: '#ffa726' },
-                    }}
-                    fullWidth
-                  />
+                  {question.options ? (
+                    <FormControl fullWidth>
+                      <Select
+                        value={answers[question.id] || ''}
+                        onChange={e => handleAnswerChange(question.id, e.target.value)}
+                        disabled={showAnswers}
+                        displayEmpty
+                        renderValue={(value) => value ? value : '-- Please select'}
+                        sx={{
+                          borderRadius: '10px',
+                          bgcolor: 'rgba(255,255,255,0.06)',
+                          color: answers[question.id] ? '#fff' : '#90a4ae',
+                          fontWeight: 'bold',
+                          fontSize: '0.95rem',
+                          '& .MuiOutlinedInput-notchedOutline': {
+                            borderColor: answers[question.id] && showAnswers
+                              ? answers[question.id] === String(question.answer)
+                                ? '#66bb6a'
+                                : '#ef5350'
+                              : 'rgba(255,255,255,0.2)'
+                          },
+                          '&:hover .MuiOutlinedInput-notchedOutline': {
+                            borderColor: '#ffd54f'
+                          },
+                          '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                            borderColor: '#ffd54f'
+                          },
+                          '& .MuiSelect-icon': { color: '#ffcc80' },
+                          '&.Mui-disabled': {
+                            opacity: 1,
+                            color: answers[question.id]
+                              ? answers[question.id] === String(question.answer)
+                                ? '#a5d6a7'
+                                : '#ef9a9a'
+                              : '#90a4ae'
+                          },
+                        }}
+                        MenuProps={{
+                          PaperProps: {
+                            sx: { bgcolor: '#1a1f35', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '10px' }
+                          }
+                        }}
+                      >
+                        {question.options.map(opt => {
+                          const isThisCorrect = showAnswers && opt === String(question.answer);
+                          return (
+                            <MenuItem key={opt} value={opt} sx={{ color: isThisCorrect && showAnswers ? '#66bb6a' : '#cfd8dc' }}>
+                              {isThisCorrect && showAnswers ? '✅ ' : ''}{opt}
+                            </MenuItem>
+                          );
+                        })}
+                      </Select>
+                    </FormControl>
+                  ) : (
+                    <TextField
+                      label="Your Answer"
+                      variant="outlined"
+                      type="number"
+                      value={answers[question.id] || ''}
+                      onChange={e => handleAnswerChange(question.id, e.target.value)}
+                      sx={{
+                        mb: 1,
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: '12px',
+                          bgcolor: 'rgba(255,255,255,0.06)',
+                          color: '#fff',
+                          '& fieldset': { borderColor: 'rgba(255,255,255,0.2)' },
+                          '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.4)' },
+                          '&.Mui-focused fieldset': { borderColor: '#ffa726' },
+                        },
+                        '& .MuiInputLabel-root': { color: '#90a4ae' },
+                        '& .MuiInputLabel-root.Mui-focused': { color: '#ffa726' },
+                      }}
+                      fullWidth
+                    />
+                  )}
                   {showAnswers && (
                     <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 0.5 }}>
                       {isCorrect ? (
@@ -516,6 +885,9 @@ function MathSection() {
         </Button>
       </Box>
 
+      {/* Whiteboard */}
+      <Whiteboard />
+
       {/* YouTube Reward */}
       <YouTubeReward
         visible={allCorrect}
@@ -576,12 +948,54 @@ function MathSection() {
                         {result.correctCount}/{result.totalQuestions} ({result.score}%)
                       </Typography>
                     </Box>
-                    <Chip
-                      icon={<TimerIcon sx={{ color: '#90a4ae !important' }} />}
-                      label={formatTime(result.timeTakenSeconds)}
-                      size="small"
-                      sx={{ mt: 1, bgcolor: 'rgba(255,255,255,0.08)', color: '#b0bec5' }}
-                    />
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
+                      <Chip
+                        icon={<TimerIcon sx={{ color: '#90a4ae !important' }} />}
+                        label={formatTime(result.timeTakenSeconds)}
+                        size="small"
+                        sx={{ bgcolor: 'rgba(255,255,255,0.08)', color: '#b0bec5' }}
+                      />
+                      <Box sx={{ display: 'flex', gap: 0.8 }}>
+                        <Button
+                          size="small"
+                          startIcon={<ReplayIcon sx={{ fontSize: '0.9rem !important' }} />}
+                          onClick={() => setReviewResult(result)}
+                          sx={{
+                            borderRadius: '12px',
+                            textTransform: 'none',
+                            fontWeight: 'bold',
+                            fontSize: '0.75rem',
+                            color: '#ff8a80',
+                            border: '1px solid rgba(239,83,80,0.35)',
+                            px: 1.2,
+                            py: 0.4,
+                            minWidth: 0,
+                            '&:hover': { bgcolor: 'rgba(239,83,80,0.1)', borderColor: '#ef5350' },
+                          }}
+                        >
+                          Review
+                        </Button>
+                        <Button
+                          size="small"
+                          startIcon={<DeleteOutlineIcon sx={{ fontSize: '0.9rem !important' }} />}
+                          onClick={() => setDeleteTarget(result)}
+                          sx={{
+                            borderRadius: '12px',
+                            textTransform: 'none',
+                            fontWeight: 'bold',
+                            fontSize: '0.75rem',
+                            color: '#78909c',
+                            border: '1px solid rgba(120,144,156,0.3)',
+                            px: 1.2,
+                            py: 0.4,
+                            minWidth: 0,
+                            '&:hover': { bgcolor: 'rgba(239,83,80,0.1)', color: '#ef9a9a', borderColor: '#ef5350' },
+                          }}
+                        >
+                          Delete
+                        </Button>
+                      </Box>
+                    </Box>
                   </CardContent>
                 </Card>
               </Grid>
@@ -596,6 +1010,26 @@ function MathSection() {
           </Grid>
         </Collapse>
       </Box>
+      {reviewResult && (
+        <SessionReviewDialog
+          open={!!reviewResult}
+          onClose={() => setReviewResult(null)}
+          title="⚔️ Math Session Review"
+          subtitle={`Difficulty: ${reviewResult.difficulty}`}
+          accentColor="#ef5350"
+          questions={JSON.parse(reviewResult.questionsData || '[]') as ReviewQuestion[]}
+          score={reviewResult.score}
+          correctCount={reviewResult.correctCount}
+          totalQuestions={reviewResult.totalQuestions}
+          date={new Date(reviewResult.completedAt)}
+        />
+      )}
+      <ConfirmDeleteDialog
+        open={!!deleteTarget}
+        description={deleteTarget ? `Delete the ${deleteTarget.difficulty} session from ${new Date(deleteTarget.completedAt).toLocaleDateString()}? This cannot be undone.` : undefined}
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </SectionContainer>
   );
 }

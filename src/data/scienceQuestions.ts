@@ -8,6 +8,7 @@ export interface ScienceQuestion {
   answer: string;
   topic: string;
   yearLevel: 2 | 3;
+  options?: string[];   // if present, render as multiple-choice
 }
 
 export type YearLevel = 2 | 3;
@@ -535,20 +536,44 @@ function shuffle<T>(arr: T[]): T[] {
   return [...arr].sort(() => 0.5 - Math.random());
 }
 
+// ─── MCQ distractor helper ────────────────────────────────────────────────────
+
+/** Attach multiple-choice options to ~50% of a question slice. */
+function withOptions(
+  slice: Array<{ question: string; answer: string; topic: string; yearLevel: YearLevel }>,
+  allAnswers: string[]
+): ScienceQuestion[] {
+  return slice.map((q, i) => {
+    const useMCQ = Math.random() < 0.5;
+    let options: string[] | undefined;
+    if (useMCQ) {
+      const wrong = allAnswers.filter(a => a.toLowerCase() !== q.answer.toLowerCase());
+      const distractors = shuffle(wrong).slice(0, 3);
+      if (distractors.length === 3) {
+        options = shuffle([q.answer, ...distractors]);
+      }
+    }
+    return { id: i + 1, text: q.question, answer: q.answer, topic: q.topic, yearLevel: q.yearLevel, options };
+  });
+}
+
 // ─── PUBLIC API ───────────────────────────────────────────────────────────────
 
 export function getRandomQuestionsByYear(yearLevel: YearLevel, count: number): ScienceQuestion[] {
-  const pool = shuffle(buildPool(yearLevel));
-  return pool.slice(0, count).map((q, i) => ({ id: i + 1, text: q.question, answer: q.answer, topic: q.topic, yearLevel: q.yearLevel }));
+  const fullPool = buildPool(yearLevel);
+  const allAnswers = [...new Set(fullPool.map(q => q.answer))];
+  const slice = shuffle(fullPool).slice(0, count);
+  return withOptions(slice, allAnswers);
 }
 
 export function getRandomQuestionsByTopic(yearLevel: YearLevel, topic: string, count: number): ScienceQuestion[] {
-  const pool = shuffle(
-    allFacts
-      .filter(f => f.yearLevel === yearLevel && f.topic === topic)
-      .flatMap(f => f.variants.map(v => ({ question: v.question, answer: v.answer, topic: f.topic, yearLevel: f.yearLevel })))
-  );
-  return pool.slice(0, count).map((q, i) => ({ id: i + 1, text: q.question, answer: q.answer, topic: q.topic, yearLevel: q.yearLevel }));
+  const topicPool = allFacts
+    .filter(f => f.yearLevel === yearLevel && f.topic === topic)
+    .flatMap(f => f.variants.map(v => ({ question: v.question, answer: v.answer, topic: f.topic, yearLevel: f.yearLevel })));
+  // Use full-year pool for distractors so they aren't all from the same narrow topic
+  const allAnswers = [...new Set(buildPool(yearLevel).map(q => q.answer))];
+  const slice = shuffle(topicPool).slice(0, count);
+  return withOptions(slice, allAnswers);
 }
 
 export function getTopicsForYear(yearLevel: YearLevel): string[] {

@@ -5,15 +5,17 @@ import {
   Calculate as MathIcon,
   MenuBook as EnglishIcon,
   Science as ScienceIcon,
+  Psychology as ThinkingIcon,
   EmojiEvents as TrophyIcon,
   Timer as TimerIcon,
 } from '@mui/icons-material';
 import { User } from '../types';
 import { db } from '../db/database';
-import type { MathSessionResult, ScienceSessionResult } from '../db/database';
+import type { MathSessionResult, ScienceSessionResult, ThinkingSessionResult } from '../db/database';
 
 interface DashboardProps {
   user: User;
+  onLogout?: () => void;
 }
 
 function formatTime(seconds: number): string {
@@ -27,6 +29,7 @@ function Dashboard({ user }: DashboardProps) {
   const navigate = useNavigate();
   const [lastMath, setLastMath] = useState<MathSessionResult | null>(null);
   const [lastScience, setLastScience] = useState<ScienceSessionResult | null>(null);
+  const [lastThinking, setLastThinking] = useState<ThinkingSessionResult | null>(null);
   const [englishCount, setEnglishCount] = useState({ comprehension: 0, writing: 0 });
 
   useEffect(() => {
@@ -45,6 +48,13 @@ function Dashboard({ user }: DashboardProps) {
           .reverse()
           .sortBy('completedAt');
         if (scienceResults.length > 0) setLastScience(scienceResults[0]);
+
+        const thinkingResults = await db.thinkingSessionResults
+          .where('userId')
+          .equals('lucas')
+          .reverse()
+          .sortBy('completedAt');
+        if (thinkingResults.length > 0) setLastThinking(thinkingResults[0]);
 
         const compCount = await db.comprehensionAnswers
           .where('userId')
@@ -364,6 +374,61 @@ function Dashboard({ user }: DashboardProps) {
               ) : (
                 <Typography variant="body2" sx={{ color: '#a5d6a7', fontStyle: 'italic' }}>
                   No potions brewed yet - explore! 🧪
+                </Typography>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
+        {/* Thinking Skills Card */}
+        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Card
+            sx={{
+              ...cardStyle,
+              background: 'linear-gradient(135deg, #1a0030 0%, #4a1070 40%, #7b1fa2 100%)',
+              border: '3px solid #ce93d8',
+              '&:hover': {
+                ...cardStyle['&:hover'],
+                borderColor: '#e040fb',
+                boxShadow: '0 12px 36px rgba(206,147,216,0.3)',
+              },
+            }}
+            onClick={() => navigate('/thinking')}
+          >
+            <CardContent sx={{ textAlign: 'center', p: 3, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <ThinkingIcon sx={{ fontSize: 56, color: '#e1bee7', mb: 1 }} />
+              <Typography
+                variant="h5"
+                sx={{ color: '#f3e5f5', fontWeight: 'bold', mb: 1, letterSpacing: '1px' }}
+              >
+                Thinking Skills
+              </Typography>
+              <Typography sx={{ color: '#ce93d8', mb: 2, fontSize: '0.95rem' }}>
+                Sequences, patterns, analogies & logic!
+              </Typography>
+              {lastThinking ? (
+                <Box>
+                  <Chip
+                    icon={lastThinking.score === 100 ? <TrophyIcon sx={{ color: '#ffd54f !important' }} /> : undefined}
+                    label={`Last: ${lastThinking.correctCount}/${lastThinking.totalQuestions} (${lastThinking.score}%)`}
+                    sx={{
+                      fontWeight: 'bold',
+                      bgcolor: lastThinking.score === 100 ? 'rgba(76,175,80,0.3)' : 'rgba(243,229,245,0.15)',
+                      color: '#fff',
+                      mb: 0.5,
+                    }}
+                  />
+                  <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.5, mt: 0.5 }}>
+                    <Chip
+                      icon={<TimerIcon sx={{ fontSize: '0.9rem !important', color: '#e1bee7 !important' }} />}
+                      label={formatTime(lastThinking.timeTakenSeconds)}
+                      size="small"
+                      sx={{ fontSize: '0.75rem', bgcolor: 'rgba(225,190,231,0.2)', color: '#e1bee7' }}
+                    />
+                  </Box>
+                </Box>
+              ) : (
+                <Typography variant="body2" sx={{ color: '#ce93d8', fontStyle: 'italic' }}>
+                  No challenges yet - start thinking! 🧠
                 </Typography>
               )}
             </CardContent>

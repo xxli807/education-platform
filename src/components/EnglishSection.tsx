@@ -8,6 +8,10 @@ import {
   Card,
   CardContent,
   Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   LinearProgress,
   Tab,
   Tabs,
@@ -23,8 +27,9 @@ import {
   getReadingsByYear,
   type WritingPrompt,
 } from '../data/englishContent';
-import { db, type ComprehensionAnswer, type WritingTask } from '../db/database';
+import { db, type ComprehensionAnswer, type WritingTask, type JournalEntry } from '../db/database';
 import SectionContainer from './SectionContainer';
+import ConfirmDeleteDialog from './ConfirmDeleteDialog';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -75,7 +80,7 @@ const darkButton = {
 };
 
 function EnglishSection() {
-  const [yearLevel, setYearLevel] = useState<2 | 3>(2);
+  const [yearLevel, setYearLevel] = useState<2 | 3 | null>(2);
   const [currentPage, setCurrentPage] = useState(0);
   const [activeTab, setActiveTab] = useState(0);
   const [comprehensionAnswers, setComprehensionAnswers] = useState<{
@@ -97,6 +102,18 @@ function EnglishSection() {
     message: string;
   }>({ type: null, message: '' });
 
+  // Journal state
+  const MOODS = ['😄', '😊', '😐', '😢', '😴', '🤩', '😠', '🤒'];
+  const today = new Date().toISOString().split('T')[0];
+  const [journalDate, setJournalDate] = useState(today);
+  const [journalMood, setJournalMood] = useState('😊');
+  const [journalContent, setJournalContent] = useState('');
+  const [savedJournals, setSavedJournals] = useState<JournalEntry[]>([]);
+  const [journalStatus, setJournalStatus] = useState<'idle' | 'saved' | 'error'>('idle');
+  const [deleteTarget, setDeleteTarget] = useState<JournalEntry | null>(null);
+  const [deleteCompGroup, setDeleteCompGroup] = useState<ComprehensionAnswer[] | null>(null);
+  const [deleteWriting, setDeleteWriting] = useState<WritingTask | null>(null);
+
   const userId = 'lucas';
 
   const readings = getReadingsByYear(yearLevel);
@@ -105,19 +122,14 @@ function EnglishSection() {
   const loadSavedData = async () => {
     try {
       const comprehensions = await db.comprehensionAnswers
-        .where('userId')
-        .equals(userId)
-        .reverse()
-        .sortBy('submittedAt');
-
+        .where('userId').equals(userId).reverse().sortBy('submittedAt');
       const writings = await db.writingTasks
-        .where('userId')
-        .equals(userId)
-        .reverse()
-        .sortBy('submittedAt');
-
+        .where('userId').equals(userId).reverse().sortBy('submittedAt');
+      const journals = await db.journalEntries
+        .where('userId').equals(userId).reverse().sortBy('date');
       setSavedComprehensions(comprehensions);
       setSavedWritings(writings);
+      setSavedJournals(journals);
     } catch (error) {
       console.error('Error loading saved data:', error);
     }
@@ -126,6 +138,71 @@ function EnglishSection() {
   useEffect(() => {
     loadSavedData();
   }, []);
+
+  const saveJournal = async () => {
+    if (!journalContent.trim()) {
+      setJournalStatus('error');
+      setTimeout(() => setJournalStatus('idle'), 2000);
+      return;
+    }
+    try {
+      // Update existing entry for the same date, or add new
+      const existing = await db.journalEntries
+        .where('date').equals(journalDate)
+        .and(e => e.userId === userId)
+        .first();
+      if (existing?.id) {
+        await db.journalEntries.update(existing.id, {
+          mood: journalMood,
+          content: journalContent.trim(),
+          savedAt: new Date(),
+        });
+      } else {
+        await db.journalEntries.add({
+          date: journalDate,
+          mood: journalMood,
+          content: journalContent.trim(),
+          savedAt: new Date(),
+          userId,
+        });
+      }
+      setJournalStatus('saved');
+      setTimeout(() => setJournalStatus('idle'), 2500);
+      loadSavedData();
+    } catch {
+      setJournalStatus('error');
+      setTimeout(() => setJournalStatus('idle'), 2000);
+    }
+  };
+
+  // When user picks a past journal entry, load it into the editor
+  const loadJournalEntry = (entry: JournalEntry) => {
+    setJournalDate(entry.date);
+    setJournalMood(entry.mood);
+    setJournalContent(entry.content);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget?.id) return;
+    await db.journalEntries.delete(deleteTarget.id);
+    setDeleteTarget(null);
+    loadSavedData();
+  };
+
+  const confirmDeleteCompGroup = async () => {
+    if (!deleteCompGroup) return;
+    const ids = deleteCompGroup.map(i => i.id).filter((id): id is number => id !== undefined);
+    await db.comprehensionAnswers.bulkDelete(ids);
+    setDeleteCompGroup(null);
+    loadSavedData();
+  };
+
+  const confirmDeleteWriting = async () => {
+    if (!deleteWriting?.id) return;
+    await db.writingTasks.delete(deleteWriting.id);
+    setDeleteWriting(null);
+    loadSavedData();
+  };
 
   const handleYearChange = useCallback(
     (_: React.MouseEvent<HTMLElement>, newYear: (2 | 3) | null) => {
@@ -211,12 +288,6 @@ function EnglishSection() {
       }
 
       await db.comprehensionAnswers.bulkAdd(answersToSave);
-
-      const clearedAnswers = { ...comprehensionAnswers };
-      currentStory.comprehensionQuestions.forEach((_, index) => {
-        delete clearedAnswers[`${yearLevel}-${currentPage}-${index}`];
-      });
-      setComprehensionAnswers(clearedAnswers);
 
       setSubmitStatus({
         type: 'success',
@@ -355,6 +426,7 @@ function EnglishSection() {
         >
           <Tab label="📚 Reading" />
           <Tab label="✍️ Writing" />
+          <Tab label="📔 My Journal" />
           <Tab
             label={
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -657,8 +729,210 @@ function EnglishSection() {
         ))}
       </TabPanel>
 
-      {/* History Tab */}
+      {/* Journal Tab */}
       <TabPanel value={activeTab} index={2}>
+        <Typography variant="h5" sx={{ color: '#f48fb1', fontWeight: 'bold', mb: 3, textAlign: 'center' }}>
+          📔 My Daily Journal
+        </Typography>
+
+        {/* Editor card */}
+        <Card sx={{ ...darkCard, mb: 3, bgcolor: 'rgba(255,255,255,0.05)', border: '2px solid rgba(244,143,177,0.35)' }}>
+          <CardContent sx={{ p: 3 }}>
+            {/* Date + Mood row */}
+            <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+              <TextField
+                type="date"
+                label="Date"
+                value={journalDate}
+                onChange={e => setJournalDate(e.target.value)}
+                size="small"
+                slotProps={{ inputLabel: { shrink: true } }}
+                sx={{
+                  flex: '0 0 auto',
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: '12px',
+                    bgcolor: 'rgba(255,255,255,0.06)',
+                    color: '#fff',
+                    colorScheme: 'dark',
+                    '& fieldset': { borderColor: 'rgba(244,143,177,0.3)' },
+                    '&:hover fieldset': { borderColor: 'rgba(244,143,177,0.6)' },
+                    '&.Mui-focused fieldset': { borderColor: '#f48fb1' },
+                  },
+                  '& .MuiInputLabel-root': { color: '#90a4ae' },
+                  '& .MuiInputLabel-root.Mui-focused': { color: '#f48fb1' },
+                }}
+              />
+              <Box>
+                <Typography sx={{ color: '#90a4ae', fontSize: '0.82rem', mb: 0.5 }}>How are you feeling?</Typography>
+                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                  {MOODS.map(m => (
+                    <Box
+                      key={m}
+                      onClick={() => setJournalMood(m)}
+                      sx={{
+                        fontSize: '1.8rem',
+                        cursor: 'pointer',
+                        borderRadius: '10px',
+                        p: 0.5,
+                        border: journalMood === m ? '2px solid #f48fb1' : '2px solid transparent',
+                        bgcolor: journalMood === m ? 'rgba(244,143,177,0.15)' : 'transparent',
+                        transition: 'all 0.15s',
+                        '&:hover': { bgcolor: 'rgba(244,143,177,0.1)' },
+                      }}
+                    >
+                      {m}
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
+            </Box>
+
+            {/* Writing area */}
+            <Typography sx={{ color: '#f48fb1', fontWeight: 'bold', mb: 1 }}>
+              {journalMood} What happened today?
+            </Typography>
+            <TextareaAutosize
+              minRows={6}
+              maxRows={16}
+              value={journalContent}
+              onChange={e => setJournalContent(e.target.value)}
+              placeholder="Write about your day... What did you do? Who did you see? How did you feel?"
+              style={{
+                width: '100%',
+                fontFamily: 'inherit',
+                fontSize: '1.05rem',
+                lineHeight: '1.9',
+                padding: '14px 16px',
+                border: '2px solid rgba(244,143,177,0.25)',
+                borderRadius: '12px',
+                backgroundColor: 'rgba(255,255,255,0.04)',
+                color: '#e0e0e0',
+                resize: 'vertical',
+                outline: 'none',
+                boxSizing: 'border-box',
+              }}
+            />
+
+            {/* Save button + feedback */}
+            <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+              <Button
+                variant="contained"
+                onClick={saveJournal}
+                sx={{
+                  ...darkButton,
+                  background: 'linear-gradient(135deg, #e91e8c, #9c27b0)',
+                  '&:hover': { background: 'linear-gradient(135deg, #c2185b, #7b1fa2)' },
+                  boxShadow: '0 4px 15px rgba(233,30,140,0.35)',
+                }}
+              >
+                💾 Save Journal Entry
+              </Button>
+              {journalStatus === 'saved' && (
+                <Typography sx={{ color: '#a5d6a7', fontWeight: 'bold' }}>✅ Saved!</Typography>
+              )}
+              {journalStatus === 'error' && (
+                <Typography sx={{ color: '#ef9a9a', fontWeight: 'bold' }}>⚠️ Please write something first.</Typography>
+              )}
+            </Box>
+          </CardContent>
+        </Card>
+
+        {/* Past entries */}
+        {savedJournals.length > 0 && (
+          <>
+            <Typography variant="h6" sx={{ color: '#f48fb1', fontWeight: 'bold', mb: 2 }}>
+              📅 Past Entries ({savedJournals.length})
+            </Typography>
+            {savedJournals.map(entry => (
+              <Card
+                key={entry.id}
+                sx={{
+                  ...darkCard,
+                  mb: 2,
+                  bgcolor: 'rgba(244,143,177,0.07)',
+                  border: '1px solid rgba(244,143,177,0.25)',
+                }}
+              >
+                <CardContent sx={{ py: 2 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1, gap: 1, flexWrap: 'wrap' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Typography sx={{ fontSize: '1.5rem' }}>{entry.mood}</Typography>
+                      <Typography sx={{ fontWeight: 'bold', color: '#f48fb1' }}>
+                        {new Date(entry.date + 'T12:00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' })}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      <Chip
+                        label="✏️ Edit"
+                        size="small"
+                        onClick={() => loadJournalEntry(entry)}
+                        sx={{ bgcolor: 'rgba(244,143,177,0.2)', color: '#f48fb1', fontWeight: 'bold', cursor: 'pointer', '&:hover': { bgcolor: 'rgba(244,143,177,0.35)' } }}
+                      />
+                      <Chip
+                        label="🗑️ Delete"
+                        size="small"
+                        onClick={() => setDeleteTarget(entry)}
+                        sx={{ bgcolor: 'rgba(239,83,80,0.15)', color: '#ef9a9a', fontWeight: 'bold', cursor: 'pointer', '&:hover': { bgcolor: 'rgba(239,83,80,0.3)' } }}
+                      />
+                    </Box>
+                  </Box>
+                  <Typography variant="body2" sx={{ color: '#b0bec5', whiteSpace: 'pre-wrap', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                    {entry.content}
+                  </Typography>
+                </CardContent>
+              </Card>
+            ))}
+          </>
+        )}
+
+        {/* Delete confirmation dialog */}
+        <Dialog
+          open={!!deleteTarget}
+          onClose={() => setDeleteTarget(null)}
+          PaperProps={{
+            sx: {
+              bgcolor: '#1a1f35',
+              border: '2px solid rgba(239,83,80,0.5)',
+              borderRadius: '16px',
+              color: '#e0e0e0',
+              minWidth: 300,
+            },
+          }}
+        >
+          <DialogTitle sx={{ color: '#ef9a9a', fontWeight: 'bold', pb: 1 }}>
+            🗑️ Delete Journal Entry?
+          </DialogTitle>
+          <DialogContent>
+            <Typography sx={{ color: '#b0bec5' }}>
+              Are you sure you want to delete the entry from{' '}
+              <strong style={{ color: '#f48fb1' }}>
+                {deleteTarget
+                  ? new Date(deleteTarget.date + 'T12:00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' })
+                  : ''}
+              </strong>
+              ? This cannot be undone.
+            </Typography>
+          </DialogContent>
+          <DialogActions sx={{ px: 3, pb: 2, gap: 1 }}>
+            <Button
+              onClick={() => setDeleteTarget(null)}
+              sx={{ borderRadius: '20px', textTransform: 'none', fontWeight: 'bold', color: '#90a4ae', border: '1px solid rgba(144,164,174,0.3)', '&:hover': { bgcolor: 'rgba(144,164,174,0.1)' } }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={confirmDelete}
+              variant="contained"
+              sx={{ borderRadius: '20px', textTransform: 'none', fontWeight: 'bold', bgcolor: '#c62828', '&:hover': { bgcolor: '#b71c1c' }, boxShadow: '0 4px 12px rgba(198,40,40,0.4)' }}
+            >
+              Yes, Delete
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </TabPanel>
+
+      {/* History Tab */}
+      <TabPanel value={activeTab} index={3}>
         <Typography
           variant="h5"
           sx={{ color: '#82b1ff', fontWeight: 'bold', mb: 3, textAlign: 'center' }}
@@ -666,106 +940,170 @@ function EnglishSection() {
           📊 Your Learning History
         </Typography>
 
-        {/* Comprehension History */}
-        <Card sx={{ ...darkCard, mb: 3, bgcolor: 'rgba(255,255,255,0.04)', border: '2px solid rgba(66,165,245,0.25)' }}>
-          <CardContent>
-            <Typography
-              variant="h6"
-              sx={{ color: '#64b5f6', fontWeight: 'bold', mb: 2 }}
-            >
-              📖 Reading Comprehension ({savedComprehensions.length} submissions)
+        {/* Comprehension History — grouped by story + date */}
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="h6" sx={{ color: '#64b5f6', fontWeight: 'bold', mb: 2 }}>
+            📖 Reading Comprehension
+          </Typography>
+          {savedComprehensions.length === 0 ? (
+            <Typography sx={{ color: '#78909c', textAlign: 'center', py: 2 }}>
+              No comprehension answers yet. Start reading to fill this up! 📚
             </Typography>
-            {savedComprehensions.length === 0 ? (
-              <Typography sx={{ color: '#78909c', textAlign: 'center', py: 2 }}>
-                No comprehension answers yet. Start reading to fill this up! 📚
-              </Typography>
-            ) : (
-              savedComprehensions.map(item => (
-                <Card
-                  key={item.id}
-                  sx={{ ...darkCard, mb: 2, bgcolor: 'rgba(66,165,245,0.08)', border: '1px solid rgba(66,165,245,0.2)' }}
-                >
-                  <CardContent sx={{ py: 2 }}>
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'start',
-                        mb: 1,
-                      }}
-                    >
-                      <Typography sx={{ fontWeight: 'bold', color: '#82b1ff' }}>
-                        {item.storyTitle}
-                      </Typography>
+          ) : (() => {
+            // Group by storyTitle + date (day)
+            const groups: { key: string; title: string; date: string; items: ComprehensionAnswer[] }[] = [];
+            savedComprehensions.forEach(item => {
+              const dateStr = new Date(item.submittedAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
+              const key = `${item.storyTitle}__${dateStr}`;
+              const existing = groups.find(g => g.key === key);
+              if (existing) {
+                existing.items.push(item);
+              } else {
+                groups.push({ key, title: item.storyTitle, date: dateStr, items: [item] });
+              }
+            });
+            return groups.map(group => (
+              <Card
+                key={group.key}
+                sx={{ ...darkCard, mb: 2, bgcolor: 'rgba(66,165,245,0.06)', border: '2px solid rgba(66,165,245,0.2)' }}
+              >
+                <CardContent sx={{ py: 2 }}>
+                  {/* Session header */}
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
+                    <Typography sx={{ fontWeight: 'bold', color: '#82b1ff', fontSize: '1rem' }}>
+                      📖 {group.title}
+                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Chip
-                        label={new Date(item.submittedAt).toLocaleDateString()}
+                        label={group.date}
                         size="small"
-                        sx={{ bgcolor: 'rgba(66,165,245,0.2)', color: '#90caf9' }}
+                        sx={{ bgcolor: 'rgba(66,165,245,0.2)', color: '#90caf9', fontWeight: 'bold' }}
                       />
+                      <Button
+                        size="small"
+                        onClick={() => setDeleteCompGroup(group.items)}
+                        sx={{
+                          borderRadius: '10px',
+                          textTransform: 'none',
+                          fontWeight: 'bold',
+                          fontSize: '0.72rem',
+                          color: '#78909c',
+                          border: '1px solid rgba(120,144,156,0.3)',
+                          px: 1,
+                          py: 0.3,
+                          minWidth: 0,
+                          '&:hover': { bgcolor: 'rgba(239,83,80,0.1)', color: '#ef9a9a', borderColor: '#ef5350' },
+                        }}
+                      >
+                        🗑️ Delete
+                      </Button>
                     </Box>
-                    <Typography variant="body2" sx={{ color: '#90a4ae', mb: 0.5 }}>
-                      Q{item.questionIndex + 1}: {item.question}
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: '#cfd8dc' }}>
-                      <strong>Answer:</strong> {item.answer}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </CardContent>
-        </Card>
+                  </Box>
+                  {/* All Q&A pairs */}
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    {group.items.sort((a, b) => a.questionIndex - b.questionIndex).map(item => (
+                      <Box
+                        key={item.id}
+                        sx={{ p: 1.2, borderRadius: '10px', bgcolor: 'rgba(66,165,245,0.08)', border: '1px solid rgba(66,165,245,0.15)' }}
+                      >
+                        <Typography variant="body2" sx={{ color: '#78909c', mb: 0.4, fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: 0.4 }}>
+                          Question {item.questionIndex + 1}
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: '#90caf9', mb: 0.6, fontStyle: 'italic' }}>
+                          {item.question}
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: '#cfd8dc', fontWeight: 600 }}>
+                          💬 {item.answer}
+                        </Typography>
+                      </Box>
+                    ))}
+                  </Box>
+                </CardContent>
+              </Card>
+            ));
+          })()}
+        </Box>
 
         {/* Writing History */}
-        <Card sx={{ ...darkCard, bgcolor: 'rgba(255,255,255,0.04)', border: '2px solid rgba(76,175,80,0.25)' }}>
-          <CardContent>
-            <Typography
-              variant="h6"
-              sx={{ color: '#a5d6a7', fontWeight: 'bold', mb: 2 }}
-            >
-              ✍️ Writing Tasks ({savedWritings.length} submissions)
+        <Box>
+          <Typography variant="h6" sx={{ color: '#a5d6a7', fontWeight: 'bold', mb: 2 }}>
+            ✍️ Writing Tasks
+          </Typography>
+          {savedWritings.length === 0 ? (
+            <Typography sx={{ color: '#78909c', textAlign: 'center', py: 2 }}>
+              No writing tasks yet. Time to get creative! ✍️
             </Typography>
-            {savedWritings.length === 0 ? (
-              <Typography sx={{ color: '#78909c', textAlign: 'center', py: 2 }}>
-                No writing tasks yet. Time to get creative! ✍️
-              </Typography>
-            ) : (
-              savedWritings.map(item => (
-                <Card
-                  key={item.id}
-                  sx={{ ...darkCard, mb: 2, bgcolor: 'rgba(76,175,80,0.08)', border: '1px solid rgba(76,175,80,0.2)' }}
-                >
-                  <CardContent sx={{ py: 2 }}>
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'start',
-                        mb: 1,
-                      }}
-                    >
-                      <Typography sx={{ fontWeight: 'bold', color: '#a5d6a7' }}>
-                        Writing Task {item.taskIndex + 1}
-                      </Typography>
+          ) : (
+            savedWritings.map((item, idx) => (
+              <Card
+                key={item.id}
+                sx={{ ...darkCard, mb: 2, bgcolor: 'rgba(76,175,80,0.06)', border: '2px solid rgba(76,175,80,0.2)' }}
+              >
+                <CardContent sx={{ py: 2 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.2 }}>
+                    <Typography sx={{ fontWeight: 'bold', color: '#a5d6a7', fontSize: '0.95rem' }}>
+                      ✍️ Writing #{savedWritings.length - idx}
+                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Chip
-                        label={new Date(item.submittedAt).toLocaleDateString()}
+                        label={new Date(item.submittedAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
                         size="small"
-                        sx={{ bgcolor: 'rgba(76,175,80,0.2)', color: '#a5d6a7' }}
+                        sx={{ bgcolor: 'rgba(76,175,80,0.2)', color: '#a5d6a7', fontWeight: 'bold' }}
                       />
+                      <Button
+                        size="small"
+                        onClick={() => setDeleteWriting(item)}
+                        sx={{
+                          borderRadius: '10px',
+                          textTransform: 'none',
+                          fontWeight: 'bold',
+                          fontSize: '0.72rem',
+                          color: '#78909c',
+                          border: '1px solid rgba(120,144,156,0.3)',
+                          px: 1,
+                          py: 0.3,
+                          minWidth: 0,
+                          '&:hover': { bgcolor: 'rgba(239,83,80,0.1)', color: '#ef9a9a', borderColor: '#ef5350' },
+                        }}
+                      >
+                        🗑️ Delete
+                      </Button>
                     </Box>
-                    <Typography variant="body2" sx={{ color: '#90a4ae', mb: 1 }}>
-                      <strong>Prompt:</strong> {item.prompt}
+                  </Box>
+                  <Box sx={{ p: 1.2, borderRadius: '10px', bgcolor: 'rgba(76,175,80,0.08)', border: '1px solid rgba(76,175,80,0.15)', mb: 1 }}>
+                    <Typography variant="body2" sx={{ color: '#78909c', mb: 0.3, fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: 0.4 }}>
+                      Prompt
                     </Typography>
-                    <Typography variant="body2" sx={{ color: '#cfd8dc' }}>
-                      <strong>Response:</strong> {item.response}
+                    <Typography variant="body2" sx={{ color: '#81c784', fontStyle: 'italic' }}>
+                      {item.prompt}
                     </Typography>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </CardContent>
-        </Card>
+                  </Box>
+                  <Box sx={{ p: 1.2, borderRadius: '10px', bgcolor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                    <Typography variant="body2" sx={{ color: '#78909c', mb: 0.3, fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: 0.4 }}>
+                      Lucas's response
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: '#cfd8dc', lineHeight: 1.7 }}>
+                      {item.response}
+                    </Typography>
+                  </Box>
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </Box>
       </TabPanel>
+      <ConfirmDeleteDialog
+        open={!!deleteCompGroup}
+        description={deleteCompGroup ? `Delete all ${deleteCompGroup.length} answer(s) for "${deleteCompGroup[0]?.storyTitle}"? This cannot be undone.` : undefined}
+        onConfirm={confirmDeleteCompGroup}
+        onCancel={() => setDeleteCompGroup(null)}
+      />
+      <ConfirmDeleteDialog
+        open={!!deleteWriting}
+        description={deleteWriting ? `Delete this writing task from ${new Date(deleteWriting.submittedAt).toLocaleDateString()}? This cannot be undone.` : undefined}
+        onConfirm={confirmDeleteWriting}
+        onCancel={() => setDeleteWriting(null)}
+      />
     </SectionContainer>
   );
 }

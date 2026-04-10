@@ -1,1 +1,1 @@
-export type supportedSubject = 'English' | 'Math' | 'Science';
+export type supportedSubject = 'English' | 'Math' | 'Science' | 'Thinking';

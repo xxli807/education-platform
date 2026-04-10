@@ -6,6 +6,7 @@ export interface User {
     id: number;
     text: string;
     answer: string | number;
+    options?: string[];   // if present, render as multiple-choice
   }
 
   export interface ReadingPage {

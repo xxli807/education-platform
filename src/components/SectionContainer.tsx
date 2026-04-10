@@ -13,6 +13,7 @@ const subjectConfig: Record<supportedSubject, { emoji: string; glow: string }> =
   Math: { emoji: '⚔️', glow: 'rgba(239,83,80,0.15)' },
   English: { emoji: '📜', glow: 'rgba(66,165,245,0.15)' },
   Science: { emoji: '🧪', glow: 'rgba(102,187,106,0.15)' },
+  Thinking: { emoji: '🧠', glow: 'rgba(206,147,216,0.15)' },
 };
 
 function SectionContainer({ name, children }: SectionProps) {

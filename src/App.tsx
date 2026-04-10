@@ -5,12 +5,26 @@ import EnglishSection from './components/EnglishSection';
 import Login from './components/Login';
 import MathSection from './components/MathSection';
 import ScienceSection from './components/ScienceSection';
+import ThinkingSection from './components/ThinkingSection';
 import { User } from './types';
+
 function App() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(() => {
+    // Restore user from localStorage on initial load
+    const saved = localStorage.getItem('user');
+    return saved ? JSON.parse(saved) : null;
+  });
 
   const handleLogin = (username: string) => {
-    setUser({ username });
+    const newUser = { username };
+    setUser(newUser);
+    // Persist to localStorage
+    localStorage.setItem('user', JSON.stringify(newUser));
+  };
+
+  const handleLogout = () => {
+    setUser(null);
+    localStorage.removeItem('user');
   };
 
   return (
@@ -23,9 +37,22 @@ function App() {
           }
         />
 
-        <Route path="/math" element={<MathSection />} />
-        <Route path="/english" element={<EnglishSection />} />
-        <Route path="/science" element={<ScienceSection />} />
+        <Route
+          path="/math"
+          element={user ? <MathSection /> : <Login onLogin={handleLogin} />}
+        />
+        <Route
+          path="/english"
+          element={user ? <EnglishSection /> : <Login onLogin={handleLogin} />}
+        />
+        <Route
+          path="/science"
+          element={user ? <ScienceSection /> : <Login onLogin={handleLogin} />}
+        />
+        <Route
+          path="/thinking"
+          element={user ? <ThinkingSection /> : <Login onLogin={handleLogin} />}
+        />
       </Routes>
     </Router>
   );

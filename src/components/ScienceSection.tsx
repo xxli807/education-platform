@@ -5,10 +5,11 @@ import {
   CardContent,
   Chip,
   Collapse,
+  FormControl,
   Grid,
+  MenuItem,
+  Select,
   TextField,
-  ToggleButton,
-  ToggleButtonGroup,
   Typography,
 } from '@mui/material';
 import {
@@ -18,7 +19,11 @@ import {
   Star as StarIcon,
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
+  Replay as ReplayIcon,
+  DeleteOutline as DeleteOutlineIcon,
 } from '@mui/icons-material';
+import SessionReviewDialog, { type ReviewQuestion } from './SessionReviewDialog';
+import ConfirmDeleteDialog from './ConfirmDeleteDialog';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   type ScienceQuestion,
@@ -80,13 +85,22 @@ function ScienceSection() {
   const [allCorrect, setAllCorrect] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [history, setHistory] = useState<ScienceSessionResult[]>([]);
+  const [reviewResult, setReviewResult] = useState<ScienceSessionResult | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<ScienceSessionResult | null>(null);
   const [feedbackMessages, setFeedbackMessages] = useState<{ [key: number]: string }>({});
 
-  const topics = getTopicsForYear(yearLevel);
+  const topics = yearLevel ? getTopicsForYear(yearLevel) : [];
 
   useEffect(() => {
     loadHistory();
   }, []);
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget?.id) return;
+    await db.scienceSessionResults.delete(deleteTarget.id);
+    setDeleteTarget(null);
+    loadHistory();
+  };
 
   const loadHistory = async () => {
     const results = await db.scienceSessionResults
@@ -120,13 +134,11 @@ function ScienceSection() {
     [loadQuestions]
   );
 
-  const handleTopicChange = useCallback(
-    (topic: string) => {
-      setSelectedTopic(topic);
-      loadQuestions(yearLevel, topic);
-    },
-    [yearLevel, loadQuestions]
-  );
+  const handleTopicChange = useCallback((topic: string) => {
+    if (!yearLevel) return;
+    setSelectedTopic(topic);
+    loadQuestions(yearLevel, topic);
+  }, [yearLevel, loadQuestions]);
 
   const handleAnswerChange = useCallback((id: number, value: string) => {
     setAnswers(prev => ({ ...prev, [id]: value }));
@@ -184,81 +196,56 @@ function ScienceSection() {
 
   return (
     <SectionContainer name="Science">
-      {/* Year Level Selector */}
-      <Box sx={{ mb: 2, textAlign: 'center' }}>
-        <Typography variant="h6" sx={{ mb: 1, color: '#a5d6a7', fontWeight: 'bold' }}>
-          🎓 Choose Your Year Level
-        </Typography>
-        <ToggleButtonGroup
-          value={yearLevel}
-          exclusive
-          onChange={handleYearChange}
-          sx={{
-            '& .MuiToggleButton-root': {
-              borderRadius: '20px !important',
-              px: 4,
-              py: 1,
-              mx: 0.5,
-              fontWeight: 'bold',
-              fontSize: '1rem',
-              border: '2px solid rgba(255,255,255,0.2) !important',
-              color: '#b0bec5',
-              '&:hover': { bgcolor: 'rgba(255,255,255,0.08)' },
-            },
-          }}
-        >
-          <ToggleButton
-            value={2}
-            sx={{
-              '&.Mui-selected': { bgcolor: 'rgba(76,175,80,0.2) !important', color: '#66bb6a !important', borderColor: '#66bb6a !important' },
-            }}
-          >
-            ⭐ Year 2
-          </ToggleButton>
-          <ToggleButton
-            value={3}
-            sx={{
-              '&.Mui-selected': { bgcolor: 'rgba(156,39,176,0.2) !important', color: '#ce93d8 !important', borderColor: '#ce93d8 !important' },
-            }}
-          >
-            🌟 Year 3
-          </ToggleButton>
-        </ToggleButtonGroup>
-      </Box>
-
-      {/* Topic Selector */}
+      {/* Year Level and Topic Selectors */}
       <Box sx={{ mb: 3, textAlign: 'center' }}>
-        <Typography variant="body1" sx={{ mb: 1, color: '#90a4ae' }}>
-          🔬 Choose a Topic
+        <Typography variant="h6" sx={{ mb: 2, color: '#a5d6a7', fontWeight: 'bold' }}>
+          🎓 Choose Your Year Level & Topic
         </Typography>
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center' }}>
-          <Chip
-            label="All Topics"
-            onClick={() => handleTopicChange('all')}
-            sx={{
-              fontWeight: 'bold',
-              cursor: 'pointer',
-              bgcolor: selectedTopic === 'all' ? 'rgba(76,175,80,0.3)' : 'rgba(255,255,255,0.08)',
-              color: selectedTopic === 'all' ? '#a5d6a7' : '#90a4ae',
-              border: selectedTopic === 'all' ? '2px solid #66bb6a' : '2px solid transparent',
-              '&:hover': { bgcolor: 'rgba(76,175,80,0.2)' },
-            }}
-          />
-          {topics.map(topic => (
-            <Chip
-              key={topic}
-              label={topic}
-              onClick={() => handleTopicChange(topic)}
+        <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
+          <FormControl sx={{ minWidth: 200 }}>
+            <Select
+              value={yearLevel}
+              onChange={e => handleYearChange(null as any, Number(e.target.value) as YearLevel)}
               sx={{
+                borderRadius: '14px',
+                bgcolor: 'rgba(255,255,255,0.06)',
+                color: '#fff',
                 fontWeight: 'bold',
-                cursor: 'pointer',
-                bgcolor: selectedTopic === topic ? 'rgba(76,175,80,0.3)' : 'rgba(255,255,255,0.08)',
-                color: selectedTopic === topic ? '#a5d6a7' : '#90a4ae',
-                border: selectedTopic === topic ? '2px solid #66bb6a' : '2px solid transparent',
-                '&:hover': { bgcolor: 'rgba(76,175,80,0.2)' },
+                fontSize: '0.95rem',
+                '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(102,187,106,0.4)' },
+                '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#66bb6a' },
+                '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#66bb6a' },
+                '& .MuiSelect-icon': { color: '#a5d6a7' },
               }}
-            />
-          ))}
+              MenuProps={{ PaperProps: { sx: { bgcolor: '#1a1f35', border: '1px solid rgba(102,187,106,0.3)', borderRadius: '12px' } } }}
+            >
+              <MenuItem value={2} sx={{ color: '#66bb6a', fontWeight: 'bold' }}>⭐ Year 2</MenuItem>
+              <MenuItem value={3} sx={{ color: '#ce93d8', fontWeight: 'bold' }}>🌟 Year 3</MenuItem>
+            </Select>
+          </FormControl>
+          <FormControl sx={{ minWidth: 220 }}>
+            <Select
+              value={selectedTopic}
+              onChange={e => handleTopicChange(e.target.value as string)}
+              sx={{
+                borderRadius: '14px',
+                bgcolor: 'rgba(255,255,255,0.06)',
+                color: '#fff',
+                fontWeight: 'bold',
+                fontSize: '0.95rem',
+                '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(102,187,106,0.4)' },
+                '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#66bb6a' },
+                '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#66bb6a' },
+                '& .MuiSelect-icon': { color: '#a5d6a7' },
+              }}
+              MenuProps={{ PaperProps: { sx: { bgcolor: '#1a1f35', border: '1px solid rgba(102,187,106,0.3)', borderRadius: '12px' } } }}
+            >
+              <MenuItem value="all" sx={{ color: '#a5d6a7', fontWeight: 'bold' }}>🔬 All Topics</MenuItem>
+              {topics.map(topic => (
+                <MenuItem key={topic} value={topic} sx={{ color: '#cfd8dc', fontWeight: 'bold' }}>{topic}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
         </Box>
       </Box>
 
@@ -330,21 +317,73 @@ function ScienceSection() {
                       fontWeight: 'bold',
                       mb: 2,
                       fontSize: '1.1rem',
-                      minHeight: '3em',
                     }}
                   >
                     🔬 {question.text}
                   </Typography>
-                  <TextField
-                    label="Your Answer"
-                    variant="outlined"
-                    value={answers[question.id] || ''}
-                    onChange={e =>
-                      handleAnswerChange(question.id, e.target.value)
-                    }
-                    sx={{ ...darkTextField, mb: 1 }}
-                    fullWidth
-                  />
+                  {question.options ? (
+                    <FormControl fullWidth>
+                      <Select
+                        value={answers[question.id] || ''}
+                        onChange={e => handleAnswerChange(question.id, e.target.value)}
+                        disabled={showAnswers}
+                        displayEmpty
+                        renderValue={(value) => value ? value : '-- Please select'}
+                        sx={{
+                          borderRadius: '10px',
+                          bgcolor: 'rgba(255,255,255,0.06)',
+                          color: answers[question.id] ? '#fff' : '#90a4ae',
+                          fontWeight: 'bold',
+                          fontSize: '0.95rem',
+                          '& .MuiOutlinedInput-notchedOutline': {
+                            borderColor: answers[question.id] && showAnswers
+                              ? answers[question.id].toLowerCase() === question.answer.toLowerCase()
+                                ? '#66bb6a'
+                                : '#ef5350'
+                              : 'rgba(255,255,255,0.2)'
+                          },
+                          '&:hover .MuiOutlinedInput-notchedOutline': {
+                            borderColor: '#a5d6a7'
+                          },
+                          '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                            borderColor: '#a5d6a7'
+                          },
+                          '& .MuiSelect-icon': { color: '#a5d6a7' },
+                          '&.Mui-disabled': {
+                            opacity: 1,
+                            color: answers[question.id]
+                              ? answers[question.id].toLowerCase() === question.answer.toLowerCase()
+                                ? '#a5d6a7'
+                                : '#ef9a9a'
+                              : '#90a4ae'
+                          },
+                        }}
+                        MenuProps={{
+                          PaperProps: {
+                            sx: { bgcolor: '#1a1f35', border: '1px solid rgba(102,187,106,0.3)', borderRadius: '10px' }
+                          }
+                        }}
+                      >
+                        {question.options.map(opt => {
+                          const isThisCorrect = showAnswers && opt.toLowerCase() === question.answer.toLowerCase();
+                          return (
+                            <MenuItem key={opt} value={opt} sx={{ color: isThisCorrect && showAnswers ? '#66bb6a' : '#cfd8dc' }}>
+                              {isThisCorrect && showAnswers ? '✅ ' : ''}{opt}
+                            </MenuItem>
+                          );
+                        })}
+                      </Select>
+                    </FormControl>
+                  ) : (
+                    <TextField
+                      label="Your Answer"
+                      variant="outlined"
+                      value={answers[question.id] || ''}
+                      onChange={e => handleAnswerChange(question.id, e.target.value)}
+                      sx={{ ...darkTextField, mb: 1 }}
+                      fullWidth
+                    />
+                  )}
                   {showAnswers && (
                     <Box
                       sx={{
@@ -472,9 +511,48 @@ function ScienceSection() {
                         <StarIcon sx={{ color: '#ffa726' }} />
                       )}
                       <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#e0e0e0' }}>
-                        {result.correctCount}/{result.totalQuestions} (
-                        {result.score}%)
+                        {result.correctCount}/{result.totalQuestions} ({result.score}%)
                       </Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.8, mt: 1 }}>
+                      <Button
+                        size="small"
+                        startIcon={<ReplayIcon sx={{ fontSize: '0.9rem !important' }} />}
+                        onClick={() => setReviewResult(result)}
+                        sx={{
+                          borderRadius: '12px',
+                          textTransform: 'none',
+                          fontWeight: 'bold',
+                          fontSize: '0.75rem',
+                          color: '#a5d6a7',
+                          border: '1px solid rgba(76,175,80,0.35)',
+                          px: 1.2,
+                          py: 0.4,
+                          minWidth: 0,
+                          '&:hover': { bgcolor: 'rgba(76,175,80,0.1)', borderColor: '#66bb6a' },
+                        }}
+                      >
+                        Review
+                      </Button>
+                      <Button
+                        size="small"
+                        startIcon={<DeleteOutlineIcon sx={{ fontSize: '0.9rem !important' }} />}
+                        onClick={() => setDeleteTarget(result)}
+                        sx={{
+                          borderRadius: '12px',
+                          textTransform: 'none',
+                          fontWeight: 'bold',
+                          fontSize: '0.75rem',
+                          color: '#78909c',
+                          border: '1px solid rgba(120,144,156,0.3)',
+                          px: 1.2,
+                          py: 0.4,
+                          minWidth: 0,
+                          '&:hover': { bgcolor: 'rgba(239,83,80,0.1)', color: '#ef9a9a', borderColor: '#ef5350' },
+                        }}
+                      >
+                        Delete
+                      </Button>
                     </Box>
                   </CardContent>
                 </Card>
@@ -492,6 +570,25 @@ function ScienceSection() {
           </Grid>
         </Collapse>
       </Box>
+      {reviewResult && (
+        <SessionReviewDialog
+          open={!!reviewResult}
+          onClose={() => setReviewResult(null)}
+          title="🧪 Science Session Review"
+          accentColor="#66bb6a"
+          questions={JSON.parse(reviewResult.questionsData || '[]') as ReviewQuestion[]}
+          score={reviewResult.score}
+          correctCount={reviewResult.correctCount}
+          totalQuestions={reviewResult.totalQuestions}
+          date={new Date(reviewResult.completedAt)}
+        />
+      )}
+      <ConfirmDeleteDialog
+        open={!!deleteTarget}
+        description={deleteTarget ? `Delete the science session from ${new Date(deleteTarget.completedAt).toLocaleDateString()}? This cannot be undone.` : undefined}
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </SectionContainer>
   );
 }
