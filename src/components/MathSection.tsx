@@ -311,6 +311,7 @@ function Whiteboard() {
   const handleDragMove = useCallback((clientX: number, clientY: number) => {
     const deltaX = clientX - dragStart.current.x;
     const deltaY = clientY - dragStart.current.y;
+    dragDistance.current = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
     setPosition({
       top: Math.max(0, dragStart.current.startTop + deltaY),
       right: Math.max(0, dragStart.current.startRight - deltaX),
@@ -325,6 +326,7 @@ function Whiteboard() {
       startTop: position.top,
       startRight: position.right,
     };
+    dragDistance.current = 0;
   };
 
   const startMouseDrag = (e: React.MouseEvent) => {
@@ -378,7 +380,13 @@ function Whiteboard() {
       {/* Collapsed pill / toggle button */}
       {!expanded && (
         <Box
-          onClick={() => setExpanded(true)}
+          onMouseDown={startMouseDrag}
+          onTouchStart={startTouchDrag}
+          onClick={() => {
+            if (dragDistance.current < DRAG_THRESHOLD) {
+              setExpanded(true);
+            }
+          }}
           sx={{
             display: 'flex',
             alignItems: 'center',
@@ -389,14 +397,16 @@ function Whiteboard() {
             bgcolor: 'rgba(10,14,26,0.92)',
             border: '2px solid rgba(255,213,79,0.6)',
             boxShadow: '0 0 12px rgba(255,213,79,0.3)',
-            cursor: 'pointer',
+            cursor: 'grab',
             userSelect: 'none',
             backdropFilter: 'blur(8px)',
+            touchAction: 'none',
             '&:hover': {
               border: '2px solid #ffd54f',
               boxShadow: '0 0 20px rgba(255,213,79,0.5)',
             },
             transition: 'all 0.2s',
+            '&:active': { cursor: 'grabbing' },
           }}
         >
           <WhiteboardIcon sx={{ color: '#ffd54f', fontSize: '1.2rem' }} />
