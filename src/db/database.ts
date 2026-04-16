@@ -63,6 +63,25 @@ interface JournalEntry {
   userId: string;
 }
 
+interface HolidayPlan {
+  id?: number;
+  holidayName: string;
+  holidayDate: string; // 'YYYY-MM-DD'
+  createdAt: Date;
+  userId: string;
+}
+
+interface HolidayTodoItem {
+  id?: number;
+  planId: number;
+  startTime: string;   // 'HH:MM'
+  endTime: string;     // 'HH:MM'
+  description: string;
+  completed: boolean;
+  createdAt: Date;
+  userId: string;
+}
+
 const db = new Dexie('EnglishLearningApp') as Dexie & {
   comprehensionAnswers: EntityTable<ComprehensionAnswer, 'id'>;
   writingTasks: EntityTable<WritingTask, 'id'>;
@@ -70,6 +89,8 @@ const db = new Dexie('EnglishLearningApp') as Dexie & {
   scienceSessionResults: EntityTable<ScienceSessionResult, 'id'>;
   journalEntries: EntityTable<JournalEntry, 'id'>;
   thinkingSessionResults: EntityTable<ThinkingSessionResult, 'id'>;
+  holidayPlans: EntityTable<HolidayPlan, 'id'>;
+  holidayTodoItems: EntityTable<HolidayTodoItem, 'id'>;
 };
 
 db.version(1).stores({
@@ -101,5 +122,16 @@ db.version(4).stores({
   thinkingSessionResults: '++id, category, score, completedAt, userId'
 });
 
+db.version(5).stores({
+  comprehensionAnswers: '++id, storyIndex, questionIndex, question, answer, storyTitle, submittedAt, userId',
+  writingTasks: '++id, taskIndex, prompt, response, submittedAt, userId',
+  mathSessionResults: '++id, difficulty, score, completedAt, userId',
+  scienceSessionResults: '++id, score, completedAt, userId',
+  journalEntries: '++id, date, savedAt, userId',
+  thinkingSessionResults: '++id, category, score, completedAt, userId',
+  holidayPlans: '++id, holidayDate, createdAt, userId',
+  holidayTodoItems: '++id, planId, userId'
+});
+
 export { db };
-export type { ComprehensionAnswer, WritingTask, MathSessionResult, ScienceSessionResult, JournalEntry, ThinkingSessionResult };
+export type { ComprehensionAnswer, WritingTask, MathSessionResult, ScienceSessionResult, JournalEntry, ThinkingSessionResult, HolidayPlan, HolidayTodoItem };

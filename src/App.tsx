@@ -6,6 +6,7 @@ import Login from './components/Login';
 import MathSection from './components/MathSection';
 import ScienceSection from './components/ScienceSection';
 import ThinkingSection from './components/ThinkingSection';
+import HolidayTodoSection from './components/HolidayTodoSection';
 import { User } from './types';
 
 function App() {
@@ -52,6 +53,10 @@ function App() {
         <Route
           path="/thinking"
           element={user ? <ThinkingSection /> : <Login onLogin={handleLogin} />}
+        />
+        <Route
+          path="/holiday-todo"
+          element={user ? <HolidayTodoSection /> : <Login onLogin={handleLogin} />}
         />
       </Routes>
     </Router>

@@ -8,6 +8,7 @@ import {
   Psychology as ThinkingIcon,
   EmojiEvents as TrophyIcon,
   Timer as TimerIcon,
+  TaskAlt as HolidayIcon,
 } from '@mui/icons-material';
 import { User } from '../types';
 import { db } from '../db/database';
@@ -431,6 +432,39 @@ function Dashboard({ user }: DashboardProps) {
                   No challenges yet - start thinking! 🧠
                 </Typography>
               )}
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Holiday Plans Card */}
+        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Card
+            sx={{
+              ...cardStyle,
+              background: 'linear-gradient(135deg, #001a20 0%, #0d4a3a 40%, #00695c 100%)',
+              border: '3px solid #26a69a',
+              '&:hover': {
+                ...cardStyle['&:hover'],
+                borderColor: '#80cbc4',
+                boxShadow: '0 12px 36px rgba(38,166,154,0.3)',
+              },
+            }}
+            onClick={() => navigate('/holiday-todo')}
+          >
+            <CardContent sx={{ textAlign: 'center', p: 3, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <HolidayIcon sx={{ fontSize: 56, color: '#80cbc4', mb: 1 }} />
+              <Typography
+                variant="h5"
+                sx={{ color: '#b2dfdb', fontWeight: 'bold', mb: 1, letterSpacing: '1px' }}
+              >
+                Holiday Plans
+              </Typography>
+              <Typography sx={{ color: '#80cbc4', mb: 2, fontSize: '0.95rem' }}>
+                Plan your holiday activities! 🏖️
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#80cbc4', fontStyle: 'italic' }}>
+                Create and manage your holiday todo lists
+              </Typography>
             </CardContent>
           </Card>
         </Grid>
