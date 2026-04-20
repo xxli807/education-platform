@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Route, BrowserRouter as Router, Routes } from 'react-router-dom';
+import { Route, HashRouter as Router, Routes } from 'react-router-dom';
 import Dashboard from './components/Dashboard';
 import EnglishSection from './components/EnglishSection';
 import Login from './components/Login';
@@ -34,7 +34,7 @@ function App() {
         <Route
           path="/"
           element={
-            user ? <Dashboard user={user} /> : <Login onLogin={handleLogin} />
+            user ? <Dashboard user={user} onLogout={handleLogout} /> : <Login onLogin={handleLogin} />
           }
         />
 

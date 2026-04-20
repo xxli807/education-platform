@@ -245,8 +245,8 @@ function Login({ onLogin }: LoginProps) {
   const navigate = useNavigate();
 
   const handleLogin = () => {
-    if (username && password) {
-      onLogin(username);
+    if (username.trim() && password.trim()) {
+      onLogin(username.trim());
       navigate('/');
     } else {
       setShake(true);
@@ -373,6 +373,7 @@ function Login({ onLogin }: LoginProps) {
                 value={username}
                 onChange={e => setUsername(e.target.value)}
                 placeholder="Enter your name..."
+                autoFocus
                 sx={{
                   '& .MuiOutlinedInput-root': {
                     borderRadius: '2px',
@@ -409,6 +410,7 @@ function Login({ onLogin }: LoginProps) {
                 variant="outlined"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
+                onKeyDown={handleKeyDown}
                 placeholder="Secret password..."
                 sx={{
                   '& .MuiOutlinedInput-root': {
@@ -428,6 +430,7 @@ function Login({ onLogin }: LoginProps) {
                 }}
               />
             </Box>
+
 
             {/* Login button — Minecraft green button style */}
             <Button
@@ -472,7 +475,7 @@ function Login({ onLogin }: LoginProps) {
               mt: 2,
               letterSpacing: '0.05em',
             }}>
-              Version 1.0 — Year 2 Edition
+              🎓 Year 2 Learning Adventure
             </Typography>
           </Box>
         </Box>

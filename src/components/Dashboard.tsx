@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Typography, Grid, Card, CardContent, Box, Chip } from '@mui/material';
+import { Typography, Grid, Card, CardContent, Box, Chip, IconButton } from '@mui/material';
 import {
   Calculate as MathIcon,
   MenuBook as EnglishIcon,
@@ -9,6 +9,7 @@ import {
   EmojiEvents as TrophyIcon,
   Timer as TimerIcon,
   TaskAlt as HolidayIcon,
+  Logout as LogoutIcon,
 } from '@mui/icons-material';
 import { User } from '../types';
 import { db } from '../db/database';
@@ -26,8 +27,15 @@ function formatTime(seconds: number): string {
   return `${mins}m ${secs}s`;
 }
 
-function Dashboard({ user }: DashboardProps) {
+function Dashboard({ user, onLogout }: DashboardProps) {
   const navigate = useNavigate();
+
+  const handleLogout = () => {
+    if (onLogout) {
+      onLogout();
+    }
+    navigate('/');
+  };
   const [lastMath, setLastMath] = useState<MathSessionResult | null>(null);
   const [lastScience, setLastScience] = useState<ScienceSessionResult | null>(null);
   const [lastThinking, setLastThinking] = useState<ThinkingSessionResult | null>(null);
@@ -191,33 +199,53 @@ function Dashboard({ user }: DashboardProps) {
         {'🏰'}
       </Box>
 
-      {/* Header */}
-      <Box sx={{ textAlign: 'center', mb: 5, position: 'relative', zIndex: 1 }}>
-        <Typography
-          variant="h3"
+      {/* Header with Logout Button */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 5, position: 'relative', zIndex: 1 }}>
+        <Box sx={{ textAlign: 'center', flex: 1 }}>
+          <Typography
+            variant="h3"
+            sx={{
+              fontWeight: 900,
+              mb: 1,
+              background: 'linear-gradient(90deg, #ffd54f, #ff8a65, #ce93d8, #64b5f6)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              textShadow: 'none',
+              letterSpacing: '1px',
+            }}
+          >
+            Hello, {user.username}! 👋
+          </Typography>
+          <Typography
+            variant="h5"
+            sx={{
+              color: '#b0bec5',
+              fontWeight: 600,
+              letterSpacing: '0.5px',
+            }}
+          >
+            Choose Your Quest, Hero! ⚡
+          </Typography>
+        </Box>
+        <IconButton
+          onClick={handleLogout}
           sx={{
-            fontWeight: 900,
-            mb: 1,
-            background: 'linear-gradient(90deg, #ffd54f, #ff8a65, #ce93d8, #64b5f6)',
-            backgroundClip: 'text',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            textShadow: 'none',
-            letterSpacing: '1px',
+            bgcolor: 'rgba(239, 83, 80, 0.2)',
+            color: '#ef5350',
+            border: '2px solid #ef5350',
+            borderRadius: '12px',
+            p: 1.5,
+            transition: 'all 0.2s',
+            '&:hover': {
+              bgcolor: 'rgba(239, 83, 80, 0.3)',
+              transform: 'scale(1.05)',
+            },
           }}
+          title="Logout"
         >
-          Hello, {user.username}! 👋
-        </Typography>
-        <Typography
-          variant="h5"
-          sx={{
-            color: '#b0bec5',
-            fontWeight: 600,
-            letterSpacing: '0.5px',
-          }}
-        >
-          Choose Your Quest, Hero! ⚡
-        </Typography>
+          <LogoutIcon sx={{ fontSize: 28 }} />
+        </IconButton>
       </Box>
 
       {/* Subject Cards */}
