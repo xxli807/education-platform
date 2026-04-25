@@ -80,9 +80,9 @@ const darkButton = {
 };
 
 function EnglishSection() {
-  const [yearLevel, setYearLevel] = useState<2 | 3 | null>(() => {
+  const [yearLevel, setYearLevel] = useState<2 | 3>(() => {
     const saved = localStorage.getItem('englishYearLevel');
-    return saved ? (JSON.parse(saved) as 2 | 3 | null) : 2;
+    return saved ? (JSON.parse(saved) as 2 | 3) : 2;
   });
   const [currentPage, setCurrentPage] = useState(() => {
     const saved = localStorage.getItem('englishCurrentPage');

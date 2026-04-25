@@ -1,10 +1,7 @@
 import { Box, Button, TextField, Typography } from '@mui/material';
 import React, { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLoginMutation } from '../hooks/useAuth';
 
-interface LoginProps {
-  onLogin: (username: string) => void;
-}
 
 // ─── Minecraft block palette ──────────────────────────────────────────────────
 const BLOCK_COLORS: Record<string, string> = {
@@ -238,16 +235,15 @@ function MinecraftCanvas() {
 
 
 // ─── Login component ──────────────────────────────────────────────────────────
-function Login({ onLogin }: LoginProps) {
+function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [shake, setShake] = useState(false);
-  const navigate = useNavigate();
+  const loginMutation = useLoginMutation();
 
   const handleLogin = () => {
     if (username.trim() && password.trim()) {
-      onLogin(username.trim());
-      navigate('/');
+      loginMutation.mutate({ username: username.trim() });
     } else {
       setShake(true);
       setTimeout(() => setShake(false), 500);

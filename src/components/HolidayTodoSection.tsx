@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@tanstack/react-router';
 import {
   Box,
   Button,
@@ -399,7 +399,7 @@ function HolidayTodoSection() {
         }}
       >
         <IconButton
-          onClick={() => navigate('/')}
+          onClick={() => navigate({ to: '/' })}
           sx={{
             color: '#b0bec5',
             mr: 2,

@@ -24,7 +24,7 @@ import {
 } from '@mui/icons-material';
 import SessionReviewDialog, { type ReviewQuestion } from './SessionReviewDialog';
 import ConfirmDeleteDialog from './ConfirmDeleteDialog';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Question } from '../types';
 import { db } from '../db/database';
 import type { ThinkingSessionResult } from '../db/database';
@@ -344,7 +344,6 @@ function ThinkingSection() {
       <Grid container spacing={3}>
         {questions.map(q => {
           const correct = showAnswers && isCorrect(q);
-          const wrong = showAnswers && !isCorrect(q);
           return (
             <Grid size={{ xs: 12, sm: 6, md: 4 }} key={q.id}>
               <Card

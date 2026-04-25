@@ -1,7 +1,7 @@
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { Box, IconButton, Typography } from '@mui/material';
 import { useCallback, type ReactNode } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@tanstack/react-router';
 import { supportedSubject } from '../models';
 
 export interface SectionProps {
@@ -19,7 +19,7 @@ const subjectConfig: Record<supportedSubject, { emoji: string; glow: string }> =
 function SectionContainer({ name, children }: SectionProps) {
   const navigate = useNavigate();
   const handleBackToDashboard = useCallback(() => {
-    navigate('/');
+    navigate({ to: '/' });
   }, [navigate]);
 
   const config = subjectConfig[name];

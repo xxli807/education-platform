@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@tanstack/react-router';
 import { Typography, Grid, Card, CardContent, Box, Chip, IconButton } from '@mui/material';
 import {
   Calculate as MathIcon,
@@ -11,14 +11,9 @@ import {
   TaskAlt as HolidayIcon,
   Logout as LogoutIcon,
 } from '@mui/icons-material';
-import { User } from '../types';
+import { useCurrentUser, useLogoutMutation } from '../hooks/useAuth';
 import { db } from '../db/database';
 import type { MathSessionResult, ScienceSessionResult, ThinkingSessionResult } from '../db/database';
-
-interface DashboardProps {
-  user: User;
-  onLogout?: () => void;
-}
 
 function formatTime(seconds: number): string {
   const mins = Math.floor(seconds / 60);
@@ -27,14 +22,13 @@ function formatTime(seconds: number): string {
   return `${mins}m ${secs}s`;
 }
 
-function Dashboard({ user, onLogout }: DashboardProps) {
+function Dashboard() {
+  const { data: user } = useCurrentUser();
+  const logoutMutation = useLogoutMutation();
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    if (onLogout) {
-      onLogout();
-    }
-    navigate('/');
+    logoutMutation.mutate();
   };
   const [lastMath, setLastMath] = useState<MathSessionResult | null>(null);
   const [lastScience, setLastScience] = useState<ScienceSessionResult | null>(null);
@@ -215,7 +209,7 @@ function Dashboard({ user, onLogout }: DashboardProps) {
               letterSpacing: '1px',
             }}
           >
-            Hello, {user.username}! 👋
+            Hello, {user?.username}! 👋
           </Typography>
           <Typography
             variant="h5"
@@ -268,7 +262,7 @@ function Dashboard({ user, onLogout }: DashboardProps) {
                 boxShadow: '0 12px 36px rgba(239,83,80,0.3)',
               },
             }}
-            onClick={() => navigate('/math')}
+            onClick={() => navigate({ to: '/math' })}
           >
             <CardContent sx={{ textAlign: 'center', p: 3, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
               <MathIcon sx={{ fontSize: 56, color: '#ff8a80', mb: 1 }} />
@@ -329,7 +323,7 @@ function Dashboard({ user, onLogout }: DashboardProps) {
                 boxShadow: '0 12px 36px rgba(66,165,245,0.3)',
               },
             }}
-            onClick={() => navigate('/english')}
+            onClick={() => navigate({ to: '/english' })}
           >
             <CardContent sx={{ textAlign: 'center', p: 3, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
               <EnglishIcon sx={{ fontSize: 56, color: '#82b1ff', mb: 1 }} />
@@ -377,7 +371,7 @@ function Dashboard({ user, onLogout }: DashboardProps) {
                 boxShadow: '0 12px 36px rgba(102,187,106,0.3)',
               },
             }}
-            onClick={() => navigate('/science')}
+            onClick={() => navigate({ to: '/science' })}
           >
             <CardContent sx={{ textAlign: 'center', p: 3, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
               <ScienceIcon sx={{ fontSize: 56, color: '#a5d6a7', mb: 1 }} />
@@ -421,7 +415,7 @@ function Dashboard({ user, onLogout }: DashboardProps) {
                 boxShadow: '0 12px 36px rgba(206,147,216,0.3)',
               },
             }}
-            onClick={() => navigate('/thinking')}
+            onClick={() => navigate({ to: '/thinking' })}
           >
             <CardContent sx={{ textAlign: 'center', p: 3, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
               <ThinkingIcon sx={{ fontSize: 56, color: '#e1bee7', mb: 1 }} />
@@ -477,7 +471,7 @@ function Dashboard({ user, onLogout }: DashboardProps) {
                 boxShadow: '0 12px 36px rgba(38,166,154,0.3)',
               },
             }}
-            onClick={() => navigate('/holiday-todo')}
+            onClick={() => navigate({ to: '/holiday-todo' })}
           >
             <CardContent sx={{ textAlign: 'center', p: 3, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
               <HolidayIcon sx={{ fontSize: 56, color: '#80cbc4', mb: 1 }} />
