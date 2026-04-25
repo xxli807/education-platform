@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Route, HashRouter as Router, Routes } from 'react-router-dom';
 import Dashboard from './components/Dashboard';
 import EnglishSection from './components/EnglishSection';
@@ -8,6 +8,7 @@ import ScienceSection from './components/ScienceSection';
 import ThinkingSection from './components/ThinkingSection';
 import HolidayTodoSection from './components/HolidayTodoSection';
 import { User } from './types';
+import { initializeStorageCleanup } from './utils/storageManager';
 
 function App() {
   const [user, setUser] = useState<User | null>(() => {
@@ -15,6 +16,10 @@ function App() {
     const saved = localStorage.getItem('user');
     return saved ? JSON.parse(saved) : null;
   });
+
+  useEffect(() => {
+    initializeStorageCleanup();
+  }, []);
 
   const handleLogin = (username: string) => {
     const newUser = { username };

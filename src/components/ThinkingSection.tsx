@@ -85,14 +85,38 @@ const CATEGORY_DISPLAY: Record<ThinkingCategory, string> = {
 };
 
 function ThinkingSection() {
-  const [category, setCategory] = useState<ThinkingCategory | null>('mixed');
-  const [questions, setQuestions] = useState<Question[]>([]);
-  const [answers, setAnswers] = useState<Record<number, string>>({});
-  const [showAnswers, setShowAnswers] = useState(false);
-  const [allCorrect, setAllCorrect] = useState(false);
-  const [startTime, setStartTime] = useState(Date.now());
-  const [timeTaken, setTimeTaken] = useState<number | null>(null);
-  const [feedbackMessages, setFeedbackMessages] = useState<Record<number, string>>({});
+  const [category, setCategory] = useState<ThinkingCategory | null>(() => {
+    const saved = localStorage.getItem('thinkingCategory');
+    return (saved as ThinkingCategory) || 'mixed';
+  });
+  const [questions, setQuestions] = useState<Question[]>(() => {
+    const saved = localStorage.getItem('thinkingQuestions');
+    return saved ? JSON.parse(saved) : generateThinkingQuestions('mixed', 8);
+  });
+  const [answers, setAnswers] = useState<Record<number, string>>(() => {
+    const saved = localStorage.getItem('thinkingAnswers');
+    return saved ? JSON.parse(saved) : {};
+  });
+  const [showAnswers, setShowAnswers] = useState(() => {
+    const saved = localStorage.getItem('thinkingShowAnswers');
+    return saved ? JSON.parse(saved) : false;
+  });
+  const [allCorrect, setAllCorrect] = useState(() => {
+    const saved = localStorage.getItem('thinkingAllCorrect');
+    return saved ? JSON.parse(saved) : false;
+  });
+  const [startTime, setStartTime] = useState<number>(() => {
+    const saved = localStorage.getItem('thinkingStartTime');
+    return saved ? parseInt(saved) : Date.now();
+  });
+  const [timeTaken, setTimeTaken] = useState<number | null>(() => {
+    const saved = localStorage.getItem('thinkingTimeTaken');
+    return saved ? parseInt(saved) : null;
+  });
+  const [feedbackMessages, setFeedbackMessages] = useState<Record<number, string>>(() => {
+    const saved = localStorage.getItem('thinkingFeedbackMessages');
+    return saved ? JSON.parse(saved) : {};
+  });
   const [showHistory, setShowHistory] = useState(false);
   const [history, setHistory] = useState<ThinkingSessionResult[]>([]);
   const [reviewResult, setReviewResult] = useState<ThinkingSessionResult | null>(null);
@@ -103,6 +127,38 @@ function ThinkingSection() {
     // Load initial questions with 'mixed' category
     setQuestions(generateThinkingQuestions('mixed'));
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem('thinkingCategory', category ?? 'mixed');
+  }, [category]);
+
+  useEffect(() => {
+    localStorage.setItem('thinkingQuestions', JSON.stringify(questions));
+  }, [questions]);
+
+  useEffect(() => {
+    localStorage.setItem('thinkingAnswers', JSON.stringify(answers));
+  }, [answers]);
+
+  useEffect(() => {
+    localStorage.setItem('thinkingShowAnswers', JSON.stringify(showAnswers));
+  }, [showAnswers]);
+
+  useEffect(() => {
+    localStorage.setItem('thinkingAllCorrect', JSON.stringify(allCorrect));
+  }, [allCorrect]);
+
+  useEffect(() => {
+    localStorage.setItem('thinkingStartTime', startTime.toString());
+  }, [startTime]);
+
+  useEffect(() => {
+    localStorage.setItem('thinkingTimeTaken', timeTaken?.toString() || '');
+  }, [timeTaken]);
+
+  useEffect(() => {
+    localStorage.setItem('thinkingFeedbackMessages', JSON.stringify(feedbackMessages));
+  }, [feedbackMessages]);
 
   const handleDeleteConfirm = async () => {
     if (!deleteTarget?.id) return;
@@ -126,9 +182,15 @@ function ThinkingSection() {
     setAnswers({});
     setShowAnswers(false);
     setAllCorrect(false);
-    setStartTime(Date.now());
+    const newStartTime = Date.now();
+    setStartTime(newStartTime);
     setTimeTaken(null);
     setFeedbackMessages({});
+    localStorage.removeItem('thinkingAnswers');
+    localStorage.removeItem('thinkingShowAnswers');
+    localStorage.removeItem('thinkingAllCorrect');
+    localStorage.removeItem('thinkingTimeTaken');
+    localStorage.removeItem('thinkingFeedbackMessages');
   }, []);
 
   const handleSelect = useCallback((id: number, opt: string) => {
@@ -196,9 +258,15 @@ function ThinkingSection() {
     setAnswers({});
     setShowAnswers(false);
     setAllCorrect(false);
-    setStartTime(Date.now());
+    const newStartTime = Date.now();
+    setStartTime(newStartTime);
     setTimeTaken(null);
     setFeedbackMessages({});
+    localStorage.removeItem('thinkingAnswers');
+    localStorage.removeItem('thinkingShowAnswers');
+    localStorage.removeItem('thinkingAllCorrect');
+    localStorage.removeItem('thinkingTimeTaken');
+    localStorage.removeItem('thinkingFeedbackMessages');
   }, [category]);
 
   return (

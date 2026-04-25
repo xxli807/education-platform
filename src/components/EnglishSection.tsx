@@ -80,18 +80,36 @@ const darkButton = {
 };
 
 function EnglishSection() {
-  const [yearLevel, setYearLevel] = useState<2 | 3 | null>(2);
-  const [currentPage, setCurrentPage] = useState(0);
-  const [activeTab, setActiveTab] = useState(0);
+  const [yearLevel, setYearLevel] = useState<2 | 3 | null>(() => {
+    const saved = localStorage.getItem('englishYearLevel');
+    return saved ? (JSON.parse(saved) as 2 | 3 | null) : 2;
+  });
+  const [currentPage, setCurrentPage] = useState(() => {
+    const saved = localStorage.getItem('englishCurrentPage');
+    return saved ? parseInt(saved) : 0;
+  });
+  const [activeTab, setActiveTab] = useState(() => {
+    const saved = localStorage.getItem('englishActiveTab');
+    return saved ? parseInt(saved) : 0;
+  });
   const [comprehensionAnswers, setComprehensionAnswers] = useState<{
     [key: string]: string;
-  }>({});
+  }>(() => {
+    const saved = localStorage.getItem('englishComprehensionAnswers');
+    return saved ? JSON.parse(saved) : {};
+  });
   const [writingResponses, setWritingResponses] = useState<{
     [key: string]: string;
-  }>({});
+  }>(() => {
+    const saved = localStorage.getItem('englishWritingResponses');
+    return saved ? JSON.parse(saved) : {};
+  });
   const [vocabSentences, setVocabSentences] = useState<{
     [key: string]: string;
-  }>({});
+  }>(() => {
+    const saved = localStorage.getItem('englishVocabSentences');
+    return saved ? JSON.parse(saved) : {};
+  });
 
   const [savedComprehensions, setSavedComprehensions] = useState<
     ComprehensionAnswer[]
@@ -138,6 +156,30 @@ function EnglishSection() {
   useEffect(() => {
     loadSavedData();
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem('englishYearLevel', JSON.stringify(yearLevel));
+  }, [yearLevel]);
+
+  useEffect(() => {
+    localStorage.setItem('englishCurrentPage', currentPage.toString());
+  }, [currentPage]);
+
+  useEffect(() => {
+    localStorage.setItem('englishActiveTab', activeTab.toString());
+  }, [activeTab]);
+
+  useEffect(() => {
+    localStorage.setItem('englishComprehensionAnswers', JSON.stringify(comprehensionAnswers));
+  }, [comprehensionAnswers]);
+
+  useEffect(() => {
+    localStorage.setItem('englishWritingResponses', JSON.stringify(writingResponses));
+  }, [writingResponses]);
+
+  useEffect(() => {
+    localStorage.setItem('englishVocabSentences', JSON.stringify(vocabSentences));
+  }, [vocabSentences]);
 
   const saveJournal = async () => {
     if (!journalContent.trim()) {
@@ -212,6 +254,8 @@ function EnglishSection() {
         setComprehensionAnswers({});
         setVocabSentences({});
         setWritingTasks(generateWritingPrompts(newYear, 4));
+        localStorage.removeItem('englishComprehensionAnswers');
+        localStorage.removeItem('englishVocabSentences');
       }
     },
     []

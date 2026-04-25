@@ -77,23 +77,74 @@ const darkTextField = {
 };
 
 function ScienceSection() {
-  const [yearLevel, setYearLevel] = useState<YearLevel>(2);
-  const [selectedTopic, setSelectedTopic] = useState<string>('all');
-  const [answers, setAnswers] = useState<{ [key: number]: string }>({});
-  const [showAnswers, setShowAnswers] = useState(false);
-  const [questions, setQuestions] = useState<ScienceQuestion[]>(() => getRandomQuestionsByYear(2, 10));
-  const [allCorrect, setAllCorrect] = useState(false);
+  const [yearLevel, setYearLevel] = useState<YearLevel>(() => {
+    const saved = localStorage.getItem('scienceYearLevel');
+    return saved ? (parseInt(saved) as YearLevel) : 2;
+  });
+  const [selectedTopic, setSelectedTopic] = useState<string>(() => {
+    const saved = localStorage.getItem('scienceSelectedTopic');
+    return saved || 'all';
+  });
+  const [answers, setAnswers] = useState<{ [key: number]: string }>(() => {
+    const saved = localStorage.getItem('scienceAnswers');
+    return saved ? JSON.parse(saved) : {};
+  });
+  const [showAnswers, setShowAnswers] = useState(() => {
+    const saved = localStorage.getItem('scienceShowAnswers');
+    return saved ? JSON.parse(saved) : false;
+  });
+  const [questions, setQuestions] = useState<ScienceQuestion[]>(() => {
+    const saved = localStorage.getItem('scienceQuestions');
+    const savedYear = localStorage.getItem('scienceYearLevel');
+    const year = savedYear ? (parseInt(savedYear) as YearLevel) : 2;
+    return saved ? JSON.parse(saved) : getRandomQuestionsByYear(year, 10);
+  });
+  const [allCorrect, setAllCorrect] = useState(() => {
+    const saved = localStorage.getItem('scienceAllCorrect');
+    return saved ? JSON.parse(saved) : false;
+  });
   const [showHistory, setShowHistory] = useState(false);
   const [history, setHistory] = useState<ScienceSessionResult[]>([]);
   const [reviewResult, setReviewResult] = useState<ScienceSessionResult | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ScienceSessionResult | null>(null);
-  const [feedbackMessages, setFeedbackMessages] = useState<{ [key: number]: string }>({});
+  const [feedbackMessages, setFeedbackMessages] = useState<{ [key: number]: string }>(() => {
+    const saved = localStorage.getItem('scienceFeedbackMessages');
+    return saved ? JSON.parse(saved) : {};
+  });
 
   const topics = yearLevel ? getTopicsForYear(yearLevel) : [];
 
   useEffect(() => {
     loadHistory();
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem('scienceYearLevel', yearLevel.toString());
+  }, [yearLevel]);
+
+  useEffect(() => {
+    localStorage.setItem('scienceSelectedTopic', selectedTopic);
+  }, [selectedTopic]);
+
+  useEffect(() => {
+    localStorage.setItem('scienceAnswers', JSON.stringify(answers));
+  }, [answers]);
+
+  useEffect(() => {
+    localStorage.setItem('scienceShowAnswers', JSON.stringify(showAnswers));
+  }, [showAnswers]);
+
+  useEffect(() => {
+    localStorage.setItem('scienceQuestions', JSON.stringify(questions));
+  }, [questions]);
+
+  useEffect(() => {
+    localStorage.setItem('scienceAllCorrect', JSON.stringify(allCorrect));
+  }, [allCorrect]);
+
+  useEffect(() => {
+    localStorage.setItem('scienceFeedbackMessages', JSON.stringify(feedbackMessages));
+  }, [feedbackMessages]);
 
   const handleDeleteConfirm = async () => {
     if (!deleteTarget?.id) return;
@@ -129,6 +180,10 @@ function ScienceSection() {
         setYearLevel(newYear);
         setSelectedTopic('all');
         loadQuestions(newYear, 'all');
+        localStorage.removeItem('scienceAnswers');
+        localStorage.removeItem('scienceShowAnswers');
+        localStorage.removeItem('scienceAllCorrect');
+        localStorage.removeItem('scienceFeedbackMessages');
       }
     },
     [loadQuestions]
@@ -138,6 +193,10 @@ function ScienceSection() {
     if (!yearLevel) return;
     setSelectedTopic(topic);
     loadQuestions(yearLevel, topic);
+    localStorage.removeItem('scienceAnswers');
+    localStorage.removeItem('scienceShowAnswers');
+    localStorage.removeItem('scienceAllCorrect');
+    localStorage.removeItem('scienceFeedbackMessages');
   }, [yearLevel, loadQuestions]);
 
   const handleAnswerChange = useCallback((id: number, value: string) => {

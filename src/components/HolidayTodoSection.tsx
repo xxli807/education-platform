@@ -34,7 +34,10 @@ import AlertDialog from './AlertDialog';
 function HolidayTodoSection() {
   const navigate = useNavigate();
   const [plans, setPlans] = useState<HolidayPlan[]>([]);
-  const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
+  const [selectedPlanId, setSelectedPlanId] = useState<number | null>(() => {
+    const saved = localStorage.getItem('holidaySelectedPlanId');
+    return saved ? parseInt(saved) : null;
+  });
   const [todoItems, setTodoItems] = useState<HolidayTodoItem[]>([]);
 
   // Dialog states
@@ -89,6 +92,15 @@ function HolidayTodoSection() {
       loadTodoItems(selectedPlanId);
     } else {
       setTodoItems([]);
+    }
+  }, [selectedPlanId]);
+
+  // Persist selected plan to localStorage
+  useEffect(() => {
+    if (selectedPlanId) {
+      localStorage.setItem('holidaySelectedPlanId', selectedPlanId.toString());
+    } else {
+      localStorage.removeItem('holidaySelectedPlanId');
     }
   }, [selectedPlanId]);
 

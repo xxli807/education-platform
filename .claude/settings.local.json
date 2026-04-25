@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:pascalpress.com.au)",
+      "WebFetch(domain:www.dymockstutoring.edu.au)",
+      "WebFetch(domain:braintreecoaching.com.au)",
+      "Bash(npm run:*)"
+    ]
+  }
+}

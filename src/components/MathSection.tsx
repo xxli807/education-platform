@@ -523,20 +523,76 @@ function Whiteboard() {
 }
 
 function MathSection() {
-  const [difficulty, setDifficulty] = useState<Difficulty>('standard');
-  const [questions, setQuestions] = useState<Question[]>(() =>
-    generateMathQuestions('standard')
-  );
-  const [answers, setAnswers] = useState<{ [key: number]: string }>({});
-  const [showAnswers, setShowAnswers] = useState(false);
-  const [allCorrect, setAllCorrect] = useState(false);
-  const [startTime, setStartTime] = useState<number>(Date.now());
-  const [timeTaken, setTimeTaken] = useState<number | null>(null);
+  const [difficulty, setDifficulty] = useState<Difficulty>(() => {
+    const saved = localStorage.getItem('mathDifficulty');
+    return (saved as Difficulty) || 'standard';
+  });
+  const [questions, setQuestions] = useState<Question[]>(() => {
+    const saved = localStorage.getItem('mathQuestions');
+    const savedDifficulty = localStorage.getItem('mathDifficulty') as Difficulty || 'standard';
+    return saved ? JSON.parse(saved) : generateMathQuestions(savedDifficulty);
+  });
+  const [answers, setAnswers] = useState<{ [key: number]: string }>(() => {
+    const saved = localStorage.getItem('mathAnswers');
+    return saved ? JSON.parse(saved) : {};
+  });
+  const [showAnswers, setShowAnswers] = useState(() => {
+    const saved = localStorage.getItem('mathShowAnswers');
+    return saved ? JSON.parse(saved) : false;
+  });
+  const [allCorrect, setAllCorrect] = useState(() => {
+    const saved = localStorage.getItem('mathAllCorrect');
+    return saved ? JSON.parse(saved) : false;
+  });
+  const [startTime, setStartTime] = useState<number>(() => {
+    const saved = localStorage.getItem('mathStartTime');
+    return saved ? parseInt(saved) : Date.now();
+  });
+  const [timeTaken, setTimeTaken] = useState<number | null>(() => {
+    const saved = localStorage.getItem('mathTimeTaken');
+    return saved ? parseInt(saved) : null;
+  });
   const [showHistory, setShowHistory] = useState(false);
   const [history, setHistory] = useState<MathSessionResult[]>([]);
   const [reviewResult, setReviewResult] = useState<MathSessionResult | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<MathSessionResult | null>(null);
-  const [feedbackMessages, setFeedbackMessages] = useState<{ [key: number]: string }>({});
+  const [feedbackMessages, setFeedbackMessages] = useState<{ [key: number]: string }>(() => {
+    const saved = localStorage.getItem('mathFeedbackMessages');
+    return saved ? JSON.parse(saved) : {};
+  });
+
+  // Persist state to localStorage
+  useEffect(() => {
+    localStorage.setItem('mathDifficulty', difficulty);
+  }, [difficulty]);
+
+  useEffect(() => {
+    localStorage.setItem('mathQuestions', JSON.stringify(questions));
+  }, [questions]);
+
+  useEffect(() => {
+    localStorage.setItem('mathAnswers', JSON.stringify(answers));
+  }, [answers]);
+
+  useEffect(() => {
+    localStorage.setItem('mathShowAnswers', JSON.stringify(showAnswers));
+  }, [showAnswers]);
+
+  useEffect(() => {
+    localStorage.setItem('mathAllCorrect', JSON.stringify(allCorrect));
+  }, [allCorrect]);
+
+  useEffect(() => {
+    localStorage.setItem('mathStartTime', startTime.toString());
+  }, [startTime]);
+
+  useEffect(() => {
+    localStorage.setItem('mathTimeTaken', timeTaken?.toString() || '');
+  }, [timeTaken]);
+
+  useEffect(() => {
+    localStorage.setItem('mathFeedbackMessages', JSON.stringify(feedbackMessages));
+  }, [feedbackMessages]);
 
   useEffect(() => {
     loadHistory();
@@ -561,13 +617,21 @@ function MathSection() {
   const handleDifficultyChange = useCallback(
     (_: React.SyntheticEvent, newDifficulty: Difficulty) => {
       setDifficulty(newDifficulty);
-      setQuestions(generateMathQuestions(newDifficulty));
+      const newQuestions = generateMathQuestions(newDifficulty);
+      setQuestions(newQuestions);
       setAnswers({});
       setShowAnswers(false);
       setAllCorrect(false);
-      setStartTime(Date.now());
+      const newStartTime = Date.now();
+      setStartTime(newStartTime);
       setTimeTaken(null);
       setFeedbackMessages({});
+      // Clear localStorage for new session
+      localStorage.removeItem('mathAnswers');
+      localStorage.removeItem('mathShowAnswers');
+      localStorage.removeItem('mathAllCorrect');
+      localStorage.removeItem('mathTimeTaken');
+      localStorage.removeItem('mathFeedbackMessages');
     },
     []
   );
@@ -577,13 +641,21 @@ function MathSection() {
   }, []);
 
   const handleMoreQuestions = useCallback(() => {
-    setQuestions(generateMathQuestions(difficulty));
+    const newQuestions = generateMathQuestions(difficulty);
+    setQuestions(newQuestions);
     setAnswers({});
     setShowAnswers(false);
     setAllCorrect(false);
-    setStartTime(Date.now());
+    const newStartTime = Date.now();
+    setStartTime(newStartTime);
     setTimeTaken(null);
     setFeedbackMessages({});
+    // Clear localStorage for new session
+    localStorage.removeItem('mathAnswers');
+    localStorage.removeItem('mathShowAnswers');
+    localStorage.removeItem('mathAllCorrect');
+    localStorage.removeItem('mathTimeTaken');
+    localStorage.removeItem('mathFeedbackMessages');
   }, [difficulty]);
 
   const isEveryAnswerCorrect = useMemo(() => {
