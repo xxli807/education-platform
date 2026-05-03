@@ -9,9 +9,9 @@ import {
   Grid,
   MenuItem,
   Select,
+  Tab,
+  Tabs,
   TextField,
-  ToggleButton,
-  ToggleButtonGroup,
   Typography,
 } from '@mui/material';
 import {
@@ -39,7 +39,13 @@ import {
   generateMissingNumberProblem,
   generateHalfProblem,
 } from '../data/mathQuestions';
+import { generateOlympiadQuestions } from '../data/olympiadQuestions';
 import SectionContainer from './SectionContainer';
+
+type MathMode = 'practice' | 'olympiad';
+
+const PRACTICE_PER_GROUP = 8;
+const OLYMPIAD_COUNT = 12;
 
 const encouragingCorrect = [
   'Awesome! 🌟',
@@ -62,25 +68,27 @@ function getRandomEncouragement(correct: boolean): string {
   return list[Math.floor(Math.random() * list.length)];
 }
 
-function generateMathQuestions(difficulty: Difficulty): Question[] {
+function generateLevelQuestions(difficulty: Difficulty, count: number, startId: number): Question[] {
   const questions: Question[] = [];
-  const totalQuestions = 16;
 
-  for (let i = 1; i <= totalQuestions; i++) {
+  for (let i = 0; i < count; i++) {
+    const id = startId + i;
+    const indexWithinLevel = i + 1;
+
     if (difficulty === 'challenge') {
-      if (i <= 4) {
+      if (indexWithinLevel === 1 || indexWithinLevel === 2) {
         const wp = generateWordProblem();
-        wp.id = i;
+        wp.id = id;
         questions.push(wp);
         continue;
-      } else if (i <= 6) {
+      } else if (indexWithinLevel === 3) {
         const mp = generateMissingNumberProblem();
-        mp.id = i;
+        mp.id = id;
         questions.push(mp);
         continue;
-      } else if (i <= 8) {
+      } else if (indexWithinLevel === 4) {
         const hp = generateHalfProblem();
-        hp.id = i;
+        hp.id = id;
         questions.push(hp);
         continue;
       }
@@ -164,7 +172,7 @@ function generateMathQuestions(difficulty: Difficulty): Question[] {
         break;
     }
 
-    if (difficulty === 'advanced' && i % 4 === 0) {
+    if (difficulty === 'advanced' && indexWithinLevel % 4 === 0) {
       const num3 = Math.floor(Math.random() * 20) + 1;
       const op2 = Math.random() > 0.5 ? '+' : '-';
       if (op2 === '+') {
@@ -178,12 +186,19 @@ function generateMathQuestions(difficulty: Difficulty): Question[] {
       }
     }
 
-    // Add MCQ options for ~40% of advanced and challenge questions
     const useMCQ = (difficulty === 'advanced' || difficulty === 'challenge') && Math.random() < 0.4;
-    questions.push({ id: i, text, answer, options: useMCQ ? mathOptions(Number(answer)) : undefined });
+    questions.push({ id, text, answer, options: useMCQ ? mathOptions(Number(answer)) : undefined });
   }
 
   return questions;
+}
+
+function generatePracticeQuestions(): Question[] {
+  return [
+    ...generateLevelQuestions('standard', PRACTICE_PER_GROUP, 1),
+    ...generateLevelQuestions('advanced', PRACTICE_PER_GROUP, 1 + PRACTICE_PER_GROUP),
+    ...generateLevelQuestions('challenge', PRACTICE_PER_GROUP, 1 + PRACTICE_PER_GROUP * 2),
+  ];
 }
 
 function formatTime(seconds: number): string {
@@ -193,7 +208,6 @@ function formatTime(seconds: number): string {
   return `${mins}m ${secs}s`;
 }
 
-// ─── MCQ option generator for math ───────────────────────────────────────────
 function mathOptions(correct: number): string[] {
   const ans = Number(correct);
   const wrong = new Set<number>();
@@ -206,7 +220,6 @@ function mathOptions(correct: number): string[] {
   return [ans, ...[...wrong]].map(String).sort(() => Math.random() - 0.5);
 }
 
-// Dark theme styles
 const darkCard = {
   borderRadius: '16px',
   boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
@@ -214,7 +227,6 @@ const darkCard = {
   '&:hover': { transform: 'scale(1.02)' },
 };
 
-// ─── Whiteboard (floating, top-right) ────────────────────────────────────────
 function Whiteboard() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawing = useRef(false);
@@ -280,7 +292,6 @@ function Whiteboard() {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
   };
 
-  // Size canvas whenever it becomes visible and fill with white background
   useEffect(() => {
     if (!expanded) return;
     const canvas = canvasRef.current;
@@ -297,7 +308,6 @@ function Whiteboard() {
         }
       }
     };
-    // small delay so the expand animation has settled
     const t = setTimeout(size, 50);
     window.addEventListener('resize', size);
     return () => { clearTimeout(t); window.removeEventListener('resize', size); };
@@ -339,7 +349,6 @@ function Whiteboard() {
     startDrag(touch.clientX, touch.clientY);
   };
 
-  // Add document-level drag handlers
   useEffect(() => {
     if (!isDragging) return;
 
@@ -376,7 +385,6 @@ function Whiteboard() {
         alignItems: 'flex-end',
       }}
     >
-      {/* Collapsed pill / toggle button */}
       {!expanded && (
         <Box
           onMouseDown={startMouseDrag}
@@ -415,7 +423,6 @@ function Whiteboard() {
         </Box>
       )}
 
-      {/* Expanded panel */}
       {expanded && (
         <Box
           sx={{
@@ -431,7 +438,6 @@ function Whiteboard() {
             overflow: 'hidden',
           }}
         >
-          {/* Header */}
           <Box
             onMouseDown={startMouseDrag}
             onTouchStart={startTouchDrag}
@@ -498,7 +504,6 @@ function Whiteboard() {
             </Box>
           </Box>
 
-          {/* Canvas */}
           <Box sx={{ touchAction: 'none', cursor: 'crosshair', flex: 1, display: 'flex', flexDirection: 'column' }}>
             <canvas
               ref={canvasRef}
@@ -521,15 +526,22 @@ function Whiteboard() {
   );
 }
 
+const PRACTICE_SECTIONS: { label: string; emoji: string; color: string; range: [number, number] }[] = [
+  { label: 'Standard', emoji: '⭐', color: '#ffa726', range: [1, PRACTICE_PER_GROUP] },
+  { label: 'Advanced', emoji: '🌟', color: '#42a5f5', range: [PRACTICE_PER_GROUP + 1, PRACTICE_PER_GROUP * 2] },
+  { label: 'Challenge', emoji: '🔥', color: '#ef5350', range: [PRACTICE_PER_GROUP * 2 + 1, PRACTICE_PER_GROUP * 3] },
+];
+
 function MathSection() {
-  const [difficulty, setDifficulty] = useState<Difficulty>(() => {
-    const saved = localStorage.getItem('mathDifficulty');
-    return (saved as Difficulty) || 'standard';
+  const [mode, setMode] = useState<MathMode>(() => {
+    const saved = localStorage.getItem('mathMode');
+    return saved === 'olympiad' ? 'olympiad' : 'practice';
   });
   const [questions, setQuestions] = useState<Question[]>(() => {
     const saved = localStorage.getItem('mathQuestions');
-    const savedDifficulty = localStorage.getItem('mathDifficulty') as Difficulty || 'standard';
-    return saved ? JSON.parse(saved) : generateMathQuestions(savedDifficulty);
+    if (saved) return JSON.parse(saved);
+    const savedMode = localStorage.getItem('mathMode') === 'olympiad' ? 'olympiad' : 'practice';
+    return savedMode === 'olympiad' ? generateOlympiadQuestions(OLYMPIAD_COUNT) : generatePracticeQuestions();
   });
   const [answers, setAnswers] = useState<{ [key: number]: string }>(() => {
     const saved = localStorage.getItem('mathAnswers');
@@ -560,10 +572,9 @@ function MathSection() {
     return saved ? JSON.parse(saved) : {};
   });
 
-  // Persist state to localStorage
   useEffect(() => {
-    localStorage.setItem('mathDifficulty', difficulty);
-  }, [difficulty]);
+    localStorage.setItem('mathMode', mode);
+  }, [mode]);
 
   useEffect(() => {
     localStorage.setItem('mathQuestions', JSON.stringify(questions));
@@ -613,26 +624,32 @@ function MathSection() {
     setHistory(results.slice(0, 10));
   };
 
-  const handleDifficultyChange = useCallback(
-    (_: React.SyntheticEvent, newDifficulty: Difficulty) => {
-      setDifficulty(newDifficulty);
-      const newQuestions = generateMathQuestions(newDifficulty);
-      setQuestions(newQuestions);
-      setAnswers({});
-      setShowAnswers(false);
-      setAllCorrect(false);
-      const newStartTime = Date.now();
-      setStartTime(newStartTime);
-      setTimeTaken(null);
-      setFeedbackMessages({});
-      // Clear localStorage for new session
-      localStorage.removeItem('mathAnswers');
-      localStorage.removeItem('mathShowAnswers');
-      localStorage.removeItem('mathAllCorrect');
-      localStorage.removeItem('mathTimeTaken');
-      localStorage.removeItem('mathFeedbackMessages');
+  const resetSession = useCallback((nextQuestions: Question[]) => {
+    setQuestions(nextQuestions);
+    setAnswers({});
+    setShowAnswers(false);
+    setAllCorrect(false);
+    setStartTime(Date.now());
+    setTimeTaken(null);
+    setFeedbackMessages({});
+    localStorage.removeItem('mathAnswers');
+    localStorage.removeItem('mathShowAnswers');
+    localStorage.removeItem('mathAllCorrect');
+    localStorage.removeItem('mathTimeTaken');
+    localStorage.removeItem('mathFeedbackMessages');
+  }, []);
+
+  const handleModeChange = useCallback(
+    (_: React.SyntheticEvent, newMode: MathMode | null) => {
+      if (!newMode || newMode === mode) return;
+      setMode(newMode);
+      const nextQuestions =
+        newMode === 'olympiad'
+          ? generateOlympiadQuestions(OLYMPIAD_COUNT)
+          : generatePracticeQuestions();
+      resetSession(nextQuestions);
     },
-    []
+    [mode, resetSession]
   );
 
   const handleAnswerChange = useCallback((id: number, value: string) => {
@@ -640,22 +657,12 @@ function MathSection() {
   }, []);
 
   const handleMoreQuestions = useCallback(() => {
-    const newQuestions = generateMathQuestions(difficulty);
-    setQuestions(newQuestions);
-    setAnswers({});
-    setShowAnswers(false);
-    setAllCorrect(false);
-    const newStartTime = Date.now();
-    setStartTime(newStartTime);
-    setTimeTaken(null);
-    setFeedbackMessages({});
-    // Clear localStorage for new session
-    localStorage.removeItem('mathAnswers');
-    localStorage.removeItem('mathShowAnswers');
-    localStorage.removeItem('mathAllCorrect');
-    localStorage.removeItem('mathTimeTaken');
-    localStorage.removeItem('mathFeedbackMessages');
-  }, [difficulty]);
+    const nextQuestions =
+      mode === 'olympiad'
+        ? generateOlympiadQuestions(OLYMPIAD_COUNT)
+        : generatePracticeQuestions();
+    resetSession(nextQuestions);
+  }, [mode, resetSession]);
 
   const isEveryAnswerCorrect = useMemo(() => {
     if (!questions.length) return false;
@@ -706,7 +713,7 @@ function MathSection() {
     );
 
     await db.mathSessionResults.add({
-      difficulty,
+      difficulty: mode === 'olympiad' ? 'olympiad' : 'mixed',
       totalQuestions: questions.length,
       correctCount: count,
       score: Math.round((count / questions.length) * 100),
@@ -717,46 +724,196 @@ function MathSection() {
     });
 
     loadHistory();
-  }, [startTime, isEveryAnswerCorrect, questions, answers, difficulty]);
+  }, [startTime, isEveryAnswerCorrect, questions, answers, mode]);
+
+  const renderQuestionCard = (question: Question) => {
+    const isCorrect =
+      showAnswers &&
+      answers[question.id] !== undefined &&
+      answers[question.id] !== '' &&
+      Number(answers[question.id]) === Number(question.answer);
+    return (
+      <Grid size={{ xs: 12, sm: 6, md: 3 }} key={question.id}>
+        <Card
+          sx={{
+            ...darkCard,
+            bgcolor: showAnswers
+              ? isCorrect
+                ? 'rgba(76,175,80,0.15)'
+                : 'rgba(239,83,80,0.15)'
+              : 'rgba(255,255,255,0.06)',
+            border: showAnswers
+              ? isCorrect
+                ? '2px solid #4caf50'
+                : '2px solid #ef5350'
+              : '2px solid rgba(255,255,255,0.12)',
+            backdropFilter: 'blur(10px)',
+          }}
+        >
+          <CardContent>
+            <Typography
+              variant="h6"
+              sx={{
+                color: '#ffcc80',
+                fontWeight: 'bold',
+                mb: 2,
+                fontSize: '1.05rem',
+                lineHeight: 1.4,
+              }}
+            >
+              {question.text}
+            </Typography>
+            {question.options ? (
+              <FormControl fullWidth>
+                <Select
+                  value={answers[question.id] || ''}
+                  onChange={e => handleAnswerChange(question.id, e.target.value)}
+                  disabled={showAnswers}
+                  displayEmpty
+                  renderValue={(value) => value ? value : '-- Please select'}
+                  sx={{
+                    borderRadius: '10px',
+                    bgcolor: 'rgba(255,255,255,0.06)',
+                    color: answers[question.id] ? '#fff' : '#90a4ae',
+                    fontWeight: 'bold',
+                    fontSize: '0.95rem',
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: answers[question.id] && showAnswers
+                        ? answers[question.id] === String(question.answer)
+                          ? '#66bb6a'
+                          : '#ef5350'
+                        : 'rgba(255,255,255,0.2)'
+                    },
+                    '&:hover .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#ffd54f'
+                    },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#ffd54f'
+                    },
+                    '& .MuiSelect-icon': { color: '#ffcc80' },
+                    '&.Mui-disabled': {
+                      opacity: 1,
+                      color: answers[question.id]
+                        ? answers[question.id] === String(question.answer)
+                          ? '#a5d6a7'
+                          : '#ef9a9a'
+                        : '#90a4ae'
+                    },
+                  }}
+                  MenuProps={{
+                    PaperProps: {
+                      sx: { bgcolor: '#1a1f35', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '10px' }
+                    }
+                  }}
+                >
+                  {question.options.map(opt => {
+                    const isThisCorrect = showAnswers && opt === String(question.answer);
+                    return (
+                      <MenuItem key={opt} value={opt} sx={{ color: isThisCorrect && showAnswers ? '#66bb6a' : '#cfd8dc' }}>
+                        {isThisCorrect && showAnswers ? '✅ ' : ''}{opt}
+                      </MenuItem>
+                    );
+                  })}
+                </Select>
+              </FormControl>
+            ) : (
+              <TextField
+                label="Your Answer"
+                variant="outlined"
+                type="number"
+                value={answers[question.id] || ''}
+                onChange={e => handleAnswerChange(question.id, e.target.value)}
+                sx={{
+                  mb: 1,
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: '12px',
+                    bgcolor: 'rgba(255,255,255,0.06)',
+                    color: '#fff',
+                    '& fieldset': { borderColor: 'rgba(255,255,255,0.2)' },
+                    '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.4)' },
+                    '&.Mui-focused fieldset': { borderColor: '#ffa726' },
+                  },
+                  '& .MuiInputLabel-root': { color: '#90a4ae' },
+                  '& .MuiInputLabel-root.Mui-focused': { color: '#ffa726' },
+                }}
+                fullWidth
+              />
+            )}
+            {showAnswers && (
+              <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                {isCorrect ? (
+                  <CheckIcon sx={{ color: '#66bb6a' }} />
+                ) : (
+                  <WrongIcon sx={{ color: '#ef5350' }} />
+                )}
+                <Typography
+                  sx={{
+                    fontWeight: 'bold',
+                    fontSize: '0.9rem',
+                    color: isCorrect ? '#a5d6a7' : '#ef9a9a',
+                  }}
+                >
+                  {isCorrect
+                    ? feedbackMessages[question.id]
+                    : `${feedbackMessages[question.id]} ${question.answer}`}
+                </Typography>
+              </Box>
+            )}
+          </CardContent>
+        </Card>
+      </Grid>
+    );
+  };
 
   return (
     <SectionContainer name="Math">
-      {/* Difficulty Selector */}
-      <Box sx={{ mb: 3, textAlign: 'center' }}>
-        <Typography variant="h6" sx={{ mb: 2, color: '#ff8a80', fontWeight: 'bold' }}>
-          🎯 Choose Your Level
-        </Typography>
-        <ToggleButtonGroup
-          value={difficulty}
-          exclusive
-          onChange={handleDifficultyChange}
+      {/* Mode Tabs */}
+      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'center' }}>
+        <Tabs
+          value={mode}
+          onChange={handleModeChange}
           sx={{
-            gap: 1,
-            '& .MuiToggleButton-root': {
-              borderRadius: '12px',
-              border: '2px solid rgba(239,83,80,0.3)',
-              color: '#ff8a80',
+            '& .MuiTabs-indicator': { backgroundColor: '#ef5350', height: 3, borderRadius: '3px' },
+            '& .MuiTab-root': {
               textTransform: 'none',
               fontWeight: 'bold',
-              fontSize: '0.95rem',
+              fontSize: '1rem',
+              color: '#90a4ae',
+              minHeight: 48,
               px: 3,
-              py: 1.2,
-              transition: 'all 0.3s',
-              '&:hover': { bgcolor: 'rgba(239,83,80,0.1)' },
-              '&.Mui-selected': {
-                bgcolor: 'rgba(239,83,80,0.2)',
-                borderColor: '#ef5350',
-                color: '#ff8a80',
-                '&:hover': { bgcolor: 'rgba(239,83,80,0.3)' },
-              },
+              '&.Mui-selected': { color: '#ff8a80' },
             },
           }}
         >
-          <ToggleButton value="standard">⭐ Standard</ToggleButton>
-          <ToggleButton value="advanced">🌟 Advanced</ToggleButton>
-          <ToggleButton value="challenge">🔥 Challenge</ToggleButton>
-        </ToggleButtonGroup>
+          <Tab value="practice" label="🎯 Practice Mix" />
+          <Tab value="olympiad" label="🏆 Competitions" />
+        </Tabs>
       </Box>
+
+      {/* Olympiad Banner */}
+      {mode === 'olympiad' && (
+        <Box
+          sx={{
+            mb: 3,
+            p: 3,
+            borderRadius: '20px',
+            background: 'linear-gradient(135deg, rgba(255,193,7,0.18) 0%, rgba(239,83,80,0.18) 100%)',
+            border: '2px solid rgba(255,213,79,0.45)',
+            textAlign: 'center',
+            boxShadow: '0 0 24px rgba(255,213,79,0.18)',
+          }}
+        >
+          <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#ffd54f', mb: 1 }}>
+            🏆 Maths Olympiad
+          </Typography>
+          <Typography sx={{ color: '#fff8e1', fontSize: '1.05rem', fontStyle: 'italic' }}>
+            Unleash the maths olympian in you!
+          </Typography>
+          <Typography sx={{ color: '#ffe082', fontSize: '0.95rem', mt: 1 }}>
+            Patterns, puzzles, and tricky problems. Take your time. Show your working on the whiteboard.
+          </Typography>
+        </Box>
+      )}
 
       {/* Score Summary */}
       {showAnswers && (
@@ -788,145 +945,40 @@ function MathSection() {
       )}
 
       {/* Question Grid */}
-      <Grid container spacing={3}>
-        {questions.map(question => {
-          const isCorrect =
-            showAnswers &&
-            answers[question.id] !== undefined &&
-            answers[question.id] !== '' &&
-            Number(answers[question.id]) === Number(question.answer);
-          return (
-            <Grid size={{ xs: 12, sm: 6, md: 3 }} key={question.id}>
-              <Card
-                sx={{
-                  ...darkCard,
-                  bgcolor: showAnswers
-                    ? isCorrect
-                      ? 'rgba(76,175,80,0.15)'
-                      : 'rgba(239,83,80,0.15)'
-                    : 'rgba(255,255,255,0.06)',
-                  border: showAnswers
-                    ? isCorrect
-                      ? '2px solid #4caf50'
-                      : '2px solid #ef5350'
-                    : '2px solid rgba(255,255,255,0.12)',
-                  backdropFilter: 'blur(10px)',
-                }}
-              >
-                <CardContent>
-                  <Typography
-                    variant="h6"
-                    sx={{
-                      color: '#ffcc80',
-                      fontWeight: 'bold',
-                      mb: 2,
-                      fontSize: '1.1rem',
-                    }}
-                  >
-                    {question.text}
-                  </Typography>
-                  {question.options ? (
-                    <FormControl fullWidth>
-                      <Select
-                        value={answers[question.id] || ''}
-                        onChange={e => handleAnswerChange(question.id, e.target.value)}
-                        disabled={showAnswers}
-                        displayEmpty
-                        renderValue={(value) => value ? value : '-- Please select'}
-                        sx={{
-                          borderRadius: '10px',
-                          bgcolor: 'rgba(255,255,255,0.06)',
-                          color: answers[question.id] ? '#fff' : '#90a4ae',
-                          fontWeight: 'bold',
-                          fontSize: '0.95rem',
-                          '& .MuiOutlinedInput-notchedOutline': {
-                            borderColor: answers[question.id] && showAnswers
-                              ? answers[question.id] === String(question.answer)
-                                ? '#66bb6a'
-                                : '#ef5350'
-                              : 'rgba(255,255,255,0.2)'
-                          },
-                          '&:hover .MuiOutlinedInput-notchedOutline': {
-                            borderColor: '#ffd54f'
-                          },
-                          '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                            borderColor: '#ffd54f'
-                          },
-                          '& .MuiSelect-icon': { color: '#ffcc80' },
-                          '&.Mui-disabled': {
-                            opacity: 1,
-                            color: answers[question.id]
-                              ? answers[question.id] === String(question.answer)
-                                ? '#a5d6a7'
-                                : '#ef9a9a'
-                              : '#90a4ae'
-                          },
-                        }}
-                        MenuProps={{
-                          PaperProps: {
-                            sx: { bgcolor: '#1a1f35', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '10px' }
-                          }
-                        }}
-                      >
-                        {question.options.map(opt => {
-                          const isThisCorrect = showAnswers && opt === String(question.answer);
-                          return (
-                            <MenuItem key={opt} value={opt} sx={{ color: isThisCorrect && showAnswers ? '#66bb6a' : '#cfd8dc' }}>
-                              {isThisCorrect && showAnswers ? '✅ ' : ''}{opt}
-                            </MenuItem>
-                          );
-                        })}
-                      </Select>
-                    </FormControl>
-                  ) : (
-                    <TextField
-                      label="Your Answer"
-                      variant="outlined"
-                      type="number"
-                      value={answers[question.id] || ''}
-                      onChange={e => handleAnswerChange(question.id, e.target.value)}
-                      sx={{
-                        mb: 1,
-                        '& .MuiOutlinedInput-root': {
-                          borderRadius: '12px',
-                          bgcolor: 'rgba(255,255,255,0.06)',
-                          color: '#fff',
-                          '& fieldset': { borderColor: 'rgba(255,255,255,0.2)' },
-                          '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.4)' },
-                          '&.Mui-focused fieldset': { borderColor: '#ffa726' },
-                        },
-                        '& .MuiInputLabel-root': { color: '#90a4ae' },
-                        '& .MuiInputLabel-root.Mui-focused': { color: '#ffa726' },
-                      }}
-                      fullWidth
-                    />
-                  )}
-                  {showAnswers && (
-                    <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      {isCorrect ? (
-                        <CheckIcon sx={{ color: '#66bb6a' }} />
-                      ) : (
-                        <WrongIcon sx={{ color: '#ef5350' }} />
-                      )}
-                      <Typography
-                        sx={{
-                          fontWeight: 'bold',
-                          fontSize: '0.9rem',
-                          color: isCorrect ? '#a5d6a7' : '#ef9a9a',
-                        }}
-                      >
-                        {isCorrect
-                          ? feedbackMessages[question.id]
-                          : `${feedbackMessages[question.id]} ${question.answer}`}
-                      </Typography>
-                    </Box>
-                  )}
-                </CardContent>
-              </Card>
-            </Grid>
-          );
-        })}
-      </Grid>
+      {mode === 'practice' ? (
+        <Box>
+          {PRACTICE_SECTIONS.map(section => {
+            const sectionQuestions = questions.filter(
+              q => q.id >= section.range[0] && q.id <= section.range[1]
+            );
+            return (
+              <Box key={section.label} sx={{ mb: 4 }}>
+                <Typography
+                  variant="h5"
+                  sx={{
+                    color: section.color,
+                    fontWeight: 'bold',
+                    mb: 2,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                  }}
+                >
+                  <span>{section.emoji}</span>
+                  <span>{section.label}</span>
+                </Typography>
+                <Grid container spacing={3}>
+                  {sectionQuestions.map(renderQuestionCard)}
+                </Grid>
+              </Box>
+            );
+          })}
+        </Box>
+      ) : (
+        <Grid container spacing={3}>
+          {questions.map(renderQuestionCard)}
+        </Grid>
+      )}
 
       {/* Action Buttons */}
       <Box sx={{ mt: 3, mb: 3, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
@@ -997,11 +1049,15 @@ function MathSection() {
                         sx={{
                           fontWeight: 'bold',
                           bgcolor:
-                            result.difficulty === 'challenge'
-                              ? 'rgba(239,83,80,0.3)'
-                              : result.difficulty === 'advanced'
-                                ? 'rgba(66,165,245,0.3)'
-                                : 'rgba(255,167,38,0.3)',
+                            result.difficulty === 'olympiad'
+                              ? 'rgba(255,213,79,0.3)'
+                              : result.difficulty === 'challenge'
+                                ? 'rgba(239,83,80,0.3)'
+                                : result.difficulty === 'advanced'
+                                  ? 'rgba(66,165,245,0.3)'
+                                  : result.difficulty === 'mixed'
+                                    ? 'rgba(186,104,200,0.3)'
+                                    : 'rgba(255,167,38,0.3)',
                           color: '#fff',
                         }}
                       />
@@ -1086,7 +1142,7 @@ function MathSection() {
           open={!!reviewResult}
           onClose={() => setReviewResult(null)}
           title="⚔️ Math Session Review"
-          subtitle={`Difficulty: ${reviewResult.difficulty}`}
+          subtitle={`Mode: ${reviewResult.difficulty}`}
           accentColor="#ef5350"
           questions={JSON.parse(reviewResult.questionsData || '[]') as ReviewQuestion[]}
           score={reviewResult.score}
