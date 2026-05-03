@@ -35,7 +35,6 @@ import {
 import { db } from '../db/database';
 import type { ScienceSessionResult } from '../db/database';
 import SectionContainer from './SectionContainer';
-import YouTubeReward from './Video';
 
 const encouragingCorrect = [
   'Awesome! 🌟',
@@ -514,16 +513,6 @@ function ScienceSection() {
           🔄 More Questions
         </Button>
       </Box>
-
-      {/* YouTube Reward */}
-      <YouTubeReward
-        visible={allCorrect}
-        title="Great job! All science answers are correct 🎉"
-        description="Enjoy your reward: search for a ~5 minute YouTube video to watch."
-        minDurationSec={5 * 60}
-        maxDurationSec={10 * 60}
-        className="mt-4"
-      />
 
       {/* History Section */}
       <Box sx={{ mt: 4 }}>

@@ -34,7 +34,6 @@ import {
   generateThinkingQuestions,
 } from '../data/thinkingSkillsQuestions';
 import SectionContainer from './SectionContainer';
-import YouTubeReward from './Video';
 
 const CORRECT_MSGS = [
   'Brilliant! 🧠',
@@ -514,16 +513,6 @@ function ThinkingSection() {
           🔄 New Questions
         </Button>
       </Box>
-
-      {/* YouTube reward */}
-      <YouTubeReward
-        visible={allCorrect}
-        title="Incredible thinking! All answers are correct 🎉"
-        description="Enjoy your reward: search for a ~5 minute YouTube video to watch."
-        minDurationSec={5 * 60}
-        maxDurationSec={10 * 60}
-        className="mt-4"
-      />
       </>)}
 
       {/* History */}
