@@ -34,6 +34,7 @@ import {
   generateThinkingQuestions,
 } from '../data/thinkingSkillsQuestions';
 import SectionContainer from './SectionContainer';
+import { formatSavedDateTime } from '../utils/formatDate';
 
 const CORRECT_MSGS = [
   'Brilliant! 🧠',
@@ -543,7 +544,7 @@ function ThinkingSection() {
                         sx={{ fontWeight: 'bold', bgcolor: 'rgba(206,147,216,0.25)', color: '#ce93d8', fontSize: '0.7rem' }}
                       />
                       <Typography variant="body2" sx={{ color: '#90a4ae' }}>
-                        {new Date(result.completedAt).toLocaleDateString()}
+                        {formatSavedDateTime(result.completedAt)}
                       </Typography>
                     </Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
