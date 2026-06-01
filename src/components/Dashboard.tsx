@@ -9,6 +9,7 @@ import {
   EmojiEvents as TrophyIcon,
   Timer as TimerIcon,
   TaskAlt as HolidayIcon,
+  SportsEsports as PlayIcon,
   Logout as LogoutIcon,
 } from '@mui/icons-material';
 import { useCurrentUser, useLogoutMutation } from '../hooks/useAuth';
@@ -34,6 +35,7 @@ function Dashboard() {
   const [lastScience, setLastScience] = useState<ScienceSessionResult | null>(null);
   const [lastThinking, setLastThinking] = useState<ThinkingSessionResult | null>(null);
   const [englishCount, setEnglishCount] = useState({ comprehension: 0, writing: 0 });
+  const playStars = Number(localStorage.getItem('playTotalStars') || '0');
 
   useEffect(() => {
     const loadStats = async () => {
@@ -249,6 +251,46 @@ function Dashboard() {
         justifyContent="center"
         sx={{ position: 'relative', zIndex: 1 }}
       >
+        {/* Play & Learn Card */}
+        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Card
+            sx={{
+              ...cardStyle,
+              background: 'linear-gradient(135deg, #d6336c 0%, #f76707 50%, #f59f00 100%)',
+              border: '3px solid #ffd43b',
+              '&:hover': {
+                ...cardStyle['&:hover'],
+                borderColor: '#fff3bf',
+                boxShadow: '0 12px 36px rgba(247,103,7,0.4)',
+              },
+            }}
+            onClick={() => navigate({ to: '/play' })}
+          >
+            <CardContent sx={{ textAlign: 'center', p: 3, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <PlayIcon sx={{ fontSize: 56, color: '#fff3bf', mb: 1 }} />
+              <Typography
+                variant="h5"
+                sx={{ color: '#fff9db', fontWeight: 'bold', mb: 1, letterSpacing: '1px' }}
+              >
+                Play &amp; Learn 🎪
+              </Typography>
+              <Typography sx={{ color: '#ffe8cc', mb: 2, fontSize: '0.95rem' }}>
+                ABC &amp; counting games — learn while you play!
+              </Typography>
+              {playStars > 0 ? (
+                <Chip
+                  label={`⭐ ${playStars} stars earned!`}
+                  sx={{ fontWeight: 'bold', bgcolor: 'rgba(255,255,255,0.25)', color: '#fff' }}
+                />
+              ) : (
+                <Typography variant="body2" sx={{ color: '#ffe8cc', fontStyle: 'italic' }}>
+                  Tap to start playing! 🎈
+                </Typography>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
+
         {/* Math Card */}
         <Grid size={{ xs: 12, sm: 6, md: 4 }}>
           <Card
