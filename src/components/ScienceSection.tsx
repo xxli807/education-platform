@@ -35,6 +35,7 @@ import {
 import { db } from '../db/database';
 import type { ScienceSessionResult } from '../db/database';
 import SectionContainer from './SectionContainer';
+import { formatSavedDateTime } from '../utils/formatDate';
 
 const encouragingCorrect = [
   'Awesome! 🌟',
@@ -549,7 +550,7 @@ function ScienceSection() {
                         sx={{ fontWeight: 'bold', bgcolor: 'rgba(76,175,80,0.3)', color: '#a5d6a7' }}
                       />
                       <Typography variant="body2" sx={{ color: '#90a4ae' }}>
-                        {new Date(result.completedAt).toLocaleDateString()}
+                        {formatSavedDateTime(result.completedAt)}
                       </Typography>
                     </Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

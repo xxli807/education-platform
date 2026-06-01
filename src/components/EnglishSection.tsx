@@ -30,6 +30,7 @@ import {
 import { db, type ComprehensionAnswer, type WritingTask, type JournalEntry } from '../db/database';
 import SectionContainer from './SectionContainer';
 import ConfirmDeleteDialog from './ConfirmDeleteDialog';
+import { formatSavedDateTime } from '../utils/formatDate';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -135,7 +136,7 @@ function EnglishSection() {
   const userId = 'lucas';
 
   const readings = getReadingsByYear(yearLevel);
-  const [writingTasks, setWritingTasks] = useState<WritingPrompt[]>(() => generateWritingPrompts(2, 4));
+  const [writingTasks, setWritingTasks] = useState<WritingPrompt[]>(() => generateWritingPrompts(yearLevel, 4));
 
   const loadSavedData = async () => {
     try {
@@ -995,7 +996,7 @@ function EnglishSection() {
             </Typography>
           ) : (() => {
             // Group by storyTitle + date (day)
-            const groups: { key: string; title: string; date: string; items: ComprehensionAnswer[] }[] = [];
+            const groups: { key: string; title: string; ts: Date | string; items: ComprehensionAnswer[] }[] = [];
             savedComprehensions.forEach(item => {
               const dateStr = new Date(item.submittedAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
               const key = `${item.storyTitle}__${dateStr}`;
@@ -1003,7 +1004,7 @@ function EnglishSection() {
               if (existing) {
                 existing.items.push(item);
               } else {
-                groups.push({ key, title: item.storyTitle, date: dateStr, items: [item] });
+                groups.push({ key, title: item.storyTitle, ts: item.submittedAt, items: [item] });
               }
             });
             return groups.map(group => (
@@ -1019,7 +1020,7 @@ function EnglishSection() {
                     </Typography>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Chip
-                        label={group.date}
+                        label={formatSavedDateTime(group.ts)}
                         size="small"
                         sx={{ bgcolor: 'rgba(66,165,245,0.2)', color: '#90caf9', fontWeight: 'bold' }}
                       />
@@ -1090,7 +1091,7 @@ function EnglishSection() {
                     </Typography>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Chip
-                        label={new Date(item.submittedAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        label={formatSavedDateTime(item.submittedAt)}
                         size="small"
                         sx={{ bgcolor: 'rgba(76,175,80,0.2)', color: '#a5d6a7', fontWeight: 'bold' }}
                       />

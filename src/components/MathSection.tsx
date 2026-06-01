@@ -40,6 +40,7 @@ import {
   generateHalfProblem,
 } from '../data/mathQuestions';
 import { generateOlympiadQuestions } from '../data/olympiadQuestions';
+import { formatSavedDateTime } from '../utils/formatDate';
 import SectionContainer from './SectionContainer';
 
 type MathMode = 'practice' | 'olympiad';
@@ -1062,7 +1063,7 @@ function MathSection() {
                         }}
                       />
                       <Typography variant="body2" sx={{ color: '#90a4ae' }}>
-                        {new Date(result.completedAt).toLocaleDateString()}
+                        {formatSavedDateTime(result.completedAt)}
                       </Typography>
                     </Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

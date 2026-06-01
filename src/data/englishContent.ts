@@ -107,6 +107,103 @@ export const challengingReadings: ReadingPage[] = [
     yearLevel: 2,
   },
 
+  {
+    id: 13,
+    title: "The Camel Who Carried the Rain",
+    text: "Far out in the golden desert, where the sand stretched as far as anyone could see, lived a young camel named Dunia. The desert had not seen rain for many months, and the small village near the oasis was running low on water. The village children had grown sad, and even the date palms drooped in the heat. One evening, an old trader told Dunia a secret: high in the distant mountains, there was a hidden spring that never ran dry. The journey would take three whole days across burning sand. Dunia was only young, but she had a special gift — camels can store water and travel for days without drinking. So she set off at dawn, her wide feet padding softly over the dunes. She walked through scorching afternoons and freezing nights. On the third morning, she reached the mountain spring, drank deeply, and filled the leather water bags the trader had strapped to her back. When Dunia returned to the village, the children cheered and danced. The cool, fresh water lasted until the rains finally came again.",
+    comprehensionQuestions: [
+      "Why was the village running low on water?",
+      "What special gift helped Dunia make the journey?",
+      "How long did the journey to the mountain spring take?"
+    ],
+    vocabulary: [
+      { word: "oasis", definition: "A place in the desert where there is water and plants can grow" },
+      { word: "scorching", definition: "Extremely hot" },
+      { word: "dunes", definition: "Hills of sand made by the wind" },
+    ],
+    yearLevel: 2,
+  },
+  {
+    id: 14,
+    title: "The Boy Who Collected Sounds",
+    text: "Oliver had an unusual hobby. While other children collected stickers or shells, Oliver collected sounds. He carried a small recorder everywhere he went and captured the noises of the world around him. He had the crunch of autumn leaves, the giggle of his baby sister, the patter of rain on the tin roof, and the gentle purr of his cat, Mittens. One rainy Sunday, Oliver's grandmother came to visit. She had recently lost most of her hearing and could no longer enjoy the sounds she once loved. Oliver had an idea. He plugged his recorder into a special machine that made the sounds vibrate, so his grandmother could feel them through her fingertips. Together they 'listened' to the rumble of thunder and the song of a blackbird. His grandmother's eyes filled with happy tears. 'You've given me back my favourite sounds,' she whispered. From that day, Oliver recorded a new sound for her every single week, and his collection became the most precious thing he owned.",
+    comprehensionQuestions: [
+      "What did Oliver collect instead of stickers or shells?",
+      "Why could his grandmother no longer enjoy sounds?",
+      "How did Oliver help his grandmother experience the sounds?"
+    ],
+    vocabulary: [
+      { word: "hobby", definition: "An activity you do for fun in your free time" },
+      { word: "vibrate", definition: "To shake or move quickly back and forth" },
+      { word: "precious", definition: "Very valuable and important to you" },
+    ],
+    yearLevel: 2,
+  },
+  {
+    id: 15,
+    title: "The Lighthouse Cat",
+    text: "On a rocky island battered by waves, there stood a tall white lighthouse. Inside lived a keeper named Mr. Bramble and his clever ginger cat, Captain. Every night, Mr. Bramble climbed the winding stairs to light the great lamp that warned ships away from the dangerous rocks. Captain always climbed with him, his tail held high. One stormy night, Mr. Bramble slipped on the wet steps and twisted his ankle. He could not climb to light the lamp, and far out at sea, a fishing boat was heading straight for the rocks! Captain seemed to understand. The brave cat raced up the stairs alone, leapt onto the lever with all his weight, and switched on the powerful light. Its beam swept across the dark water just in time. The fishing boat turned safely away. The next morning, the grateful fishermen rowed to the island with a basket of fish for the cat who had saved their lives. Captain was given a tiny gold medal, which he wore proudly on his collar ever after.",
+    comprehensionQuestions: [
+      "What was the keeper's job at the lighthouse?",
+      "Why couldn't Mr. Bramble light the lamp that night?",
+      "How did Captain the cat save the fishing boat?"
+    ],
+    vocabulary: [
+      { word: "keeper", definition: "A person whose job is to look after something" },
+      { word: "battered", definition: "Hit hard again and again" },
+      { word: "grateful", definition: "Feeling thankful for something" },
+    ],
+    yearLevel: 2,
+  },
+  {
+    id: 16,
+    title: "The Great Vegetable Race",
+    text: "Every spring, the children of Willow Lane held a competition to see who could grow the biggest vegetable. This year, eight-year-old Rosa decided to grow a giant pumpkin. Her neighbour, old Mr. Finch, had won the prize for twelve years in a row with his enormous marrows, and everyone said Rosa had no chance. But Rosa was determined. She planted her seed in the sunniest corner of the garden, watered it every morning, and pulled out every weed she could find. She even talked to her pumpkin, telling it stories and singing it songs. Slowly but surely, the pumpkin grew. By the end of summer it was so big that Rosa could barely wrap her arms around it. On competition day, the judges brought out their giant scales. Rosa's pumpkin weighed more than Rosa herself! Mr. Finch shook her hand with a warm smile. 'You earned it, young lady,' he said. 'Hard work always grows the best crop.' Rosa proudly placed her blue ribbon on the kitchen wall.",
+    comprehensionQuestions: [
+      "What did Rosa decide to grow for the competition?",
+      "Why did people think Rosa had no chance of winning?",
+      "What did Mr. Finch mean when he said 'hard work always grows the best crop'?"
+    ],
+    vocabulary: [
+      { word: "competition", definition: "An event where people try to win by being the best" },
+      { word: "determined", definition: "Wanting to do something so much that you will not give up" },
+      { word: "enormous", definition: "Very, very big" },
+    ],
+    yearLevel: 2,
+  },
+  {
+    id: 17,
+    title: "Snow Day Surprise",
+    text: "When Jasper woke up, the whole world had turned white. Thick snow had fallen during the night, covering the rooftops, the trees, and the streets like a soft blanket. School was closed! Jasper pulled on his warmest coat, woolly hat, and mittens, and rushed outside with his little sister, Elsie. They built a snowman with a carrot nose and two shiny coal eyes. Then they made snow angels by lying on their backs and waving their arms and legs. But the best part came when their dad pulled out an old wooden sledge from the shed. The whole family trudged to the top of the big hill in the park. One by one, they whooshed down, snow spraying behind them, laughing all the way to the bottom. By lunchtime their cheeks were rosy and their fingers were freezing. They warmed up indoors with mugs of hot chocolate topped with fluffy marshmallows. Jasper decided it was the very best kind of day — the kind you never forget.",
+    comprehensionQuestions: [
+      "How did Jasper know it was going to be a special day?",
+      "Name two things Jasper and Elsie did in the snow.",
+      "How did the family warm up after playing outside?"
+    ],
+    vocabulary: [
+      { word: "trudged", definition: "Walked slowly with heavy steps, often through snow or mud" },
+      { word: "whooshed", definition: "Moved quickly with a rushing sound" },
+      { word: "rosy", definition: "Having a pink or reddish colour, like cheeks in the cold" },
+    ],
+    yearLevel: 2,
+  },
+  {
+    id: 18,
+    title: "The Bakery That Smelled of Morning",
+    text: "Before the sun came up, while the town was still dark and quiet, the little corner bakery was already wide awake. Mrs. Pirelli had been baking bread there for thirty years. Her hands, dusted with flour, kneaded the soft dough and shaped it into rolls, loaves, and twisty plaits. The warm ovens glowed orange, and the whole street began to fill with the most delicious smell of fresh bread. A small girl named Bea lived above the bakery. Every morning the wonderful smell drifted up through her window and woke her gently, better than any alarm clock. One day, Bea asked Mrs. Pirelli if she could learn to bake too. The kind baker tied a tiny apron around Bea and showed her how to mix, knead, and wait patiently while the dough rose. Bea's first bread roll came out a little wonky, but it tasted like sunshine. 'Baking is not just about food,' Mrs. Pirelli told her. 'It is about giving people something warm to start their day.'",
+    comprehensionQuestions: [
+      "How long had Mrs. Pirelli been baking at the bakery?",
+      "How did the smell of bread help Bea each morning?",
+      "What did Mrs. Pirelli say baking was really about?"
+    ],
+    vocabulary: [
+      { word: "kneaded", definition: "Pressed and folded dough with your hands to make it smooth" },
+      { word: "drifted", definition: "Moved along slowly and gently, like smoke or smell in the air" },
+      { word: "patiently", definition: "Waiting calmly without getting upset" },
+    ],
+    yearLevel: 2,
+  },
+
   // === YEAR 3 READINGS ===
   {
     id: 5,
@@ -204,6 +301,102 @@ export const challengingReadings: ReadingPage[] = [
     ],
     yearLevel: 3,
   },
+  {
+    id: 19,
+    title: "The Volcano Watchers",
+    text: "High on the slopes of Mount Ruka, a team of scientists called volcanologists had built a small monitoring station. Their leader, Dr. Tomas Reyes, had spent his whole career studying volcanoes and learning to predict when they might erupt. The station was packed with clever instruments: seismographs that detected the smallest tremors deep underground, gas sensors that measured the sulphur escaping from cracks in the rock, and tilt-meters that could sense if the mountain was bulging even a few millimetres. For weeks the readings had been normal, but one Tuesday the instruments began behaving strangely. The ground trembled more frequently, the gas levels climbed, and the mountainside swelled outward as molten rock pushed up from below. Dr. Reyes recognised the warning signs immediately. He contacted the nearby town and recommended that everyone be moved to safety. Some people grumbled about leaving their homes, but two days later Mount Ruka erupted in a spectacular fountain of ash and lava. Because of the scientists' careful work, not a single person was harmed. Dr. Reyes reminded his team that patience and observation had saved hundreds of lives.",
+    comprehensionQuestions: [
+      "What is a volcanologist, and what do they study?",
+      "Name two instruments the scientists used and what each one measured.",
+      "How did the scientists' work help the people in the town?"
+    ],
+    vocabulary: [
+      { word: "predict", definition: "To say what will happen before it happens, using clues or evidence" },
+      { word: "tremors", definition: "Small shaking movements of the ground" },
+      { word: "molten", definition: "Made liquid by very high heat, like melted rock" },
+    ],
+    yearLevel: 3,
+  },
+  {
+    id: 20,
+    title: "The Bridge Builder of Bamboo Valley",
+    text: "In a remote mountain valley, two villages sat on opposite sides of a deep, fast-flowing river. For generations, the only way across had been a dangerous crossing on slippery stones, and during the rainy season the villages were completely cut off from each other. A young woman named Lakshmi, who had studied engineering in the city, returned home determined to solve the problem. She noticed that the valley was filled with tall, strong bamboo — a plant that grows incredibly fast and is surprisingly tough. Lakshmi designed a suspension bridge made entirely from woven bamboo cables and wooden planks. At first the village elders were doubtful that a plant could hold the weight of people and animals. But Lakshmi explained that bamboo can bend in the wind without snapping, making it perfect for a bridge. She worked alongside both villages, teaching them how to weave the cables and anchor them firmly into the rock. After three months of teamwork, the bridge was complete. It swayed gently but held strong, even when a heavily loaded cart crossed it. The two villages, once divided by water, were now joined together — and they celebrated with a feast that lasted late into the night.",
+    comprehensionQuestions: [
+      "What problem did the two villages face before the bridge was built?",
+      "Why was bamboo a good material for the bridge?",
+      "How did Lakshmi make sure both villages were part of the project?"
+    ],
+    vocabulary: [
+      { word: "remote", definition: "Far away from towns or cities; hard to reach" },
+      { word: "suspension bridge", definition: "A bridge that hangs from cables stretched between supports" },
+      { word: "anchor", definition: "To fix something firmly in place so it cannot move" },
+    ],
+    yearLevel: 3,
+  },
+  {
+    id: 21,
+    title: "The Secret Language of Bees",
+    text: "Few people realise that bees can talk to each other — not with words, but with dance. Researcher Dr. Hana Becker spent years observing honeybees through a glass-walled hive, and what she discovered amazed scientists around the world. When a bee finds a patch of flowers rich with nectar, it returns to the hive and performs a special movement called the 'waggle dance'. By shaking its body and moving in a figure-eight pattern, the bee tells the other bees exactly where to find the flowers. The direction of the dance shows the angle to fly relative to the sun, and the length of the waggle tells the others how far away the flowers are. The longer the waggle, the further the journey. Dr. Becker described it as one of the most sophisticated forms of communication in the animal kingdom. A single hive can share information about food sources several kilometres away. Without this remarkable dance, a colony of thousands of bees would struggle to gather enough food to survive the winter. Dr. Becker often said that the more closely we look at nature, the more cleverness we find hidden in the smallest creatures.",
+    comprehensionQuestions: [
+      "How do bees communicate the location of flowers to each other?",
+      "What do the direction and length of the waggle dance each tell the other bees?",
+      "Why is this dance so important for the survival of the hive?"
+    ],
+    vocabulary: [
+      { word: "nectar", definition: "A sweet liquid found in flowers that bees collect to make honey" },
+      { word: "sophisticated", definition: "Advanced, clever, and complex" },
+      { word: "colony", definition: "A large group of the same kind of animals living and working together" },
+    ],
+    yearLevel: 3,
+  },
+  {
+    id: 22,
+    title: "The Clockmaker's Apprentice",
+    text: "In a narrow shop crowded with ticking clocks of every shape and size, old Master Holloway repaired timepieces that no one else could fix. His apprentice was a curious boy named Felix, who swept the floors and watched the master work with wide, eager eyes. Master Holloway was famous for one extraordinary clock that stood in the town square — a magnificent astronomical clock that not only told the time but also tracked the phases of the moon and the movement of the planets. One winter, the great clock suddenly stopped, and the whole town fell into confusion. Master Holloway's eyesight had grown too weak to repair the tiny, delicate gears. To everyone's surprise, he turned to Felix. 'You have watched me for three years,' he said. 'Now it is your turn.' With trembling hands and a steady heart, Felix climbed inside the enormous clock. He cleaned the rusted cogs, replaced a cracked spring, and oiled each tiny wheel with great care. For two days he barely slept. Then, at last, the great clock began to tick once more, and its bells rang out across the town. The crowd cheered, and Master Holloway placed a proud hand on the boy's shoulder. Felix was an apprentice no longer.",
+    comprehensionQuestions: [
+      "What made Master Holloway's clock in the town square so special?",
+      "Why did the master ask Felix to repair the clock instead of doing it himself?",
+      "What does the last sentence, 'Felix was an apprentice no longer', tell us?"
+    ],
+    vocabulary: [
+      { word: "apprentice", definition: "A young person who learns a skill or trade by working with an expert" },
+      { word: "astronomical", definition: "Relating to the stars, planets, and space" },
+      { word: "delicate", definition: "Easily broken or damaged; needing careful handling" },
+    ],
+    yearLevel: 3,
+  },
+  {
+    id: 23,
+    title: "The Forgotten Seeds",
+    text: "Deep inside a mountain in the freezing Arctic, there is an extraordinary vault built to protect the future of our food. It is called a seed bank, and it stores hundreds of thousands of different seeds from all around the world. Scientist Dr. Ingrid Solberg explained that crops can be wiped out by disease, drought, war, or extreme weather. If a particular kind of wheat or rice were to disappear forever, the seeds locked safely in the vault could be used to grow it again. The vault is buried in the mountainside where the natural cold keeps the seeds frozen and alive for hundreds of years, even if the power were to fail. Countries from every continent send duplicate samples of their most important crops to be stored there, free of charge. Dr. Solberg described the seed bank as a 'library of life' — a backup copy of the plants that feed the entire human race. She believes that protecting the variety of our crops is one of the most important tasks of our time, because a world with only a few kinds of plants would be dangerously fragile. Each tiny seed, she said, holds an entire future inside it.",
+    comprehensionQuestions: [
+      "What is stored inside the Arctic vault, and why?",
+      "Why is the vault built inside a freezing mountain?",
+      "What did Dr. Solberg mean by calling the seed bank a 'library of life'?"
+    ],
+    vocabulary: [
+      { word: "vault", definition: "A strong, secure room used to protect valuable things" },
+      { word: "duplicate", definition: "An exact copy of something" },
+      { word: "fragile", definition: "Easily broken or damaged; not strong" },
+    ],
+    yearLevel: 3,
+  },
+  {
+    id: 24,
+    title: "The Marathon of Maya Tran",
+    text: "Maya Tran was eleven years old when she decided to run a half-marathon to raise money for the children's hospital that had once cared for her younger brother. Twenty-one kilometres was a very long way, and many adults doubted that someone so young could finish such a gruelling race. But Maya had a plan. Every morning before school, she laced up her running shoes and trained, adding a little more distance each week. She learned to pace herself so she would not get exhausted too early, to drink water at the right moments, and to push through the moment when her legs screamed at her to stop. On the day of the race, thousands of runners lined up at the start. The first ten kilometres felt wonderful, but soon Maya's muscles began to ache and her energy faded. She thought of her brother, smiling in his hospital bed, and she kept going. When she finally crossed the finish line, the crowd erupted in cheers. Maya had not only completed the race — she had raised over five thousand dollars for the hospital. Reporters asked her secret. 'I just kept taking one more step,' she said simply. 'And then one more.'",
+    comprehensionQuestions: [
+      "Why did Maya decide to run the half-marathon?",
+      "Name two things Maya learned in order to run such a long distance.",
+      "What kept Maya going when she became tired during the race?"
+    ],
+    vocabulary: [
+      { word: "gruelling", definition: "Extremely tiring and difficult" },
+      { word: "pace", definition: "To control your speed so you do not get tired too quickly" },
+      { word: "erupted", definition: "Burst out suddenly and loudly" },
+    ],
+    yearLevel: 3,
+  },
 ];
 
 // ─── Writing Prompt Generator ────────────────────────────────────────────────
@@ -223,6 +416,14 @@ const y2Characters = [
   'a cloud that wants to be a rainbow',
   'a cat who can fly',
   'a giant who is scared of tiny things',
+  'a snail who dreams of winning a race',
+  'a young witch whose spells always go wrong',
+  'a lonely lighthouse that wishes it could walk',
+  'a snowman who does not want to melt',
+  'a bookworm who literally lives inside stories',
+  'a baby dinosaur who hatches in the wrong time',
+  'a grumpy troll who secretly loves to bake',
+  'a firefly who has lost his glow',
 ];
 
 const y2Settings = [
@@ -236,6 +437,13 @@ const y2Settings = [
   'on a farm where all the animals can talk',
   'in a jungle full of friendly monsters',
   'inside a snow globe',
+  'in a town where it is always night-time',
+  'on the back of a giant, gentle whale',
+  'in a library where the books come alive at midnight',
+  'inside a giant hot-air balloon city',
+  'at the top of a beanstalk in the clouds',
+  'in a desert made entirely of sparkling sugar',
+  'inside a clock tower full of ticking gears',
 ];
 
 const y2Events = [
@@ -249,6 +457,13 @@ const y2Events = [
   'accidentally shrinks to the size of a pea',
   'finds a tiny creature that needs looking after',
   'gets three wishes but must choose very carefully',
+  'swaps places with someone for a whole day',
+  'discovers a pair of boots that can run faster than the wind',
+  'finds an egg that hatches into something unexpected',
+  'gets trapped inside their own favourite painting',
+  'meets a talking shadow who wants to be friends',
+  'has to win a contest to save their home',
+  'follows a trail of golden footprints into the unknown',
 ];
 
 const y2DescriptivePlaces = [
@@ -260,6 +475,11 @@ const y2DescriptivePlaces = [
   'a bedroom that magically grows to the size of a football field',
   'a cave filled with friendly, glowing animals',
   'a bakery run entirely by robots',
+  'a playground floating among the stars',
+  'a market where you can buy bottled dreams',
+  'a winter palace carved entirely from ice',
+  'a treehouse village connected by rope bridges',
+  'a garden where the flowers sing when the sun rises',
 ];
 
 const y2DescriptiveSenses = [
@@ -277,6 +497,11 @@ const y2LetterRecipients = [
   'the tooth fairy',
   'a dragon you have just met',
   'an alien who wants to visit Earth',
+  'an explorer about to set off on a big adventure',
+  'your future self when you are grown up',
+  'the captain of a pirate ship',
+  'a famous athlete you look up to',
+  'the first person to ever live on the Moon',
 ];
 
 const y2LetterTopics = [
@@ -286,6 +511,10 @@ const y2LetterTopics = [
   'sharing something funny that happened recently',
   'telling them about something you are really proud of',
   'asking for their help with a problem',
+  'describing a new invention you would like to create',
+  'telling them about a place you would love to visit one day',
+  'thanking them for something kind they once did',
+  'explaining what you want to be when you grow up',
 ];
 
 const y2ImagineScenarios = [
@@ -297,6 +526,11 @@ const y2ImagineScenarios = [
   'You are given one day to run your school however you like.',
   'You discover a treasure chest buried in your backyard.',
   'You can swap lives with your pet for one day.',
+  'You find a door in your house that was never there before.',
+  'Your drawings come to life the moment you finish them.',
+  'You wake up to find you have grown a pair of wings.',
+  'A friendly robot arrives and offers to help you for one week.',
+  'You find a map that leads to a place no one has ever seen.',
 ];
 
 // Year 3 component pools
@@ -310,6 +544,12 @@ const y3NarrativeProtagonists = [
   'an engineer who must repair a spaceship using only spare parts',
   'a time traveller who keeps arriving in the wrong century',
   'a young marine biologist who discovers a new species',
+  'a coder who builds an app that starts predicting the future',
+  'a child who wakes up with the ability to understand any language',
+  'a mountain rescuer-in-training facing their first real emergency',
+  'a museum guide who realises one of the exhibits is moving at night',
+  'a young chef competing in a contest with one secret ingredient',
+  'an astronomer who receives a strange signal from deep space',
 ];
 
 const y3NarrativeComplications = [
@@ -321,6 +561,10 @@ const y3NarrativeComplications = [
   'and learns an unexpected lesson about trust',
   'only to discover the real mystery runs much deeper',
   'and must choose between personal gain and doing what is right',
+  'but a single mistake threatens to undo everything',
+  'and discovers that the answer was hidden in plain sight all along',
+  'only to realise they must rely on someone they never trusted',
+  'and must find the courage to admit they were wrong',
 ];
 
 const y3PersuasiveTopics = [
@@ -332,6 +576,12 @@ const y3PersuasiveTopics = [
   'screen time limits are unnecessary for responsible kids',
   'animals should have the same rights as humans',
   'sport should be optional at school',
+  'every classroom should have a class pet',
+  'homework should be replaced with reading for pleasure',
+  'children should be taught how to cook at school',
+  'libraries are more important than ever in the digital age',
+  'school days should start later in the morning',
+  'everyone should be required to plant a tree each year',
 ];
 
 const y3ProceduralSubjects = [
@@ -343,6 +593,11 @@ const y3ProceduralSubjects = [
   'a secret code only your friends can read',
   'a simple musical instrument from household items',
   'a nature journal for recording observations',
+  'a board game that your whole family could play',
+  'a bird feeder to attract birds to your garden',
+  'a healthy snack with no cooking required',
+  'a simple science experiment using only kitchen items',
+  'a treasure hunt for a friend to follow',
 ];
 
 const y3DescriptiveSubjects = [
@@ -354,6 +609,11 @@ const y3DescriptiveSubjects = [
   'the inside of a scientist\'s laboratory',
   'a forest after heavy snowfall',
   'a stadium the moment before a major sporting event begins',
+  'a busy train station at rush hour',
+  'a deserted beach as the tide slowly comes in',
+  'the inside of a grand old library full of secrets',
+  'a carnival at night, glowing with lights and music',
+  'a desert at the exact moment the sun rises',
 ];
 
 const y3LetterContexts = [
@@ -363,6 +623,48 @@ const y3LetterContexts = [
   { sender: 'yourself', recipient: 'a younger student starting Year 1', about: 'the most useful things you have learned so far' },
   { sender: 'an endangered animal', recipient: 'the humans of the world', about: 'how human behaviour is affecting their habitat' },
   { sender: 'yourself', recipient: 'an alien pen pal', about: 'explaining what makes Earth worth visiting' },
+  { sender: 'yourself', recipient: 'the author of your favourite book', about: 'what their story meant to you and a question about the ending' },
+  { sender: 'yourself', recipient: 'the mayor of your town', about: 'an idea that would make your community a better place' },
+  { sender: 'an explorer from 200 years ago', recipient: 'people of today', about: 'what has changed and what has stayed the same' },
+  { sender: 'yourself', recipient: 'a scientist working on the space station', about: 'questions about daily life far above the Earth' },
+];
+
+const y2DiaryDays = [
+  'the most exciting day of the school holidays',
+  'the day you tried something brave for the very first time',
+  'a day when everything went hilariously wrong',
+  'the day a new pet arrived at your home',
+  'a special day out with someone you love',
+  'the day you made a brand-new friend',
+];
+
+const y2PoemSubjects = [
+  'the ocean',
+  'a thunderstorm',
+  'your favourite animal',
+  'autumn leaves falling',
+  'the night sky full of stars',
+  'a busy playground',
+  'a cosy winter morning',
+  'a friendly dragon',
+];
+
+const y3RecountEvents = [
+  'a day in the life of an explorer reaching a place no one has been before',
+  'the day you finally achieved something you had worked towards for a long time',
+  'an ordinary day that suddenly became extraordinary',
+  'the first day at a brand-new school',
+  'a day when you had to overcome a real fear',
+  'a day when a small act of kindness changed everything',
+];
+
+const y3NewsEvents = [
+  'a local hero who rescued a stranded animal',
+  'the unveiling of an amazing new invention at your school',
+  'an unusual weather event that surprised the whole town',
+  'a record-breaking achievement by a young person',
+  'a mysterious discovery made in your neighbourhood',
+  'a community coming together to solve a difficult problem',
 ];
 
 // ─── Generator Functions ─────────────────────────────────────────────────────
@@ -417,6 +719,26 @@ function year3LetterPrompt(): string {
   return `Write a formal or semi-formal letter from ${ctx.sender} to ${ctx.recipient} about ${ctx.about}. Use appropriate letter conventions (date, greeting, paragraphs, sign-off). Your letter should be thoughtful and well-reasoned.`;
 }
 
+function year2DiaryPrompt(): string {
+  const day = pick(y2DiaryDays);
+  return `Write a diary entry about ${day}. Start with "Dear Diary" and the day. Write about what happened, in the order it happened, and how you felt. Try to use time words like "first", "then", "after that", and "finally".`;
+}
+
+function year2PoemPrompt(): string {
+  const subject = pick(y2PoemSubjects);
+  return `Write a short poem about ${subject}. Use lots of describing words and words that appeal to the senses. Your poem does not have to rhyme, but each line should help the reader picture or feel your topic.`;
+}
+
+function year3DiaryPrompt(): string {
+  const event = pick(y3RecountEvents);
+  return `Write a diary entry recounting ${event}. Write in the first person and the past tense. Include the events in order, your thoughts and feelings along the way, and a short reflection at the end about what you learned.`;
+}
+
+function year3NewsPrompt(): string {
+  const event = pick(y3NewsEvents);
+  return `Write a news report about ${event}. Begin with a catchy headline, then an opening sentence that answers who, what, where, and when. Include at least one quote from a witness, and write in a clear, factual style with paragraphs.`;
+}
+
 // ─── Public API ──────────────────────────────────────────────────────────────
 
 export interface WritingPrompt {
@@ -430,6 +752,8 @@ const year2Generators: Array<{ fn: () => string; genre: string }> = [
   { fn: year2DescriptivePrompt, genre: '🎨 Descriptive' },
   { fn: year2LetterPrompt, genre: '✉️ Letter' },
   { fn: year2ImaginativePrompt, genre: '🌟 Imaginative' },
+  { fn: year2DiaryPrompt, genre: '📔 Diary' },
+  { fn: year2PoemPrompt, genre: '🎵 Poem' },
 ];
 
 const year3Generators: Array<{ fn: () => string; genre: string }> = [
@@ -438,6 +762,8 @@ const year3Generators: Array<{ fn: () => string; genre: string }> = [
   { fn: year3ProceduralPrompt, genre: '🔧 Procedural' },
   { fn: year3DescriptivePrompt, genre: '🎨 Descriptive' },
   { fn: year3LetterPrompt, genre: '✉️ Letter' },
+  { fn: year3DiaryPrompt, genre: '📔 Recount' },
+  { fn: year3NewsPrompt, genre: '📰 News Report' },
 ];
 
 export function generateWritingPrompts(yearLevel: 2 | 3, count = 4): WritingPrompt[] {
