@@ -6,7 +6,10 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
+type Level = 'year1' | 'year2';
+
 type GameId =
+  // Year 1 (gentle)
   | 'letterMatch'
   | 'beginningSound'
   | 'missingLetter'
@@ -14,7 +17,16 @@ type GameId =
   | 'addUp'
   | 'rhyme'
   | 'shapes'
-  | 'numberBonds';
+  | 'numberBonds'
+  // Year 2 (challenge)
+  | 'quickMaths'
+  | 'timesTables'
+  | 'numberPattern'
+  | 'missingNumber'
+  | 'brainTeaser'
+  | 'doubleHalf'
+  | 'moneyMaths'
+  | 'bonds100';
 
 interface Round {
   /** big thing shown at the top of the card */
@@ -27,6 +39,8 @@ interface Round {
   answer: string;
   /** render options in a larger font (letters/numbers) */
   bigOptions?: boolean;
+  /** render the display in a smaller font (for word problems / sentences) */
+  displaySmall?: boolean;
 }
 
 interface GameMeta {
@@ -40,7 +54,7 @@ interface GameMeta {
 
 const ROUNDS_PER_GAME = 8;
 
-const GAMES: GameMeta[] = [
+const GAMES_Y1: GameMeta[] = [
   { id: 'letterMatch', title: 'Letter Match', emoji: '🔤', blurb: 'Match big & little letters', color: '#ff6f91', color2: '#ff9671' },
   { id: 'beginningSound', title: 'First Sound', emoji: '🦁', blurb: 'What letter does it start with?', color: '#ffc75f', color2: '#ff9671' },
   { id: 'missingLetter', title: 'Missing Letter', emoji: '🔡', blurb: 'Finish the alphabet', color: '#845ec2', color2: '#d65db1' },
@@ -50,6 +64,20 @@ const GAMES: GameMeta[] = [
   { id: 'shapes', title: 'Shape Spotter', emoji: '🔷', blurb: 'Name the shape', color: '#ff8066', color2: '#ffc75f' },
   { id: 'numberBonds', title: 'Number Bonds', emoji: '🔟', blurb: 'Make 10 and 20', color: '#c34a36', color2: '#ff8066' },
 ];
+
+const GAMES_Y2: GameMeta[] = [
+  { id: 'quickMaths', title: 'Quick Maths', emoji: '⚡', blurb: 'Add & subtract big numbers', color: '#2c73d2', color2: '#0089ba' },
+  { id: 'timesTables', title: 'Times Tables', emoji: '✖️', blurb: 'Multiply up to 12 × 12', color: '#d65db1', color2: '#845ec2' },
+  { id: 'numberPattern', title: 'Number Patterns', emoji: '🔢', blurb: 'What comes next?', color: '#008f7a', color2: '#00c9a7' },
+  { id: 'missingNumber', title: 'Missing Number', emoji: '🟰', blurb: 'Find the secret number', color: '#c34a36', color2: '#ff8066' },
+  { id: 'brainTeaser', title: 'Brain Teasers', emoji: '🧠', blurb: 'Tricky word puzzles', color: '#845ec2', color2: '#2c73d2' },
+  { id: 'doubleHalf', title: 'Double or Half', emoji: '⚖️', blurb: 'Double it, halve it', color: '#ff6f91', color2: '#d65db1' },
+  { id: 'moneyMaths', title: 'Money Maths', emoji: '💰', blurb: 'Coins, totals & change', color: '#4d8076', color2: '#008f7a' },
+  { id: 'bonds100', title: 'Bonds to 100', emoji: '💯', blurb: 'Make 50 and 100', color: '#b0306c', color2: '#ff6f91' },
+];
+
+const GAMES_BY_LEVEL: Record<Level, GameMeta[]> = { year1: GAMES_Y1, year2: GAMES_Y2 };
+const ALL_GAMES = [...GAMES_Y1, ...GAMES_Y2];
 
 // ─── Content pools ──────────────────────────────────────────────────────────
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
@@ -114,6 +142,22 @@ const SHAPES: { emoji: string; name: string }[] = [
 const CORRECT_CHEERS = ['Yay! 🎉', 'Awesome! 🌟', 'You got it! ⭐', 'Super! 🚀', 'Brilliant! 💫', 'High five! ✋'];
 const WRONG_CHEERS = ['Try again! 💪', 'Almost! 🙂', 'Good try! 🌈', 'Keep going! 👍'];
 
+// ─── Year 2 brain-teaser word problems (single numeric answer) ────────────────
+const TEASERS: Array<() => { text: string; answer: number }> = [
+  () => { const n = randInt(3, 8); return { text: `A spider has 8 legs. How many legs do ${n} spiders have?`, answer: 8 * n }; },
+  () => { const n = randInt(3, 9); return { text: `Each car has 4 wheels. How many wheels are on ${n} cars?`, answer: 4 * n }; },
+  () => { const a = randInt(25, 55), b = randInt(6, 15), c = randInt(6, 15); return { text: `Mia had ${a} stickers. She gave away ${b}, then got ${c} more. How many now?`, answer: a - b + c }; },
+  () => { const per = randInt(3, 8), groups = randInt(2, 6); return { text: `${groups} friends share ${per * groups} sweets equally. How many does each get?`, answer: per }; },
+  () => { const p = randInt(45, 90), r = randInt(12, 30); return { text: `A book has ${p} pages. Lucas read ${r}. How many pages are left?`, answer: p - r }; },
+  () => { const even = randInt(11, 40) * 2; return { text: `What is half of ${even}?`, answer: even / 2 }; },
+  () => { const w = randInt(2, 6); return { text: `There are ${w} weeks. How many days is that?`, answer: w * 7 }; },
+  () => { const d = randInt(2, 9); return { text: `A pizza has 8 slices. How many slices are in ${d} pizzas?`, answer: 8 * d }; },
+  () => { const cows = randInt(3, 9); return { text: `A farmer has ${cows} cows. How many legs altogether?`, answer: cows * 4 }; },
+  () => { const n = randInt(4, 7); return { text: `${n} children each have 2 hands with 5 fingers. How many fingers in total?`, answer: n * 10 }; },
+  () => { const start = randInt(2, 6); return { text: `A frog doubles its jumps each minute, starting at ${start}. How many jumps in the 3rd minute?`, answer: start * 4 }; },
+  () => { const rows = randInt(3, 6), each = randInt(3, 6); return { text: `A garden has ${rows} rows with ${each} flowers in each row. How many flowers?`, answer: rows * each }; },
+];
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const randInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
 const pick = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
@@ -125,6 +169,18 @@ function uniqueOptions(correct: string, pool: string[], count: number): string[]
   let guard = 0;
   while (opts.size < count && guard++ < 200) {
     opts.add(pick(pool));
+  }
+  return shuffle([...opts]);
+}
+
+// plausible numeric distractors clustered around the correct answer
+function numberOptions(correct: number, spread: number): string[] {
+  const opts = new Set<string>([String(correct)]);
+  let guard = 0;
+  while (opts.size < 4 && guard++ < 200) {
+    const delta = randInt(1, spread) * (Math.random() < 0.5 ? 1 : -1);
+    const candidate = correct + delta;
+    if (candidate >= 0) opts.add(String(candidate));
   }
   return shuffle([...opts]);
 }
@@ -175,11 +231,11 @@ function makeRound(game: GameId): Round {
       };
     }
     case 'countTap': {
-      const n = randInt(3, 12);
+      const n = randInt(2, 9);
       const emoji = pick(COUNT_EMOJIS);
       const options = uniqueOptions(
         String(n),
-        Array.from({ length: 15 }, (_, i) => String(i + 1)),
+        Array.from({ length: 12 }, (_, i) => String(i + 1)),
         4
       );
       return {
@@ -191,13 +247,13 @@ function makeRound(game: GameId): Round {
       };
     }
     case 'addUp': {
-      const a = randInt(1, 9);
-      const b = randInt(1, Math.min(9, 12 - a));
+      const a = randInt(1, 5);
+      const b = randInt(1, Math.min(5, 10 - a));
       const emoji = pick(COUNT_EMOJIS);
       const sum = a + b;
       const options = uniqueOptions(
         String(sum),
-        Array.from({ length: 20 }, (_, i) => String(i + 1)),
+        Array.from({ length: 12 }, (_, i) => String(i + 1)),
         4
       );
       return {
@@ -251,6 +307,120 @@ function makeRound(game: GameId): Round {
         bigOptions: true,
       };
     }
+
+    // ─── Year 2 challenge games ───────────────────────────────────────────────
+    case 'quickMaths': {
+      const mode = randInt(0, 2);
+      let text: string;
+      let answer: number;
+      if (mode === 0) {
+        const a = randInt(11, 79);
+        const b = randInt(11, 99 - a);
+        text = `${a} + ${b}`;
+        answer = a + b;
+      } else if (mode === 1) {
+        const a = randInt(30, 99);
+        const b = randInt(11, a - 1);
+        text = `${a} − ${b}`;
+        answer = a - b;
+      } else {
+        const a = randInt(20, 50);
+        const b = randInt(10, 30);
+        const c = randInt(5, Math.min(25, a + b - 1));
+        text = `${a} + ${b} − ${c}`;
+        answer = a + b - c;
+      }
+      return { display: `${text} = ?`, prompt: 'Work it out!', options: numberOptions(answer, 8), answer: String(answer), bigOptions: true };
+    }
+    case 'timesTables': {
+      const a = randInt(2, 12);
+      const b = randInt(2, 12);
+      const answer = a * b;
+      return { display: `${a} × ${b} = ?`, prompt: 'Times tables!', options: numberOptions(answer, Math.max(4, Math.round(answer * 0.2))), answer: String(answer), bigOptions: true };
+    }
+    case 'numberPattern': {
+      const kind = randInt(0, 2);
+      let seq: number[];
+      let next: number;
+      if (kind === 0) {
+        // arithmetic step
+        const start = randInt(1, 9);
+        const step = randInt(2, 9);
+        seq = [start, start + step, start + 2 * step, start + 3 * step];
+        next = start + 4 * step;
+      } else if (kind === 1) {
+        // doubling
+        const start = randInt(2, 5);
+        seq = [start, start * 2, start * 4, start * 8];
+        next = start * 16;
+      } else {
+        // counting down
+        const step = randInt(2, 6);
+        const start = step * randInt(8, 14);
+        seq = [start, start - step, start - 2 * step, start - 3 * step];
+        next = start - 4 * step;
+      }
+      return { display: `${seq.join(',  ')},  ?`, prompt: 'What comes next?', options: numberOptions(next, 6), answer: String(next), bigOptions: true };
+    }
+    case 'missingNumber': {
+      const op = randInt(0, 3);
+      let text: string;
+      let answer: number;
+      if (op === 0) {
+        const x = randInt(2, 12);
+        const b = randInt(2, 12);
+        text = `? × ${b} = ${x * b}`;
+        answer = x;
+      } else if (op === 1) {
+        const x = randInt(2, 12);
+        const b = randInt(2, 12);
+        text = `${b} × ? = ${x * b}`;
+        answer = x;
+      } else if (op === 2) {
+        const a = randInt(5, 45);
+        const b = randInt(5, 45);
+        text = `? + ${b} = ${a + b}`;
+        answer = a;
+      } else {
+        const q = randInt(2, 12);
+        const b = randInt(2, 9);
+        text = `? ÷ ${b} = ${q}`;
+        answer = q * b;
+      }
+      return { display: text, prompt: 'Find the missing number', options: numberOptions(answer, 6), answer: String(answer), bigOptions: true };
+    }
+    case 'brainTeaser': {
+      const t = pick(TEASERS)();
+      return { display: t.text, prompt: 'Solve the puzzle! 🧠', options: numberOptions(t.answer, Math.max(4, Math.round(t.answer * 0.2))), answer: String(t.answer), displaySmall: true };
+    }
+    case 'doubleHalf': {
+      if (Math.random() < 0.5) {
+        const n = randInt(11, 50);
+        return { display: `Double ${n}`, prompt: 'Double it!', options: numberOptions(n * 2, 8), answer: String(n * 2), bigOptions: true };
+      }
+      const even = randInt(10, 50) * 2;
+      return { display: `Half of ${even}`, prompt: 'Halve it!', options: numberOptions(even / 2, 8), answer: String(even / 2), bigOptions: true };
+    }
+    case 'moneyMaths': {
+      const mode = randInt(0, 2);
+      if (mode === 0) {
+        const a = randInt(2, 9) * 5;
+        const b = randInt(2, 9) * 5;
+        return { display: `${a}c + ${b}c`, prompt: 'How many cents altogether?', options: numberOptions(a + b, 10), answer: String(a + b), bigOptions: true };
+      }
+      if (mode === 1) {
+        const spend = randInt(2, 19) * 5;
+        return { display: `Pay 100c, spend ${spend}c`, prompt: 'How much change?', options: numberOptions(100 - spend, 10), answer: String(100 - spend), bigOptions: true };
+      }
+      const total = randInt(3, 12) * 5;
+      return { display: `${total}c in 5c coins`, prompt: 'How many 5c coins?', options: numberOptions(total / 5, 3), answer: String(total / 5), bigOptions: true };
+    }
+    case 'bonds100': {
+      const total = pick([100, 100, 50]);
+      const a = randInt(1, total / 5 - 1) * 5;
+      const answer = total - a;
+      return { display: `${a}  +  ❓  =  ${total}`, prompt: `What goes with ${a} to make ${total}?`, options: numberOptions(answer, 15), answer: String(answer), bigOptions: true };
+    }
   }
 }
 
@@ -298,6 +468,7 @@ function PlayZoneSection() {
   const [feedback, setFeedback] = useState<string | null>(null);
   const [finished, setFinished] = useState(false);
   const [muted, setMuted] = useState(() => localStorage.getItem('playMuted') === '1');
+  const [level, setLevel] = useState<Level>(() => (localStorage.getItem('playLevel') === 'year2' ? 'year2' : 'year1'));
 
   const chime = useChime(muted);
 
@@ -360,7 +531,12 @@ function PlayZoneSection() {
     setFinished(false);
   }, []);
 
-  const meta = activeGame ? GAMES.find(g => g.id === activeGame)! : null;
+  const changeLevel = useCallback((next: Level) => {
+    setLevel(next);
+    localStorage.setItem('playLevel', next);
+  }, []);
+
+  const meta = activeGame ? ALL_GAMES.find(g => g.id === activeGame)! : null;
 
   return (
     <Box
@@ -467,9 +643,58 @@ function PlayZoneSection() {
           >
             🎪 Play &amp; Learn
           </Typography>
-          <Typography sx={{ color: '#8e44ad', fontWeight: 700, mb: 3, fontSize: '1.1rem' }}>
+          <Typography sx={{ color: '#8e44ad', fontWeight: 700, mb: 2, fontSize: '1.1rem' }}>
             Pick a game and learn while you play!
           </Typography>
+
+          {/* Year level tabs */}
+          <Box
+            role="tablist"
+            aria-label="Choose level"
+            sx={{
+              display: 'inline-flex',
+              gap: 0.5,
+              p: 0.5,
+              mb: 3,
+              borderRadius: '999px',
+              bgcolor: 'rgba(255,255,255,0.6)',
+              border: '3px solid #fff',
+              boxShadow: '0 6px 16px rgba(0,0,0,0.12)',
+            }}
+          >
+            {([
+              { id: 'year1' as Level, label: '🐣 Year 1', sub: 'Little learners' },
+              { id: 'year2' as Level, label: '🚀 Year 2', sub: 'Challenge mode' },
+            ]).map(t => {
+              const selected = level === t.id;
+              return (
+                <Box
+                  key={t.id}
+                  role="tab"
+                  tabIndex={0}
+                  aria-selected={selected}
+                  onClick={() => changeLevel(t.id)}
+                  onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); changeLevel(t.id); } }}
+                  sx={{
+                    cursor: 'pointer',
+                    userSelect: 'none',
+                    borderRadius: '999px',
+                    px: { xs: 2.5, sm: 4 },
+                    py: 1,
+                    textAlign: 'center',
+                    transition: 'all 0.15s',
+                    color: selected ? '#fff' : '#8e44ad',
+                    background: selected ? 'linear-gradient(150deg, #d63384, #8e44ad)' : 'transparent',
+                    boxShadow: selected ? '0 4px 12px rgba(214,51,132,0.4)' : 'none',
+                    '&:focus-visible': { outline: '3px solid #6a1b9a', outlineOffset: 2 },
+                  }}
+                >
+                  <Typography sx={{ fontWeight: 900, fontSize: '1.1rem', lineHeight: 1.1 }}>{t.label}</Typography>
+                  <Typography sx={{ fontWeight: 600, fontSize: '0.72rem', opacity: 0.85 }}>{t.sub}</Typography>
+                </Box>
+              );
+            })}
+          </Box>
 
           <Box
             sx={{
@@ -480,7 +705,7 @@ function PlayZoneSection() {
               mx: 'auto',
             }}
           >
-            {GAMES.map((g, i) => (
+            {GAMES_BY_LEVEL[level].map((g, i) => (
               <Box
                 key={g.id}
                 role="button"
@@ -568,9 +793,11 @@ function PlayZoneSection() {
             <Typography
               key={roundNum}
               sx={{
-                fontSize: { xs: '2.6rem', sm: '3.4rem' },
-                fontWeight: 900,
-                lineHeight: 1.15,
+                fontSize: round.displaySmall
+                  ? { xs: '1.4rem', sm: '1.7rem' }
+                  : { xs: '2.6rem', sm: '3.4rem' },
+                fontWeight: round.displaySmall ? 800 : 900,
+                lineHeight: 1.3,
                 whiteSpace: 'pre-line',
                 color: '#37474f',
                 mb: 1,
