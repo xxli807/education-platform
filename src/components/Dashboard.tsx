@@ -10,6 +10,7 @@ import {
   Timer as TimerIcon,
   TaskAlt as HolidayIcon,
   SportsEsports as PlayIcon,
+  MilitaryTech as OlympiadIcon,
   Logout as LogoutIcon,
 } from '@mui/icons-material';
 import { useCurrentUser, useLogoutMutation } from '../hooks/useAuth';
@@ -36,6 +37,7 @@ function Dashboard() {
   const [lastThinking, setLastThinking] = useState<ThinkingSessionResult | null>(null);
   const [englishCount, setEnglishCount] = useState({ comprehension: 0, writing: 0 });
   const playStars = Number(localStorage.getItem('playTotalStars') || '0');
+  const olympiadSolved = Number(localStorage.getItem('olympiadSolved') || '0');
 
   useEffect(() => {
     const loadStats = async () => {
@@ -346,6 +348,47 @@ function Dashboard() {
               ) : (
                 <Typography variant="body2" sx={{ color: '#ef9a9a', fontStyle: 'italic' }}>
                   No quests yet - begin your adventure! ⚔️
+                </Typography>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Maths Olympiad Card */}
+        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Card
+            sx={{
+              ...cardStyle,
+              background: 'linear-gradient(135deg, #2a1c00 0%, #5a3c00 40%, #8a6500 100%)',
+              border: '3px solid #ffd54f',
+              '&:hover': {
+                ...cardStyle['&:hover'],
+                borderColor: '#fff3bf',
+                boxShadow: '0 12px 36px rgba(255,213,79,0.35)',
+              },
+            }}
+            onClick={() => navigate({ to: '/olympiad' })}
+          >
+            <CardContent sx={{ textAlign: 'center', p: 3, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <OlympiadIcon sx={{ fontSize: 56, color: '#ffd54f', mb: 1 }} />
+              <Typography
+                variant="h5"
+                sx={{ color: '#fff8e1', fontWeight: 'bold', mb: 1, letterSpacing: '1px' }}
+              >
+                Maths Olympiad 🏅
+              </Typography>
+              <Typography sx={{ color: '#ffe082', mb: 2, fontSize: '0.95rem' }}>
+                Unleash the maths olympian in you!
+              </Typography>
+              {olympiadSolved > 0 ? (
+                <Chip
+                  icon={<TrophyIcon sx={{ color: '#ffd54f !important' }} />}
+                  label={`${olympiadSolved} problems explored`}
+                  sx={{ fontWeight: 'bold', bgcolor: 'rgba(255,213,79,0.2)', color: '#fff8e1' }}
+                />
+              ) : (
+                <Typography variant="body2" sx={{ color: '#ffe082', fontStyle: 'italic' }}>
+                  Pattern, grid & logic puzzles — Junior level 🧠
                 </Typography>
               )}
             </CardContent>
