@@ -29,7 +29,7 @@ import {
 } from '@mui/icons-material';
 import SessionReviewDialog, { type ReviewQuestion } from './SessionReviewDialog';
 import ConfirmDeleteDialog from './ConfirmDeleteDialog';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Question } from '../types';
 import { db } from '../db/database';
 import type { MathSessionResult } from '../db/database';
@@ -527,11 +527,16 @@ function Whiteboard() {
   );
 }
 
-const PRACTICE_SECTIONS: { label: string; emoji: string; color: string; range: [number, number] }[] = [
-  { label: 'Standard', emoji: '⭐', color: '#ffa726', range: [1, PRACTICE_PER_GROUP] },
-  { label: 'Advanced', emoji: '🌟', color: '#42a5f5', range: [PRACTICE_PER_GROUP + 1, PRACTICE_PER_GROUP * 2] },
-  { label: 'Challenge', emoji: '🔥', color: '#ef5350', range: [PRACTICE_PER_GROUP * 2 + 1, PRACTICE_PER_GROUP * 3] },
+type SectionKey = 'standard' | 'advanced' | 'challenge' | 'olympiad';
+
+const PRACTICE_SECTIONS: { key: Difficulty; label: string; emoji: string; color: string; range: [number, number] }[] = [
+  { key: 'standard', label: 'Standard', emoji: '⭐', color: '#ffa726', range: [1, PRACTICE_PER_GROUP] },
+  { key: 'advanced', label: 'Advanced', emoji: '🌟', color: '#42a5f5', range: [PRACTICE_PER_GROUP + 1, PRACTICE_PER_GROUP * 2] },
+  { key: 'challenge', label: 'Challenge', emoji: '🔥', color: '#ef5350', range: [PRACTICE_PER_GROUP * 2 + 1, PRACTICE_PER_GROUP * 3] },
 ];
+
+const sectionsForMode = (m: MathMode): SectionKey[] =>
+  m === 'olympiad' ? ['olympiad'] : ['standard', 'advanced', 'challenge'];
 
 function MathSection() {
   const [mode, setMode] = useState<MathMode>(() => {
@@ -548,21 +553,23 @@ function MathSection() {
     const saved = localStorage.getItem('mathAnswers');
     return saved ? JSON.parse(saved) : {};
   });
-  const [showAnswers, setShowAnswers] = useState(() => {
-    const saved = localStorage.getItem('mathShowAnswers');
-    return saved ? JSON.parse(saved) : false;
+  // per-section reveal / timing (keys: standard|advanced|challenge|olympiad)
+  const [revealed, setRevealed] = useState<Record<string, boolean>>(() => {
+    const saved = localStorage.getItem('mathRevealed');
+    return saved ? JSON.parse(saved) : {};
   });
-  const [allCorrect, setAllCorrect] = useState(() => {
-    const saved = localStorage.getItem('mathAllCorrect');
-    return saved ? JSON.parse(saved) : false;
+  const [sectionStart, setSectionStart] = useState<Record<string, number>>(() => {
+    const saved = localStorage.getItem('mathSectionStart');
+    if (saved) return JSON.parse(saved);
+    const m = localStorage.getItem('mathMode') === 'olympiad' ? 'olympiad' : 'practice';
+    const now = Date.now();
+    const o: Record<string, number> = {};
+    sectionsForMode(m as MathMode).forEach(k => { o[k] = now; });
+    return o;
   });
-  const [startTime, setStartTime] = useState<number>(() => {
-    const saved = localStorage.getItem('mathStartTime');
-    return saved ? parseInt(saved) : Date.now();
-  });
-  const [timeTaken, setTimeTaken] = useState<number | null>(() => {
-    const saved = localStorage.getItem('mathTimeTaken');
-    return saved ? parseInt(saved) : null;
+  const [sectionTime, setSectionTime] = useState<Record<string, number | null>>(() => {
+    const saved = localStorage.getItem('mathSectionTime');
+    return saved ? JSON.parse(saved) : {};
   });
   const [showHistory, setShowHistory] = useState(false);
   const [history, setHistory] = useState<MathSessionResult[]>([]);
@@ -586,20 +593,16 @@ function MathSection() {
   }, [answers]);
 
   useEffect(() => {
-    localStorage.setItem('mathShowAnswers', JSON.stringify(showAnswers));
-  }, [showAnswers]);
+    localStorage.setItem('mathRevealed', JSON.stringify(revealed));
+  }, [revealed]);
 
   useEffect(() => {
-    localStorage.setItem('mathAllCorrect', JSON.stringify(allCorrect));
-  }, [allCorrect]);
+    localStorage.setItem('mathSectionStart', JSON.stringify(sectionStart));
+  }, [sectionStart]);
 
   useEffect(() => {
-    localStorage.setItem('mathStartTime', startTime.toString());
-  }, [startTime]);
-
-  useEffect(() => {
-    localStorage.setItem('mathTimeTaken', timeTaken?.toString() || '');
-  }, [timeTaken]);
+    localStorage.setItem('mathSectionTime', JSON.stringify(sectionTime));
+  }, [sectionTime]);
 
   useEffect(() => {
     localStorage.setItem('mathFeedbackMessages', JSON.stringify(feedbackMessages));
@@ -625,19 +628,27 @@ function MathSection() {
     setHistory(results.slice(0, 10));
   };
 
-  const resetSession = useCallback((nextQuestions: Question[]) => {
+  // Count how many of the given questions are answered correctly.
+  const countCorrect = useCallback(
+    (qs: Question[]) =>
+      qs.filter(q => {
+        const val = answers[q.id];
+        return val !== undefined && val !== null && val !== '' && Number(val) === Number(q.answer);
+      }).length,
+    [answers]
+  );
+
+  // Start a fresh session for the given mode (resets every section).
+  const resetSession = useCallback((nextQuestions: Question[], m: MathMode) => {
     setQuestions(nextQuestions);
     setAnswers({});
-    setShowAnswers(false);
-    setAllCorrect(false);
-    setStartTime(Date.now());
-    setTimeTaken(null);
     setFeedbackMessages({});
-    localStorage.removeItem('mathAnswers');
-    localStorage.removeItem('mathShowAnswers');
-    localStorage.removeItem('mathAllCorrect');
-    localStorage.removeItem('mathTimeTaken');
-    localStorage.removeItem('mathFeedbackMessages');
+    setRevealed({});
+    setSectionTime({});
+    const now = Date.now();
+    const starts: Record<string, number> = {};
+    sectionsForMode(m).forEach(k => { starts[k] = now; });
+    setSectionStart(starts);
   }, []);
 
   const handleModeChange = useCallback(
@@ -648,7 +659,7 @@ function MathSection() {
         newMode === 'olympiad'
           ? generateOlympiadQuestions(OLYMPIAD_COUNT)
           : generatePracticeQuestions();
-      resetSession(nextQuestions);
+      resetSession(nextQuestions, newMode);
     },
     [mode, resetSession]
   );
@@ -657,79 +668,88 @@ function MathSection() {
     setAnswers(prev => ({ ...prev, [id]: value }));
   }, []);
 
-  const handleMoreQuestions = useCallback(() => {
-    const nextQuestions =
-      mode === 'olympiad'
-        ? generateOlympiadQuestions(OLYMPIAD_COUNT)
-        : generatePracticeQuestions();
-    resetSession(nextQuestions);
-  }, [mode, resetSession]);
+  // Questions belonging to a section key.
+  const questionsForSection = useCallback(
+    (key: SectionKey): Question[] => {
+      if (key === 'olympiad') return questions;
+      const sec = PRACTICE_SECTIONS.find(s => s.key === key)!;
+      return questions.filter(q => q.id >= sec.range[0] && q.id <= sec.range[1]);
+    },
+    [questions]
+  );
 
-  const isEveryAnswerCorrect = useMemo(() => {
-    if (!questions.length) return false;
-    return questions.every(q => {
-      const val = answers[q.id];
-      if (val === undefined || val === null || val === '') return false;
-      return Number(val) === Number(q.answer);
-    });
-  }, [answers, questions]);
+  // Check answers for a single section: reveal, give feedback, record the time,
+  // and save a history result tagged with that section's difficulty.
+  const checkSection = useCallback(
+    async (key: SectionKey) => {
+      const qs = questionsForSection(key);
+      if (!qs.length) return;
+      const start = sectionStart[key] ?? Date.now();
+      const elapsed = Math.round((Date.now() - start) / 1000);
 
-  const correctCount = useMemo(() => {
-    return questions.filter(q => {
-      const val = answers[q.id];
-      if (val === undefined || val === null || val === '') return false;
-      return Number(val) === Number(q.answer);
-    }).length;
-  }, [answers, questions]);
+      setSectionTime(prev => ({ ...prev, [key]: elapsed }));
+      setRevealed(prev => ({ ...prev, [key]: true }));
+      setFeedbackMessages(prev => {
+        const next = { ...prev };
+        qs.forEach(q => {
+          const ok = answers[q.id] !== undefined && answers[q.id] !== '' && Number(answers[q.id]) === Number(q.answer);
+          next[q.id] = getRandomEncouragement(ok);
+        });
+        return next;
+      });
 
-  const handleCheckAnswers = useCallback(async () => {
-    const elapsed = Math.round((Date.now() - startTime) / 1000);
-    setTimeTaken(elapsed);
-    setShowAnswers(true);
-    setAllCorrect(isEveryAnswerCorrect);
+      const count = countCorrect(qs);
+      const questionsData = JSON.stringify(
+        qs.map(q => ({
+          text: q.text,
+          correctAnswer: q.answer,
+          userAnswer: answers[q.id] || '',
+          isCorrect: Number(answers[q.id]) === Number(q.answer),
+        }))
+      );
 
-    const messages: { [key: number]: string } = {};
-    questions.forEach(q => {
-      const isCorrect =
-        answers[q.id] !== undefined &&
-        answers[q.id] !== '' &&
-        Number(answers[q.id]) === Number(q.answer);
-      messages[q.id] = getRandomEncouragement(isCorrect);
-    });
-    setFeedbackMessages(messages);
+      await db.mathSessionResults.add({
+        difficulty: key === 'olympiad' ? 'olympiad' : key,
+        totalQuestions: qs.length,
+        correctCount: count,
+        score: Math.round((count / qs.length) * 100),
+        timeTakenSeconds: elapsed,
+        questionsData,
+        completedAt: new Date(),
+        userId: 'lucas',
+      });
 
-    const count = questions.filter(q => {
-      const val = answers[q.id];
-      if (val === undefined || val === null || val === '') return false;
-      return Number(val) === Number(q.answer);
-    }).length;
+      loadHistory();
+    },
+    [questionsForSection, sectionStart, answers, countCorrect]
+  );
 
-    const questionsData = JSON.stringify(
-      questions.map(q => ({
-        text: q.text,
-        correctAnswer: q.answer,
-        userAnswer: answers[q.id] || '',
-        isCorrect: Number(answers[q.id]) === Number(q.answer),
-      }))
+  // Get fresh questions for a single section without touching the others.
+  const regenerateSection = useCallback((key: SectionKey) => {
+    if (key === 'olympiad') {
+      resetSession(generateOlympiadQuestions(OLYMPIAD_COUNT), 'olympiad');
+      return;
+    }
+    const sec = PRACTICE_SECTIONS.find(s => s.key === key)!;
+    const fresh = generateLevelQuestions(sec.key, PRACTICE_PER_GROUP, sec.range[0]);
+    setQuestions(prev =>
+      prev.map(q => (q.id >= sec.range[0] && q.id <= sec.range[1] ? fresh[q.id - sec.range[0]] : q))
     );
+    const clearRange = <T,>(obj: Record<number, T>) => {
+      const next = { ...obj };
+      for (let id = sec.range[0]; id <= sec.range[1]; id++) delete next[id];
+      return next;
+    };
+    setAnswers(prev => clearRange(prev));
+    setFeedbackMessages(prev => clearRange(prev));
+    setRevealed(prev => ({ ...prev, [key]: false }));
+    setSectionTime(prev => ({ ...prev, [key]: null }));
+    setSectionStart(prev => ({ ...prev, [key]: Date.now() }));
+  }, [resetSession]);
 
-    await db.mathSessionResults.add({
-      difficulty: mode === 'olympiad' ? 'olympiad' : 'mixed',
-      totalQuestions: questions.length,
-      correctCount: count,
-      score: Math.round((count / questions.length) * 100),
-      timeTakenSeconds: elapsed,
-      questionsData,
-      completedAt: new Date(),
-      userId: 'lucas',
-    });
-
-    loadHistory();
-  }, [startTime, isEveryAnswerCorrect, questions, answers, mode]);
-
-  const renderQuestionCard = (question: Question) => {
+  const renderQuestionCard = (question: Question, revealed: boolean) => {
     const isCorrect =
-      showAnswers &&
+      revealed &&
       answers[question.id] !== undefined &&
       answers[question.id] !== '' &&
       Number(answers[question.id]) === Number(question.answer);
@@ -738,12 +758,12 @@ function MathSection() {
         <Card
           sx={{
             ...darkCard,
-            bgcolor: showAnswers
+            bgcolor: revealed
               ? isCorrect
                 ? 'rgba(76,175,80,0.15)'
                 : 'rgba(239,83,80,0.15)'
               : 'rgba(255,255,255,0.06)',
-            border: showAnswers
+            border: revealed
               ? isCorrect
                 ? '2px solid #4caf50'
                 : '2px solid #ef5350'
@@ -769,7 +789,7 @@ function MathSection() {
                 <Select
                   value={answers[question.id] || ''}
                   onChange={e => handleAnswerChange(question.id, e.target.value)}
-                  disabled={showAnswers}
+                  disabled={revealed}
                   displayEmpty
                   renderValue={(value) => value ? value : '-- Please select'}
                   sx={{
@@ -779,7 +799,7 @@ function MathSection() {
                     fontWeight: 'bold',
                     fontSize: '0.95rem',
                     '& .MuiOutlinedInput-notchedOutline': {
-                      borderColor: answers[question.id] && showAnswers
+                      borderColor: answers[question.id] && revealed
                         ? answers[question.id] === String(question.answer)
                           ? '#66bb6a'
                           : '#ef5350'
@@ -808,10 +828,10 @@ function MathSection() {
                   }}
                 >
                   {question.options.map(opt => {
-                    const isThisCorrect = showAnswers && opt === String(question.answer);
+                    const isThisCorrect = revealed && opt === String(question.answer);
                     return (
-                      <MenuItem key={opt} value={opt} sx={{ color: isThisCorrect && showAnswers ? '#66bb6a' : '#cfd8dc' }}>
-                        {isThisCorrect && showAnswers ? '✅ ' : ''}{opt}
+                      <MenuItem key={opt} value={opt} sx={{ color: isThisCorrect ? '#66bb6a' : '#cfd8dc' }}>
+                        {isThisCorrect ? '✅ ' : ''}{opt}
                       </MenuItem>
                     );
                   })}
@@ -840,7 +860,7 @@ function MathSection() {
                 fullWidth
               />
             )}
-            {showAnswers && (
+            {revealed && (
               <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 0.5 }}>
                 {isCorrect ? (
                   <CheckIcon sx={{ color: '#66bb6a' }} />
@@ -916,108 +936,152 @@ function MathSection() {
         </Box>
       )}
 
-      {/* Score Summary */}
-      {showAnswers && (
-        <Box
-          sx={{
-            mb: 3,
-            p: 3,
-            borderRadius: '16px',
-            background: allCorrect
-              ? 'linear-gradient(135deg, rgba(76,175,80,0.3) 0%, rgba(56,142,60,0.4) 100%)'
-              : 'linear-gradient(135deg, rgba(255,152,0,0.2) 0%, rgba(239,83,80,0.2) 100%)',
-            border: allCorrect ? '2px solid #4caf50' : '2px solid rgba(255,152,0,0.4)',
-            textAlign: 'center',
-          }}
-        >
-          <Typography variant="h4" sx={{ fontWeight: 'bold', color: allCorrect ? '#a5d6a7' : '#ffcc80' }}>
-            {allCorrect
-              ? '🎉 AMAZING! You\'re a superstar! 🌟'
-              : `${correctCount}/${questions.length} correct! Keep going! 💪`}
-          </Typography>
-          {timeTaken !== null && (
-            <Chip
-              icon={<TimerIcon sx={{ color: '#ffd54f !important' }} />}
-              label={`Time: ${formatTime(timeTaken)}`}
-              sx={{ mt: 1, fontSize: '1rem', py: 2, px: 1, bgcolor: 'rgba(255,255,255,0.1)', color: '#e0e0e0' }}
-            />
-          )}
-        </Box>
-      )}
-
-      {/* Question Grid */}
+      {/* Question Grids */}
       {mode === 'practice' ? (
         <Box>
           {PRACTICE_SECTIONS.map(section => {
             const sectionQuestions = questions.filter(
               q => q.id >= section.range[0] && q.id <= section.range[1]
             );
+            const isRevealed = !!revealed[section.key];
+            const correct = countCorrect(sectionQuestions);
+            const total = sectionQuestions.length;
+            const tTaken = sectionTime[section.key];
+            const allRight = isRevealed && correct === total;
             return (
-              <Box key={section.label} sx={{ mb: 4 }}>
+              <Box key={section.key} sx={{ mb: 5 }}>
                 <Typography
                   variant="h5"
-                  sx={{
-                    color: section.color,
-                    fontWeight: 'bold',
-                    mb: 2,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1,
-                  }}
+                  sx={{ color: section.color, fontWeight: 'bold', mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}
                 >
                   <span>{section.emoji}</span>
                   <span>{section.label}</span>
                 </Typography>
+
+                {isRevealed && (
+                  <Box
+                    sx={{
+                      mb: 2,
+                      p: 2,
+                      borderRadius: '14px',
+                      background: allRight
+                        ? 'linear-gradient(135deg, rgba(76,175,80,0.25) 0%, rgba(56,142,60,0.35) 100%)'
+                        : 'linear-gradient(135deg, rgba(255,152,0,0.18) 0%, rgba(239,83,80,0.18) 100%)',
+                      border: allRight ? '2px solid #4caf50' : '2px solid rgba(255,152,0,0.4)',
+                      textAlign: 'center',
+                    }}
+                  >
+                    <Typography sx={{ fontWeight: 'bold', fontSize: '1.1rem', color: allRight ? '#a5d6a7' : '#ffcc80' }}>
+                      {allRight ? `🎉 All ${total} correct! Superstar! 🌟` : `${correct}/${total} correct — keep going! 💪`}
+                    </Typography>
+                    {tTaken != null && (
+                      <Chip
+                        icon={<TimerIcon sx={{ color: '#ffd54f !important' }} />}
+                        label={`Time: ${formatTime(tTaken)}`}
+                        size="small"
+                        sx={{ mt: 1, bgcolor: 'rgba(255,255,255,0.1)', color: '#e0e0e0' }}
+                      />
+                    )}
+                  </Box>
+                )}
+
                 <Grid container spacing={3}>
-                  {sectionQuestions.map(renderQuestionCard)}
+                  {sectionQuestions.map(q => renderQuestionCard(q, isRevealed))}
                 </Grid>
+
+                <Box sx={{ mt: 2.5, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                  <Button
+                    variant="contained"
+                    onClick={() => checkSection(section.key)}
+                    disabled={isRevealed}
+                    sx={{
+                      borderRadius: '25px', px: 3.5, py: 1.3, fontSize: '1rem', fontWeight: 'bold', textTransform: 'none',
+                      bgcolor: section.color,
+                      '&:hover': { bgcolor: section.color, filter: 'brightness(0.92)' },
+                      '&.Mui-disabled': { bgcolor: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.4)' },
+                    }}
+                  >
+                    ✅ Check {section.label}
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    onClick={() => regenerateSection(section.key)}
+                    sx={{
+                      borderRadius: '25px', px: 3.5, py: 1.3, fontSize: '1rem', fontWeight: 'bold', textTransform: 'none',
+                      color: section.color, borderColor: section.color, borderWidth: 2,
+                      '&:hover': { borderColor: section.color, borderWidth: 2, bgcolor: 'rgba(255,255,255,0.05)' },
+                    }}
+                  >
+                    🔄 New {section.label} Questions
+                  </Button>
+                </Box>
               </Box>
             );
           })}
         </Box>
       ) : (
-        <Grid container spacing={3}>
-          {questions.map(renderQuestionCard)}
-        </Grid>
+        (() => {
+          const isRevealed = !!revealed['olympiad'];
+          const correct = countCorrect(questions);
+          const total = questions.length;
+          const tTaken = sectionTime['olympiad'];
+          const allRight = isRevealed && correct === total;
+          return (
+            <Box>
+              {isRevealed && (
+                <Box
+                  sx={{
+                    mb: 3, p: 3, borderRadius: '16px',
+                    background: allRight
+                      ? 'linear-gradient(135deg, rgba(76,175,80,0.3) 0%, rgba(56,142,60,0.4) 100%)'
+                      : 'linear-gradient(135deg, rgba(255,152,0,0.2) 0%, rgba(239,83,80,0.2) 100%)',
+                    border: allRight ? '2px solid #4caf50' : '2px solid rgba(255,152,0,0.4)',
+                    textAlign: 'center',
+                  }}
+                >
+                  <Typography variant="h4" sx={{ fontWeight: 'bold', color: allRight ? '#a5d6a7' : '#ffcc80' }}>
+                    {allRight ? '🎉 AMAZING! You\'re a superstar! 🌟' : `${correct}/${total} correct! Keep going! 💪`}
+                  </Typography>
+                  {tTaken != null && (
+                    <Chip
+                      icon={<TimerIcon sx={{ color: '#ffd54f !important' }} />}
+                      label={`Time: ${formatTime(tTaken)}`}
+                      sx={{ mt: 1, fontSize: '1rem', py: 2, px: 1, bgcolor: 'rgba(255,255,255,0.1)', color: '#e0e0e0' }}
+                    />
+                  )}
+                </Box>
+              )}
+              <Grid container spacing={3}>
+                {questions.map(q => renderQuestionCard(q, isRevealed))}
+              </Grid>
+              <Box sx={{ mt: 3, mb: 3, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                <Button
+                  variant="contained"
+                  onClick={() => checkSection('olympiad')}
+                  disabled={isRevealed}
+                  sx={{
+                    borderRadius: '25px', px: 4, py: 1.5, fontSize: '1.1rem', fontWeight: 'bold', textTransform: 'none',
+                    bgcolor: '#e91e63', '&:hover': { bgcolor: '#c2185b' }, boxShadow: '0 4px 15px rgba(233,30,99,0.3)',
+                    '&.Mui-disabled': { bgcolor: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.4)' },
+                  }}
+                >
+                  ✅ Check Answers
+                </Button>
+                <Button
+                  variant="contained"
+                  onClick={() => regenerateSection('olympiad')}
+                  sx={{
+                    borderRadius: '25px', px: 4, py: 1.5, fontSize: '1.1rem', fontWeight: 'bold', textTransform: 'none',
+                    bgcolor: '#ff9800', '&:hover': { bgcolor: '#f57c00' }, boxShadow: '0 4px 15px rgba(255,152,0,0.3)',
+                  }}
+                >
+                  🔄 More Questions
+                </Button>
+              </Box>
+            </Box>
+          );
+        })()
       )}
-
-      {/* Action Buttons */}
-      <Box sx={{ mt: 3, mb: 3, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-        <Button
-          variant="contained"
-          onClick={handleCheckAnswers}
-          sx={{
-            borderRadius: '25px',
-            px: 4,
-            py: 1.5,
-            fontSize: '1.1rem',
-            fontWeight: 'bold',
-            bgcolor: '#e91e63',
-            '&:hover': { bgcolor: '#c2185b' },
-            textTransform: 'none',
-            boxShadow: '0 4px 15px rgba(233,30,99,0.3)',
-          }}
-        >
-          ✅ Check Answers
-        </Button>
-        <Button
-          variant="contained"
-          onClick={handleMoreQuestions}
-          sx={{
-            borderRadius: '25px',
-            px: 4,
-            py: 1.5,
-            fontSize: '1.1rem',
-            fontWeight: 'bold',
-            bgcolor: '#ff9800',
-            '&:hover': { bgcolor: '#f57c00' },
-            textTransform: 'none',
-            boxShadow: '0 4px 15px rgba(255,152,0,0.3)',
-          }}
-        >
-          🔄 More Questions
-        </Button>
-      </Box>
 
       {/* Whiteboard */}
       <Whiteboard />
