@@ -22,7 +22,7 @@ interface WritingTask {
 
 interface MathSessionResult {
   id?: number;
-  difficulty: 'standard' | 'advanced' | 'challenge' | 'mixed' | 'olympiad';
+  difficulty: 'standard' | 'advanced' | 'challenge' | 'mixed' | 'olympiad' | 'multiplication' | 'division';
   totalQuestions: number;
   correctCount: number;
   score: number;

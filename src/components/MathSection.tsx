@@ -43,7 +43,7 @@ import { generateOlympiadQuestions } from '../data/olympiadQuestions';
 import { formatSavedDateTime } from '../utils/formatDate';
 import SectionContainer from './SectionContainer';
 
-type MathMode = 'practice' | 'olympiad';
+type MathMode = 'practice' | 'olympiad' | 'multiplication' | 'division';
 
 const PRACTICE_PER_GROUP = 8;
 const OLYMPIAD_COUNT = 12;
@@ -200,6 +200,39 @@ function generatePracticeQuestions(): Question[] {
     ...generateLevelQuestions('advanced', PRACTICE_PER_GROUP, 1 + PRACTICE_PER_GROUP),
     ...generateLevelQuestions('challenge', PRACTICE_PER_GROUP, 1 + PRACTICE_PER_GROUP * 2),
   ];
+}
+
+// Full times table 2×2 → 9×9, in order (commutative pairs repeat the facts).
+function generateMultiplicationQuestions(): Question[] {
+  const qs: Question[] = [];
+  let id = 1;
+  for (let a = 2; a <= 9; a++) {
+    for (let b = 2; b <= 9; b++) {
+      qs.push({ id: id++, text: `${a} × ${b}`, answer: a * b });
+    }
+  }
+  return qs;
+}
+
+// Inverse division facts, biggest first: 81 ÷ 9 down to 4 ÷ 2.
+function generateDivisionQuestions(): Question[] {
+  const facts: { dividend: number; divisor: number; quotient: number }[] = [];
+  for (let q = 2; q <= 9; q++) {
+    for (let d = 2; d <= 9; d++) {
+      facts.push({ dividend: q * d, divisor: d, quotient: q });
+    }
+  }
+  facts.sort((x, y) => y.dividend - x.dividend || y.divisor - x.divisor);
+  return facts.map((f, i) => ({ id: i + 1, text: `${f.dividend} ÷ ${f.divisor}`, answer: f.quotient }));
+}
+
+function questionsForMode(m: MathMode): Question[] {
+  switch (m) {
+    case 'olympiad': return generateOlympiadQuestions(OLYMPIAD_COUNT);
+    case 'multiplication': return generateMultiplicationQuestions();
+    case 'division': return generateDivisionQuestions();
+    default: return generatePracticeQuestions();
+  }
 }
 
 function formatTime(seconds: number): string {
@@ -527,7 +560,7 @@ function Whiteboard() {
   );
 }
 
-type SectionKey = 'standard' | 'advanced' | 'challenge' | 'olympiad';
+type SectionKey = 'standard' | 'advanced' | 'challenge' | 'olympiad' | 'multiplication' | 'division';
 
 const PRACTICE_SECTIONS: { key: Difficulty; label: string; emoji: string; color: string; range: [number, number] }[] = [
   { key: 'standard', label: 'Standard', emoji: '⭐', color: '#ffa726', range: [1, PRACTICE_PER_GROUP] },
@@ -536,18 +569,18 @@ const PRACTICE_SECTIONS: { key: Difficulty; label: string; emoji: string; color:
 ];
 
 const sectionsForMode = (m: MathMode): SectionKey[] =>
-  m === 'olympiad' ? ['olympiad'] : ['standard', 'advanced', 'challenge'];
+  m === 'practice' ? ['standard', 'advanced', 'challenge'] : [m];
 
 function MathSection() {
   const [mode, setMode] = useState<MathMode>(() => {
-    const saved = localStorage.getItem('mathMode');
-    return saved === 'olympiad' ? 'olympiad' : 'practice';
+    const saved = localStorage.getItem('mathMode') as MathMode | null;
+    return saved && ['practice', 'olympiad', 'multiplication', 'division'].includes(saved) ? saved : 'practice';
   });
   const [questions, setQuestions] = useState<Question[]>(() => {
     const saved = localStorage.getItem('mathQuestions');
     if (saved) return JSON.parse(saved);
-    const savedMode = localStorage.getItem('mathMode') === 'olympiad' ? 'olympiad' : 'practice';
-    return savedMode === 'olympiad' ? generateOlympiadQuestions(OLYMPIAD_COUNT) : generatePracticeQuestions();
+    const savedMode = (localStorage.getItem('mathMode') as MathMode | null) || 'practice';
+    return questionsForMode(savedMode);
   });
   const [answers, setAnswers] = useState<{ [key: number]: string }>(() => {
     const saved = localStorage.getItem('mathAnswers');
@@ -655,11 +688,7 @@ function MathSection() {
     (_: React.SyntheticEvent, newMode: MathMode | null) => {
       if (!newMode || newMode === mode) return;
       setMode(newMode);
-      const nextQuestions =
-        newMode === 'olympiad'
-          ? generateOlympiadQuestions(OLYMPIAD_COUNT)
-          : generatePracticeQuestions();
-      resetSession(nextQuestions, newMode);
+      resetSession(questionsForMode(newMode), newMode);
     },
     [mode, resetSession]
   );
@@ -671,8 +700,9 @@ function MathSection() {
   // Questions belonging to a section key.
   const questionsForSection = useCallback(
     (key: SectionKey): Question[] => {
-      if (key === 'olympiad') return questions;
-      const sec = PRACTICE_SECTIONS.find(s => s.key === key)!;
+      const sec = PRACTICE_SECTIONS.find(s => s.key === key);
+      // single-section modes (olympiad / multiplication / division) span every question
+      if (!sec) return questions;
       return questions.filter(q => q.id >= sec.range[0] && q.id <= sec.range[1]);
     },
     [questions]
@@ -726,8 +756,9 @@ function MathSection() {
 
   // Get fresh questions for a single section without touching the others.
   const regenerateSection = useCallback((key: SectionKey) => {
-    if (key === 'olympiad') {
-      resetSession(generateOlympiadQuestions(OLYMPIAD_COUNT), 'olympiad');
+    // single-section modes (olympiad / multiplication / division) reset the whole set
+    if (key !== 'standard' && key !== 'advanced' && key !== 'challenge') {
+      resetSession(questionsForMode(key), key);
       return;
     }
     const sec = PRACTICE_SECTIONS.find(s => s.key === key)!;
@@ -893,8 +924,13 @@ function MathSection() {
         <Tabs
           value={mode}
           onChange={handleModeChange}
+          variant="scrollable"
+          scrollButtons="auto"
+          allowScrollButtonsMobile
           sx={{
+            maxWidth: '100%',
             '& .MuiTabs-indicator': { backgroundColor: '#ef5350', height: 3, borderRadius: '3px' },
+            '& .MuiTabs-scrollButtons.Mui-disabled': { opacity: 0.3 },
             '& .MuiTab-root': {
               textTransform: 'none',
               fontWeight: 'bold',
@@ -907,6 +943,8 @@ function MathSection() {
           }}
         >
           <Tab value="practice" label="🎯 Practice Mix" />
+          <Tab value="multiplication" label="✖️ Times Tables" />
+          <Tab value="division" label="➗ Division" />
           <Tab value="olympiad" label="🏆 Competitions" />
         </Tabs>
       </Box>
@@ -932,6 +970,42 @@ function MathSection() {
           </Typography>
           <Typography sx={{ color: '#ffe082', fontSize: '0.95rem', mt: 1 }}>
             Patterns, puzzles, and tricky problems. Take your time. Show your working on the whiteboard.
+          </Typography>
+        </Box>
+      )}
+
+      {/* Times Tables Banner */}
+      {mode === 'multiplication' && (
+        <Box
+          sx={{
+            mb: 3, p: 3, borderRadius: '20px',
+            background: 'linear-gradient(135deg, rgba(186,104,200,0.18) 0%, rgba(66,165,245,0.18) 100%)',
+            border: '2px solid rgba(186,104,200,0.45)', textAlign: 'center',
+          }}
+        >
+          <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#ce93d8', mb: 1 }}>
+            ✖️ Times Tables
+          </Typography>
+          <Typography sx={{ color: '#e1bee7', fontSize: '1.05rem' }}>
+            Every fact from <strong>2 × 2</strong> all the way to <strong>9 × 9</strong>. Practise them until they're automatic!
+          </Typography>
+        </Box>
+      )}
+
+      {/* Division Banner */}
+      {mode === 'division' && (
+        <Box
+          sx={{
+            mb: 3, p: 3, borderRadius: '20px',
+            background: 'linear-gradient(135deg, rgba(38,166,154,0.18) 0%, rgba(102,187,106,0.18) 100%)',
+            border: '2px solid rgba(38,166,154,0.45)', textAlign: 'center',
+          }}
+        >
+          <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#4db6ac', mb: 1 }}>
+            ➗ Division Facts
+          </Typography>
+          <Typography sx={{ color: '#b2dfdb', fontSize: '1.05rem' }}>
+            The times tables in reverse — from <strong>81 ÷ 9</strong> down to <strong>4 ÷ 2</strong>. Keep practising!
           </Typography>
         </Box>
       )}
@@ -1021,10 +1095,11 @@ function MathSection() {
         </Box>
       ) : (
         (() => {
-          const isRevealed = !!revealed['olympiad'];
+          const key = mode as SectionKey;
+          const isRevealed = !!revealed[key];
           const correct = countCorrect(questions);
           const total = questions.length;
-          const tTaken = sectionTime['olympiad'];
+          const tTaken = sectionTime[key];
           const allRight = isRevealed && correct === total;
           return (
             <Box>
@@ -1057,7 +1132,7 @@ function MathSection() {
               <Box sx={{ mt: 3, mb: 3, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                 <Button
                   variant="contained"
-                  onClick={() => checkSection('olympiad')}
+                  onClick={() => checkSection(key)}
                   disabled={isRevealed}
                   sx={{
                     borderRadius: '25px', px: 4, py: 1.5, fontSize: '1.1rem', fontWeight: 'bold', textTransform: 'none',
@@ -1069,7 +1144,7 @@ function MathSection() {
                 </Button>
                 <Button
                   variant="contained"
-                  onClick={() => regenerateSection('olympiad')}
+                  onClick={() => regenerateSection(key)}
                   sx={{
                     borderRadius: '25px', px: 4, py: 1.5, fontSize: '1.1rem', fontWeight: 'bold', textTransform: 'none',
                     bgcolor: '#ff9800', '&:hover': { bgcolor: '#f57c00' }, boxShadow: '0 4px 15px rgba(255,152,0,0.3)',
@@ -1122,7 +1197,11 @@ function MathSection() {
                                   ? 'rgba(66,165,245,0.3)'
                                   : result.difficulty === 'mixed'
                                     ? 'rgba(186,104,200,0.3)'
-                                    : 'rgba(255,167,38,0.3)',
+                                    : result.difficulty === 'multiplication'
+                                      ? 'rgba(206,147,216,0.3)'
+                                      : result.difficulty === 'division'
+                                        ? 'rgba(77,182,172,0.3)'
+                                        : 'rgba(255,167,38,0.3)',
                           color: '#fff',
                         }}
                       />
