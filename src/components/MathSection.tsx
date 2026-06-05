@@ -226,11 +226,29 @@ function generateDivisionQuestions(): Question[] {
   return facts.map((f, i) => ({ id: i + 1, text: `${f.dividend} ÷ ${f.divisor}`, answer: f.quotient }));
 }
 
-function questionsForMode(m: MathMode): Question[] {
+// Fisher–Yates shuffle, then renumber ids 1..n to match the new order.
+function shuffleQuestions(qs: Question[]): Question[] {
+  const a = [...qs];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a.map((q, i) => ({ ...q, id: i + 1 }));
+}
+
+// `randomize` shuffles the drill order (used by "More Questions"); the first
+// view of Times Tables / Division stays in its natural 2×2→9×9 / 81÷9→4÷2 order.
+function questionsForMode(m: MathMode, randomize = false): Question[] {
   switch (m) {
     case 'olympiad': return generateOlympiadQuestions(OLYMPIAD_COUNT);
-    case 'multiplication': return generateMultiplicationQuestions();
-    case 'division': return generateDivisionQuestions();
+    case 'multiplication': {
+      const qs = generateMultiplicationQuestions();
+      return randomize ? shuffleQuestions(qs) : qs;
+    }
+    case 'division': {
+      const qs = generateDivisionQuestions();
+      return randomize ? shuffleQuestions(qs) : qs;
+    }
     default: return generatePracticeQuestions();
   }
 }
@@ -756,9 +774,10 @@ function MathSection() {
 
   // Get fresh questions for a single section without touching the others.
   const regenerateSection = useCallback((key: SectionKey) => {
-    // single-section modes (olympiad / multiplication / division) reset the whole set
+    // single-section modes (olympiad / multiplication / division) reset the whole
+    // set; "More Questions" randomizes the drill order each time
     if (key !== 'standard' && key !== 'advanced' && key !== 'challenge') {
-      resetSession(questionsForMode(key), key);
+      resetSession(questionsForMode(key, true), key);
       return;
     }
     const sec = PRACTICE_SECTIONS.find(s => s.key === key)!;
