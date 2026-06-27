@@ -1,4 +1,11 @@
-import { Box, Button, IconButton, Typography, LinearProgress } from '@mui/material';
+import { palette, withAlpha } from '../theme/palette';
+import {
+  Box,
+  Button,
+  IconButton,
+  Typography,
+  LinearProgress,
+} from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import VolumeOffIcon from '@mui/icons-material/VolumeOff';
@@ -55,28 +62,143 @@ interface GameMeta {
 const ROUNDS_PER_GAME = 8;
 
 const GAMES_Y1: GameMeta[] = [
-  { id: 'letterMatch', title: 'Letter Match', emoji: '🔤', blurb: 'Match big & little letters', color: '#ff6f91', color2: '#ff9671' },
-  { id: 'beginningSound', title: 'First Sound', emoji: '🦁', blurb: 'What letter does it start with?', color: '#ffc75f', color2: '#ff9671' },
-  { id: 'missingLetter', title: 'Missing Letter', emoji: '🔡', blurb: 'Finish the alphabet', color: '#845ec2', color2: '#d65db1' },
-  { id: 'countTap', title: 'Count It', emoji: '🐣', blurb: 'How many can you see?', color: '#00c9a7', color2: '#4ffbdf' },
-  { id: 'addUp', title: 'Add It Up', emoji: '➕', blurb: 'Add the yummy things', color: '#4d8076', color2: '#00c9a7' },
-  { id: 'rhyme', title: 'Rhyme Time', emoji: '🎵', blurb: 'Find words that rhyme', color: '#0089ba', color2: '#2c73d2' },
-  { id: 'shapes', title: 'Shape Spotter', emoji: '🔷', blurb: 'Name the shape', color: '#ff8066', color2: '#ffc75f' },
-  { id: 'numberBonds', title: 'Number Bonds', emoji: '🔟', blurb: 'Make 10 and 20', color: '#c34a36', color2: '#ff8066' },
+  {
+    id: 'letterMatch',
+    title: 'Letter Match',
+    emoji: '🔤',
+    blurb: 'Match big & little letters',
+    color: palette.pink650,
+    color2: palette.orange325,
+  },
+  {
+    id: 'beginningSound',
+    title: 'First Sound',
+    emoji: '🦁',
+    blurb: 'What letter does it start with?',
+    color: palette.amber625,
+    color2: palette.orange325,
+  },
+  {
+    id: 'missingLetter',
+    title: 'Missing Letter',
+    emoji: '🔡',
+    blurb: 'Finish the alphabet',
+    color: palette.purple425,
+    color2: palette.magenta25,
+  },
+  {
+    id: 'countTap',
+    title: 'Count It',
+    emoji: '🐣',
+    blurb: 'How many can you see?',
+    color: palette.teal375,
+    color2: palette.cyan25,
+  },
+  {
+    id: 'addUp',
+    title: 'Add It Up',
+    emoji: '➕',
+    blurb: 'Add the yummy things',
+    color: palette.teal525,
+    color2: palette.teal375,
+  },
+  {
+    id: 'rhyme',
+    title: 'Rhyme Time',
+    emoji: '🎵',
+    blurb: 'Find words that rhyme',
+    color: palette.cyan950,
+    color2: palette.blue675,
+  },
+  {
+    id: 'shapes',
+    title: 'Shape Spotter',
+    emoji: '🔷',
+    blurb: 'Name the shape',
+    color: palette.orange525,
+    color2: palette.amber625,
+  },
+  {
+    id: 'numberBonds',
+    title: 'Number Bonds',
+    emoji: '🔟',
+    blurb: 'Make 10 and 20',
+    color: palette.orange825,
+    color2: palette.orange525,
+  },
 ];
 
 const GAMES_Y2: GameMeta[] = [
-  { id: 'quickMaths', title: 'Quick Maths', emoji: '⚡', blurb: 'Add & subtract big numbers', color: '#2c73d2', color2: '#0089ba' },
-  { id: 'timesTables', title: 'Times Tables', emoji: '✖️', blurb: 'Multiply up to 12 × 12', color: '#d65db1', color2: '#845ec2' },
-  { id: 'numberPattern', title: 'Number Patterns', emoji: '🔢', blurb: 'What comes next?', color: '#008f7a', color2: '#00c9a7' },
-  { id: 'missingNumber', title: 'Missing Number', emoji: '🟰', blurb: 'Find the secret number', color: '#c34a36', color2: '#ff8066' },
-  { id: 'brainTeaser', title: 'Brain Teasers', emoji: '🧠', blurb: 'Tricky word puzzles', color: '#845ec2', color2: '#2c73d2' },
-  { id: 'doubleHalf', title: 'Double or Half', emoji: '⚖️', blurb: 'Double it, halve it', color: '#ff6f91', color2: '#d65db1' },
-  { id: 'moneyMaths', title: 'Money Maths', emoji: '💰', blurb: 'Coins, totals & change', color: '#4d8076', color2: '#008f7a' },
-  { id: 'bonds100', title: 'Bonds to 100', emoji: '💯', blurb: 'Make 50 and 100', color: '#b0306c', color2: '#ff6f91' },
+  {
+    id: 'quickMaths',
+    title: 'Quick Maths',
+    emoji: '⚡',
+    blurb: 'Add & subtract big numbers',
+    color: palette.blue675,
+    color2: palette.cyan950,
+  },
+  {
+    id: 'timesTables',
+    title: 'Times Tables',
+    emoji: '✖️',
+    blurb: 'Multiply up to 12 × 12',
+    color: palette.magenta25,
+    color2: palette.purple425,
+  },
+  {
+    id: 'numberPattern',
+    title: 'Number Patterns',
+    emoji: '🔢',
+    blurb: 'What comes next?',
+    color: palette.teal675,
+    color2: palette.teal375,
+  },
+  {
+    id: 'missingNumber',
+    title: 'Missing Number',
+    emoji: '🟰',
+    blurb: 'Find the secret number',
+    color: palette.orange825,
+    color2: palette.orange525,
+  },
+  {
+    id: 'brainTeaser',
+    title: 'Brain Teasers',
+    emoji: '🧠',
+    blurb: 'Tricky word puzzles',
+    color: palette.purple425,
+    color2: palette.blue675,
+  },
+  {
+    id: 'doubleHalf',
+    title: 'Double or Half',
+    emoji: '⚖️',
+    blurb: 'Double it, halve it',
+    color: palette.pink650,
+    color2: palette.magenta25,
+  },
+  {
+    id: 'moneyMaths',
+    title: 'Money Maths',
+    emoji: '💰',
+    blurb: 'Coins, totals & change',
+    color: palette.teal525,
+    color2: palette.teal675,
+  },
+  {
+    id: 'bonds100',
+    title: 'Bonds to 100',
+    emoji: '💯',
+    blurb: 'Make 50 and 100',
+    color: palette.magenta800,
+    color2: palette.pink650,
+  },
 ];
 
-const GAMES_BY_LEVEL: Record<Level, GameMeta[]> = { year1: GAMES_Y1, year2: GAMES_Y2 };
+const GAMES_BY_LEVEL: Record<Level, GameMeta[]> = {
+  year1: GAMES_Y1,
+  year2: GAMES_Y2,
+};
 const ALL_GAMES = [...GAMES_Y1, ...GAMES_Y2];
 
 // ─── Content pools ──────────────────────────────────────────────────────────
@@ -112,7 +234,18 @@ const PICTURE_WORDS: { emoji: string; word: string; letter: string }[] = [
   { emoji: '🦓', word: 'Zebra', letter: 'Z' },
 ];
 
-const COUNT_EMOJIS = ['🐥', '🍓', '⭐', '🎈', '🐠', '🌸', '🦋', '🍩', '🚗', '🐞'];
+const COUNT_EMOJIS = [
+  '🐥',
+  '🍓',
+  '⭐',
+  '🎈',
+  '🐠',
+  '🌸',
+  '🦋',
+  '🍩',
+  '🚗',
+  '🐞',
+];
 
 // words grouped by rhyme — answer comes from the same group, distractors from others
 const RHYME_GROUPS: string[][] = [
@@ -139,32 +272,123 @@ const SHAPES: { emoji: string; name: string }[] = [
   { emoji: '🔷', name: 'Diamond' },
 ];
 
-const CORRECT_CHEERS = ['Yay! 🎉', 'Awesome! 🌟', 'You got it! ⭐', 'Super! 🚀', 'Brilliant! 💫', 'High five! ✋'];
-const WRONG_CHEERS = ['Try again! 💪', 'Almost! 🙂', 'Good try! 🌈', 'Keep going! 👍'];
+const CORRECT_CHEERS = [
+  'Yay! 🎉',
+  'Awesome! 🌟',
+  'You got it! ⭐',
+  'Super! 🚀',
+  'Brilliant! 💫',
+  'High five! ✋',
+];
+const WRONG_CHEERS = [
+  'Try again! 💪',
+  'Almost! 🙂',
+  'Good try! 🌈',
+  'Keep going! 👍',
+];
 
 // ─── Year 2 brain-teaser word problems (single numeric answer) ────────────────
 const TEASERS: Array<() => { text: string; answer: number }> = [
-  () => { const n = randInt(3, 8); return { text: `A spider has 8 legs. How many legs do ${n} spiders have?`, answer: 8 * n }; },
-  () => { const n = randInt(3, 9); return { text: `Each car has 4 wheels. How many wheels are on ${n} cars?`, answer: 4 * n }; },
-  () => { const a = randInt(25, 55), b = randInt(6, 15), c = randInt(6, 15); return { text: `Mia had ${a} stickers. She gave away ${b}, then got ${c} more. How many now?`, answer: a - b + c }; },
-  () => { const per = randInt(3, 8), groups = randInt(2, 6); return { text: `${groups} friends share ${per * groups} sweets equally. How many does each get?`, answer: per }; },
-  () => { const p = randInt(45, 90), r = randInt(12, 30); return { text: `A book has ${p} pages. Lucas read ${r}. How many pages are left?`, answer: p - r }; },
-  () => { const even = randInt(11, 40) * 2; return { text: `What is half of ${even}?`, answer: even / 2 }; },
-  () => { const w = randInt(2, 6); return { text: `There are ${w} weeks. How many days is that?`, answer: w * 7 }; },
-  () => { const d = randInt(2, 9); return { text: `A pizza has 8 slices. How many slices are in ${d} pizzas?`, answer: 8 * d }; },
-  () => { const cows = randInt(3, 9); return { text: `A farmer has ${cows} cows. How many legs altogether?`, answer: cows * 4 }; },
-  () => { const n = randInt(4, 7); return { text: `${n} children each have 2 hands with 5 fingers. How many fingers in total?`, answer: n * 10 }; },
-  () => { const start = randInt(2, 6); return { text: `A frog doubles its jumps each minute, starting at ${start}. How many jumps in the 3rd minute?`, answer: start * 4 }; },
-  () => { const rows = randInt(3, 6), each = randInt(3, 6); return { text: `A garden has ${rows} rows with ${each} flowers in each row. How many flowers?`, answer: rows * each }; },
+  () => {
+    const n = randInt(3, 8);
+    return {
+      text: `A spider has 8 legs. How many legs do ${n} spiders have?`,
+      answer: 8 * n,
+    };
+  },
+  () => {
+    const n = randInt(3, 9);
+    return {
+      text: `Each car has 4 wheels. How many wheels are on ${n} cars?`,
+      answer: 4 * n,
+    };
+  },
+  () => {
+    const a = randInt(25, 55),
+      b = randInt(6, 15),
+      c = randInt(6, 15);
+    return {
+      text: `Mia had ${a} stickers. She gave away ${b}, then got ${c} more. How many now?`,
+      answer: a - b + c,
+    };
+  },
+  () => {
+    const per = randInt(3, 8),
+      groups = randInt(2, 6);
+    return {
+      text: `${groups} friends share ${per * groups} sweets equally. How many does each get?`,
+      answer: per,
+    };
+  },
+  () => {
+    const p = randInt(45, 90),
+      r = randInt(12, 30);
+    return {
+      text: `A book has ${p} pages. Lucas read ${r}. How many pages are left?`,
+      answer: p - r,
+    };
+  },
+  () => {
+    const even = randInt(11, 40) * 2;
+    return { text: `What is half of ${even}?`, answer: even / 2 };
+  },
+  () => {
+    const w = randInt(2, 6);
+    return {
+      text: `There are ${w} weeks. How many days is that?`,
+      answer: w * 7,
+    };
+  },
+  () => {
+    const d = randInt(2, 9);
+    return {
+      text: `A pizza has 8 slices. How many slices are in ${d} pizzas?`,
+      answer: 8 * d,
+    };
+  },
+  () => {
+    const cows = randInt(3, 9);
+    return {
+      text: `A farmer has ${cows} cows. How many legs altogether?`,
+      answer: cows * 4,
+    };
+  },
+  () => {
+    const n = randInt(4, 7);
+    return {
+      text: `${n} children each have 2 hands with 5 fingers. How many fingers in total?`,
+      answer: n * 10,
+    };
+  },
+  () => {
+    const start = randInt(2, 6);
+    return {
+      text: `A frog doubles its jumps each minute, starting at ${start}. How many jumps in the 3rd minute?`,
+      answer: start * 4,
+    };
+  },
+  () => {
+    const rows = randInt(3, 6),
+      each = randInt(3, 6);
+    return {
+      text: `A garden has ${rows} rows with ${each} flowers in each row. How many flowers?`,
+      answer: rows * each,
+    };
+  },
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-const randInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
+const randInt = (min: number, max: number) =>
+  Math.floor(Math.random() * (max - min + 1)) + min;
 const pick = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
 const shuffle = <T,>(arr: T[]): T[] => [...arr].sort(() => Math.random() - 0.5);
 const cheer = (ok: boolean) => pick(ok ? CORRECT_CHEERS : WRONG_CHEERS);
 
-function uniqueOptions(correct: string, pool: string[], count: number): string[] {
+function uniqueOptions(
+  correct: string,
+  pool: string[],
+  count: number
+): string[] {
   const opts = new Set<string>([correct]);
   let guard = 0;
   while (opts.size < count && guard++ < 200) {
@@ -215,13 +439,16 @@ function makeRound(game: GameId): Round {
       };
     }
     case 'missingLetter': {
+      // sometimes use lowercase letters for variety
+      const lower = Math.random() < 0.5;
+      const alpha = lower ? ALPHABET.map(l => l.toLowerCase()) : ALPHABET;
       // pick a start so we always have a middle gap: A B _ D
-      const startIdx = randInt(0, ALPHABET.length - 4);
-      const seq = ALPHABET.slice(startIdx, startIdx + 4);
+      const startIdx = randInt(0, alpha.length - 4);
+      const seq = alpha.slice(startIdx, startIdx + 4);
       const gapPos = randInt(1, 2); // hide a middle letter
       const answer = seq[gapPos];
       const shown = seq.map((l, i) => (i === gapPos ? '_' : l)).join('  ');
-      const options = uniqueOptions(answer, ALPHABET, 4);
+      const options = uniqueOptions(answer, alpha, 4);
       return {
         display: shown,
         prompt: 'Which letter is missing?',
@@ -231,11 +458,11 @@ function makeRound(game: GameId): Round {
       };
     }
     case 'countTap': {
-      const n = randInt(2, 9);
+      const n = randInt(2, 20);
       const emoji = pick(COUNT_EMOJIS);
       const options = uniqueOptions(
         String(n),
-        Array.from({ length: 12 }, (_, i) => String(i + 1)),
+        Array.from({ length: 20 }, (_, i) => String(i + 1)),
         4
       );
       return {
@@ -281,7 +508,9 @@ function makeRound(game: GameId): Round {
       const shape = pick(SHAPES);
       const options = shuffle([
         shape.name,
-        ...shuffle(SHAPES.filter(s => s.name !== shape.name)).slice(0, 3).map(s => s.name),
+        ...shuffle(SHAPES.filter(s => s.name !== shape.name))
+          .slice(0, 3)
+          .map(s => s.name),
       ]);
       return {
         display: shape.emoji,
@@ -330,13 +559,25 @@ function makeRound(game: GameId): Round {
         text = `${a} + ${b} − ${c}`;
         answer = a + b - c;
       }
-      return { display: `${text} = ?`, prompt: 'Work it out!', options: numberOptions(answer, 8), answer: String(answer), bigOptions: true };
+      return {
+        display: `${text} = ?`,
+        prompt: 'Work it out!',
+        options: numberOptions(answer, 8),
+        answer: String(answer),
+        bigOptions: true,
+      };
     }
     case 'timesTables': {
       const a = randInt(2, 12);
       const b = randInt(2, 12);
       const answer = a * b;
-      return { display: `${a} × ${b} = ?`, prompt: 'Times tables!', options: numberOptions(answer, Math.max(4, Math.round(answer * 0.2))), answer: String(answer), bigOptions: true };
+      return {
+        display: `${a} × ${b} = ?`,
+        prompt: 'Times tables!',
+        options: numberOptions(answer, Math.max(4, Math.round(answer * 0.2))),
+        answer: String(answer),
+        bigOptions: true,
+      };
     }
     case 'numberPattern': {
       const kind = randInt(0, 2);
@@ -360,7 +601,13 @@ function makeRound(game: GameId): Round {
         seq = [start, start - step, start - 2 * step, start - 3 * step];
         next = start - 4 * step;
       }
-      return { display: `${seq.join(',  ')},  ?`, prompt: 'What comes next?', options: numberOptions(next, 6), answer: String(next), bigOptions: true };
+      return {
+        display: `${seq.join(',  ')},  ?`,
+        prompt: 'What comes next?',
+        options: numberOptions(next, 6),
+        answer: String(next),
+        bigOptions: true,
+      };
     }
     case 'missingNumber': {
       const op = randInt(0, 3);
@@ -387,39 +634,90 @@ function makeRound(game: GameId): Round {
         text = `? ÷ ${b} = ${q}`;
         answer = q * b;
       }
-      return { display: text, prompt: 'Find the missing number', options: numberOptions(answer, 6), answer: String(answer), bigOptions: true };
+      return {
+        display: text,
+        prompt: 'Find the missing number',
+        options: numberOptions(answer, 6),
+        answer: String(answer),
+        bigOptions: true,
+      };
     }
     case 'brainTeaser': {
       const t = pick(TEASERS)();
-      return { display: t.text, prompt: 'Solve the puzzle! 🧠', options: numberOptions(t.answer, Math.max(4, Math.round(t.answer * 0.2))), answer: String(t.answer), displaySmall: true };
+      return {
+        display: t.text,
+        prompt: 'Solve the puzzle! 🧠',
+        options: numberOptions(
+          t.answer,
+          Math.max(4, Math.round(t.answer * 0.2))
+        ),
+        answer: String(t.answer),
+        displaySmall: true,
+      };
     }
     case 'doubleHalf': {
       if (Math.random() < 0.5) {
         const n = randInt(11, 50);
-        return { display: `Double ${n}`, prompt: 'Double it!', options: numberOptions(n * 2, 8), answer: String(n * 2), bigOptions: true };
+        return {
+          display: `Double ${n}`,
+          prompt: 'Double it!',
+          options: numberOptions(n * 2, 8),
+          answer: String(n * 2),
+          bigOptions: true,
+        };
       }
       const even = randInt(10, 50) * 2;
-      return { display: `Half of ${even}`, prompt: 'Halve it!', options: numberOptions(even / 2, 8), answer: String(even / 2), bigOptions: true };
+      return {
+        display: `Half of ${even}`,
+        prompt: 'Halve it!',
+        options: numberOptions(even / 2, 8),
+        answer: String(even / 2),
+        bigOptions: true,
+      };
     }
     case 'moneyMaths': {
       const mode = randInt(0, 2);
       if (mode === 0) {
         const a = randInt(2, 9) * 5;
         const b = randInt(2, 9) * 5;
-        return { display: `${a}c + ${b}c`, prompt: 'How many cents altogether?', options: numberOptions(a + b, 10), answer: String(a + b), bigOptions: true };
+        return {
+          display: `${a}c + ${b}c`,
+          prompt: 'How many cents altogether?',
+          options: numberOptions(a + b, 10),
+          answer: String(a + b),
+          bigOptions: true,
+        };
       }
       if (mode === 1) {
         const spend = randInt(2, 19) * 5;
-        return { display: `Pay 100c, spend ${spend}c`, prompt: 'How much change?', options: numberOptions(100 - spend, 10), answer: String(100 - spend), bigOptions: true };
+        return {
+          display: `Pay 100c, spend ${spend}c`,
+          prompt: 'How much change?',
+          options: numberOptions(100 - spend, 10),
+          answer: String(100 - spend),
+          bigOptions: true,
+        };
       }
       const total = randInt(3, 12) * 5;
-      return { display: `${total}c in 5c coins`, prompt: 'How many 5c coins?', options: numberOptions(total / 5, 3), answer: String(total / 5), bigOptions: true };
+      return {
+        display: `${total}c in 5c coins`,
+        prompt: 'How many 5c coins?',
+        options: numberOptions(total / 5, 3),
+        answer: String(total / 5),
+        bigOptions: true,
+      };
     }
     case 'bonds100': {
       const total = pick([100, 100, 50]);
       const a = randInt(1, total / 5 - 1) * 5;
       const answer = total - a;
-      return { display: `${a}  +  ❓  =  ${total}`, prompt: `What goes with ${a} to make ${total}?`, options: numberOptions(answer, 15), answer: String(answer), bigOptions: true };
+      return {
+        display: `${a}  +  ❓  =  ${total}`,
+        prompt: `What goes with ${a} to make ${total}?`,
+        options: numberOptions(answer, 15),
+        answer: String(answer),
+        bigOptions: true,
+      };
     }
   }
 }
@@ -431,7 +729,10 @@ function useChime(muted: boolean) {
     (ok: boolean) => {
       if (muted) return;
       try {
-        const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        const Ctx =
+          window.AudioContext ||
+          (window as unknown as { webkitAudioContext: typeof AudioContext })
+            .webkitAudioContext;
         if (!ctxRef.current) ctxRef.current = new Ctx();
         const ctx = ctxRef.current;
         const now = ctx.currentTime;
@@ -467,8 +768,12 @@ function PlayZoneSection() {
   const [picked, setPicked] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [finished, setFinished] = useState(false);
-  const [muted, setMuted] = useState(() => localStorage.getItem('playMuted') === '1');
-  const [level, setLevel] = useState<Level>(() => (localStorage.getItem('playLevel') === 'year2' ? 'year2' : 'year1'));
+  const [muted, setMuted] = useState(
+    () => localStorage.getItem('playMuted') === '1'
+  );
+  const [level, setLevel] = useState<Level>(() =>
+    localStorage.getItem('playLevel') === 'year2' ? 'year2' : 'year1'
+  );
 
   const chime = useChime(muted);
 
@@ -491,7 +796,8 @@ function PlayZoneSection() {
     if (roundNum >= ROUNDS_PER_GAME) {
       setFinished(true);
       // bank the stars earned this game
-      const banked = Number(localStorage.getItem('playTotalStars') || '0') + stars;
+      const banked =
+        Number(localStorage.getItem('playTotalStars') || '0') + stars;
       localStorage.setItem('playTotalStars', String(banked));
       return;
     }
@@ -510,9 +816,12 @@ function PlayZoneSection() {
       chime(ok);
       if (ok) setStars(s => s + 1);
       // auto-advance after a beat so kids see the result
-      window.setTimeout(() => {
-        nextRound();
-      }, ok ? 900 : 1500);
+      window.setTimeout(
+        () => {
+          nextRound();
+        },
+        ok ? 900 : 1500
+      );
     },
     [round, picked, chime, nextRound]
   );
@@ -546,7 +855,7 @@ function PlayZoneSection() {
         py: 3,
         position: 'relative',
         overflow: 'hidden',
-        background: 'linear-gradient(160deg, #fff1e6 0%, #ffe0f0 35%, #e3f2ff 70%, #e8fff4 100%)',
+        background: `linear-gradient(160deg, ${palette.orange25} 0%, ${palette.pink25} 35%, ${palette.blue25} 70%, ${palette.teal25} 100%)`,
       }}
     >
       <style>{`
@@ -566,8 +875,8 @@ function PlayZoneSection() {
           aria-hidden
           sx={{
             position: 'absolute',
-            top: `${10 + (i * 14) % 80}%`,
-            [i % 2 ? 'right' : 'left']: `${4 + (i * 7) % 20}%`,
+            top: `${10 + ((i * 14) % 80)}%`,
+            [i % 2 ? 'right' : 'left']: `${4 + ((i * 7) % 20)}%`,
             fontSize: { xs: '2rem', sm: '2.8rem' },
             opacity: 0.35,
             animation: `floaty ${5 + i}s ease-in-out infinite ${i * 0.6}s`,
@@ -579,16 +888,25 @@ function PlayZoneSection() {
       ))}
 
       {/* Top bar */}
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, position: 'relative', zIndex: 1 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          mb: 2,
+          position: 'relative',
+          zIndex: 1,
+        }}
+      >
         <IconButton
           onClick={() => (activeGame ? backToHub() : navigate({ to: '/' }))}
           aria-label={activeGame ? 'Back to games' : 'Back to dashboard'}
           sx={{
-            bgcolor: 'rgba(255,255,255,0.7)',
-            color: '#7b1fa2',
-            border: '3px solid #d65db1',
+            bgcolor: withAlpha(palette.white, 0.7),
+            color: palette.purple625,
+            border: `3px solid ${palette.magenta25}`,
             borderRadius: '16px',
-            '&:hover': { bgcolor: '#fff', transform: 'scale(1.05)' },
+            '&:hover': { bgcolor: palette.white, transform: 'scale(1.05)' },
           }}
           size="large"
         >
@@ -600,14 +918,20 @@ function PlayZoneSection() {
             display: 'flex',
             alignItems: 'center',
             gap: 1,
-            bgcolor: 'rgba(255,255,255,0.75)',
-            border: '3px solid #ffc75f',
+            bgcolor: withAlpha(palette.white, 0.75),
+            border: `3px solid ${palette.amber625}`,
             borderRadius: '999px',
             px: 2,
             py: 0.5,
           }}
         >
-          <Typography sx={{ fontWeight: 900, color: '#ff8f00', fontSize: '1.2rem' }}>
+          <Typography
+            sx={{
+              fontWeight: 900,
+              color: palette.orange575,
+              fontSize: '1.2rem',
+            }}
+          >
             ⭐ {activeGame ? stars : totalStars}
           </Typography>
         </Box>
@@ -616,11 +940,11 @@ function PlayZoneSection() {
           onClick={toggleMute}
           aria-label={muted ? 'Turn sound on' : 'Turn sound off'}
           sx={{
-            bgcolor: 'rgba(255,255,255,0.7)',
-            color: '#00897b',
-            border: '3px solid #00c9a7',
+            bgcolor: withAlpha(palette.white, 0.7),
+            color: palette.teal725,
+            border: `3px solid ${palette.teal375}`,
             borderRadius: '16px',
-            '&:hover': { bgcolor: '#fff', transform: 'scale(1.05)' },
+            '&:hover': { bgcolor: palette.white, transform: 'scale(1.05)' },
           }}
           size="large"
         >
@@ -636,14 +960,21 @@ function PlayZoneSection() {
               fontWeight: 900,
               fontSize: { xs: '2.2rem', sm: '3rem' },
               mb: 0.5,
-              color: '#d63384',
-              textShadow: '2px 2px 0 #fff',
+              color: palette.magenta325,
+              textShadow: `2px 2px 0 ${palette.white}`,
               animation: 'wobble 4s ease-in-out infinite',
             }}
           >
             🎪 Play &amp; Learn
           </Typography>
-          <Typography sx={{ color: '#8e44ad', fontWeight: 700, mb: 2, fontSize: '1.1rem' }}>
+          <Typography
+            sx={{
+              color: palette.purple475,
+              fontWeight: 700,
+              mb: 2,
+              fontSize: '1.1rem',
+            }}
+          >
             Pick a game and learn while you play!
           </Typography>
 
@@ -657,15 +988,23 @@ function PlayZoneSection() {
               p: 0.5,
               mb: 3,
               borderRadius: '999px',
-              bgcolor: 'rgba(255,255,255,0.6)',
-              border: '3px solid #fff',
-              boxShadow: '0 6px 16px rgba(0,0,0,0.12)',
+              bgcolor: withAlpha(palette.white, 0.6),
+              border: `3px solid ${palette.white}`,
+              boxShadow: `0 6px 16px ${withAlpha(palette.black, 0.12)}`,
             }}
           >
-            {([
-              { id: 'year1' as Level, label: '🐣 Year 1', sub: 'Little learners' },
-              { id: 'year2' as Level, label: '🚀 Year 2', sub: 'Challenge mode' },
-            ]).map(t => {
+            {[
+              {
+                id: 'year1' as Level,
+                label: '🐣 Year 1',
+                sub: 'Little learners',
+              },
+              {
+                id: 'year2' as Level,
+                label: '🚀 Year 2',
+                sub: 'Challenge mode',
+              },
+            ].map(t => {
               const selected = level === t.id;
               return (
                 <Box
@@ -674,7 +1013,12 @@ function PlayZoneSection() {
                   tabIndex={0}
                   aria-selected={selected}
                   onClick={() => changeLevel(t.id)}
-                  onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); changeLevel(t.id); } }}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      changeLevel(t.id);
+                    }
+                  }}
                   sx={{
                     cursor: 'pointer',
                     userSelect: 'none',
@@ -683,14 +1027,33 @@ function PlayZoneSection() {
                     py: 1,
                     textAlign: 'center',
                     transition: 'all 0.15s',
-                    color: selected ? '#fff' : '#8e44ad',
-                    background: selected ? 'linear-gradient(150deg, #d63384, #8e44ad)' : 'transparent',
-                    boxShadow: selected ? '0 4px 12px rgba(214,51,132,0.4)' : 'none',
-                    '&:focus-visible': { outline: '3px solid #6a1b9a', outlineOffset: 2 },
+                    color: selected ? palette.white : palette.purple475,
+                    background: selected
+                      ? `linear-gradient(150deg, ${palette.magenta325}, ${palette.purple475})`
+                      : 'transparent',
+                    boxShadow: selected
+                      ? `0 4px 12px ${withAlpha(palette.magenta325, 0.4)}`
+                      : 'none',
+                    '&:focus-visible': {
+                      outline: `3px solid ${palette.purple675}`,
+                      outlineOffset: 2,
+                    },
                   }}
                 >
-                  <Typography sx={{ fontWeight: 900, fontSize: '1.1rem', lineHeight: 1.1 }}>{t.label}</Typography>
-                  <Typography sx={{ fontWeight: 600, fontSize: '0.72rem', opacity: 0.85 }}>{t.sub}</Typography>
+                  <Typography
+                    sx={{
+                      fontWeight: 900,
+                      fontSize: '1.1rem',
+                      lineHeight: 1.1,
+                    }}
+                  >
+                    {t.label}
+                  </Typography>
+                  <Typography
+                    sx={{ fontWeight: 600, fontSize: '0.72rem', opacity: 0.85 }}
+                  >
+                    {t.sub}
+                  </Typography>
                 </Box>
               );
             })}
@@ -699,7 +1062,11 @@ function PlayZoneSection() {
           <Box
             sx={{
               display: 'grid',
-              gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' },
+              gridTemplateColumns: {
+                xs: '1fr',
+                sm: '1fr 1fr',
+                md: '1fr 1fr 1fr',
+              },
               gap: 3,
               maxWidth: 900,
               mx: 'auto',
@@ -711,29 +1078,46 @@ function PlayZoneSection() {
                 role="button"
                 tabIndex={0}
                 onClick={() => startGame(g.id)}
-                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); startGame(g.id); } }}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    startGame(g.id);
+                  }
+                }}
                 sx={{
                   cursor: 'pointer',
                   borderRadius: '28px',
                   p: 3,
-                  color: '#fff',
+                  color: palette.white,
                   background: `linear-gradient(150deg, ${g.color} 0%, ${g.color2} 100%)`,
-                  border: '4px solid #fff',
-                  boxShadow: '0 10px 0 rgba(0,0,0,0.12), 0 14px 30px rgba(0,0,0,0.18)',
+                  border: `4px solid ${palette.white}`,
+                  boxShadow: `0 10px 0 ${withAlpha(palette.black, 0.12)}, 0 14px 30px ${withAlpha(palette.black, 0.18)}`,
                   transition: 'transform 0.15s, box-shadow 0.15s',
                   animation: `pop 0.4s ease ${i * 0.08}s both`,
                   '&:hover, &:focus-visible': {
                     transform: 'translateY(-6px) rotate(-1deg)',
-                    boxShadow: '0 14px 0 rgba(0,0,0,0.12), 0 20px 38px rgba(0,0,0,0.22)',
+                    boxShadow: `0 14px 0 ${withAlpha(palette.black, 0.12)}, 0 20px 38px ${withAlpha(palette.black, 0.22)}`,
                     outline: 'none',
                   },
                 }}
               >
-                <Typography sx={{ fontSize: '3.4rem', lineHeight: 1, mb: 1 }}>{g.emoji}</Typography>
-                <Typography sx={{ fontWeight: 900, fontSize: '1.4rem', textShadow: '1px 1px 0 rgba(0,0,0,0.2)' }}>
+                <Typography sx={{ fontSize: '3.4rem', lineHeight: 1, mb: 1 }}>
+                  {g.emoji}
+                </Typography>
+                <Typography
+                  sx={{
+                    fontWeight: 900,
+                    fontSize: '1.4rem',
+                    textShadow: `1px 1px 0 ${withAlpha(palette.black, 0.2)}`,
+                  }}
+                >
                   {g.title}
                 </Typography>
-                <Typography sx={{ fontWeight: 600, opacity: 0.95, fontSize: '0.95rem' }}>{g.blurb}</Typography>
+                <Typography
+                  sx={{ fontWeight: 600, opacity: 0.95, fontSize: '0.95rem' }}
+                >
+                  {g.blurb}
+                </Typography>
               </Box>
             ))}
           </Box>
@@ -742,38 +1126,107 @@ function PlayZoneSection() {
 
       {/* ─── FINISHED ─── */}
       {activeGame && finished && meta && (
-        <Box sx={{ position: 'relative', zIndex: 1, textAlign: 'center', mt: 4, animation: 'pop 0.5s ease both' }}>
-          <Typography sx={{ fontSize: '4.5rem', animation: 'floaty 3s ease-in-out infinite' }}>
-            {stars >= ROUNDS_PER_GAME ? '🏆' : stars >= ROUNDS_PER_GAME / 2 ? '🌟' : '🎈'}
+        <Box
+          sx={{
+            position: 'relative',
+            zIndex: 1,
+            textAlign: 'center',
+            mt: 4,
+            animation: 'pop 0.5s ease both',
+          }}
+        >
+          <Typography
+            sx={{
+              fontSize: '4.5rem',
+              animation: 'floaty 3s ease-in-out infinite',
+            }}
+          >
+            {stars >= ROUNDS_PER_GAME
+              ? '🏆'
+              : stars >= ROUNDS_PER_GAME / 2
+                ? '🌟'
+                : '🎈'}
           </Typography>
-          <Typography sx={{ fontWeight: 900, fontSize: '2.2rem', color: '#d63384', textShadow: '2px 2px 0 #fff' }}>
-            {stars >= ROUNDS_PER_GAME ? 'Perfect! You\'re a star!' : stars >= ROUNDS_PER_GAME / 2 ? 'Great job!' : 'Well played!'}
+          <Typography
+            sx={{
+              fontWeight: 900,
+              fontSize: '2.2rem',
+              color: palette.magenta325,
+              textShadow: `2px 2px 0 ${palette.white}`,
+            }}
+          >
+            {stars >= ROUNDS_PER_GAME
+              ? "Perfect! You're a star!"
+              : stars >= ROUNDS_PER_GAME / 2
+                ? 'Great job!'
+                : 'Well played!'}
           </Typography>
-          <Typography sx={{ fontWeight: 800, color: '#ff8f00', fontSize: '1.6rem', my: 1 }}>
+          <Typography
+            sx={{
+              fontWeight: 800,
+              color: palette.orange575,
+              fontSize: '1.6rem',
+              my: 1,
+            }}
+          >
             You earned {stars} ⭐ in {meta.title}!
           </Typography>
-          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap', mt: 2 }}>
-            <PlayButton color="#00c9a7" onClick={() => startGame(meta.id)}>🔁 Play Again</PlayButton>
-            <PlayButton color="#845ec2" onClick={backToHub}>🎪 Pick Another</PlayButton>
+          <Box
+            sx={{
+              display: 'flex',
+              gap: 2,
+              justifyContent: 'center',
+              flexWrap: 'wrap',
+              mt: 2,
+            }}
+          >
+            <PlayButton
+              color={palette.teal375}
+              onClick={() => startGame(meta.id)}
+            >
+              🔁 Play Again
+            </PlayButton>
+            <PlayButton color={palette.purple425} onClick={backToHub}>
+              🎪 Pick Another
+            </PlayButton>
           </Box>
         </Box>
       )}
 
       {/* ─── PLAYING ─── */}
       {activeGame && !finished && round && meta && (
-        <Box sx={{ position: 'relative', zIndex: 1, maxWidth: 720, mx: 'auto', mt: 1 }}>
+        <Box
+          sx={{
+            position: 'relative',
+            zIndex: 1,
+            maxWidth: 720,
+            mx: 'auto',
+            mt: 1,
+          }}
+        >
           {/* progress */}
           <Box sx={{ mb: 2 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-              <Typography sx={{ fontWeight: 800, color: meta.color }}>{meta.emoji} {meta.title}</Typography>
-              <Typography sx={{ fontWeight: 800, color: '#8e44ad' }}>Round {roundNum} / {ROUNDS_PER_GAME}</Typography>
+            <Box
+              sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}
+            >
+              <Typography sx={{ fontWeight: 800, color: meta.color }}>
+                {meta.emoji} {meta.title}
+              </Typography>
+              <Typography sx={{ fontWeight: 800, color: palette.purple475 }}>
+                Round {roundNum} / {ROUNDS_PER_GAME}
+              </Typography>
             </Box>
             <LinearProgress
               variant="determinate"
-              value={(roundNum - 1) / ROUNDS_PER_GAME * 100}
+              value={((roundNum - 1) / ROUNDS_PER_GAME) * 100}
               sx={{
-                height: 14, borderRadius: 999, bgcolor: 'rgba(255,255,255,0.7)',
-                '& .MuiLinearProgress-bar': { borderRadius: 999, background: `linear-gradient(90deg, ${meta.color}, ${meta.color2})` },
+                height: 14,
+                borderRadius: 999,
+                bgcolor: withAlpha(palette.white, 0.7),
+                '& .MuiLinearProgress-bar': {
+                  borderRadius: 999,
+                  background: `linear-gradient(90deg, ${meta.color}, ${meta.color2})`,
+                },
               }}
             />
           </Box>
@@ -781,10 +1234,10 @@ function PlayZoneSection() {
           {/* question card */}
           <Box
             sx={{
-              bgcolor: 'rgba(255,255,255,0.85)',
-              border: '5px solid #fff',
+              bgcolor: withAlpha(palette.white, 0.85),
+              border: `5px solid ${palette.white}`,
               borderRadius: '28px',
-              boxShadow: '0 12px 30px rgba(0,0,0,0.12)',
+              boxShadow: `0 12px 30px ${withAlpha(palette.black, 0.12)}`,
               p: { xs: 2.5, sm: 4 },
               textAlign: 'center',
               mb: 3,
@@ -799,7 +1252,7 @@ function PlayZoneSection() {
                 fontWeight: round.displaySmall ? 800 : 900,
                 lineHeight: 1.3,
                 whiteSpace: 'pre-line',
-                color: '#37474f',
+                color: palette.slate950,
                 mb: 1,
                 animation: 'pop 0.35s ease both',
                 wordBreak: 'break-word',
@@ -807,7 +1260,13 @@ function PlayZoneSection() {
             >
               {round.display}
             </Typography>
-            <Typography sx={{ fontWeight: 700, color: '#6a1b9a', fontSize: '1.15rem' }}>
+            <Typography
+              sx={{
+                fontWeight: 700,
+                color: palette.purple675,
+                fontSize: '1.15rem',
+              }}
+            >
               {round.prompt}
             </Typography>
           </Box>
@@ -824,11 +1283,18 @@ function PlayZoneSection() {
               const isPicked = picked === opt;
               const isAnswer = opt === round.answer;
               const reveal = picked !== null;
-              let bg = 'linear-gradient(150deg, #ffffff 0%, #f3e9ff 100%)';
-              let border = '#b39ddb';
-              let textColor = '#4a148c';
-              if (reveal && isAnswer) { bg = 'linear-gradient(150deg, #69f0ae 0%, #00c853 100%)'; border = '#00c853'; textColor = '#fff'; }
-              else if (reveal && isPicked && !isAnswer) { bg = 'linear-gradient(150deg, #ff8a80 0%, #ff5252 100%)'; border = '#ff5252'; textColor = '#fff'; }
+              let bg = `linear-gradient(150deg, ${palette.white} 0%, ${palette.purple25} 100%)`;
+              let border = palette.purple300;
+              let textColor = palette.purple750;
+              if (reveal && isAnswer) {
+                bg = `linear-gradient(150deg, ${palette.green175} 0%, ${palette.green500} 100%)`;
+                border = palette.green500;
+                textColor = palette.white;
+              } else if (reveal && isPicked && !isAnswer) {
+                bg = `linear-gradient(150deg, ${palette.red225} 0%, ${palette.red325} 100%)`;
+                border = palette.red325;
+                textColor = palette.white;
+              }
               return (
                 <Box
                   key={opt}
@@ -836,7 +1302,12 @@ function PlayZoneSection() {
                   tabIndex={reveal ? -1 : 0}
                   aria-label={`Answer ${opt}`}
                   onClick={() => handlePick(opt)}
-                  onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handlePick(opt); } }}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      handlePick(opt);
+                    }
+                  }}
                   sx={{
                     cursor: reveal ? 'default' : 'pointer',
                     userSelect: 'none',
@@ -848,22 +1319,47 @@ function PlayZoneSection() {
                     px: 1,
                     textAlign: 'center',
                     fontWeight: 900,
-                    fontSize: round.bigOptions ? { xs: '2rem', sm: '2.4rem' } : { xs: '1.1rem', sm: '1.3rem' },
-                    boxShadow: reveal && isAnswer ? '0 8px 0 #00a040' : '0 6px 0 rgba(0,0,0,0.12)',
+                    fontSize: round.bigOptions
+                      ? { xs: '2rem', sm: '2.4rem' }
+                      : { xs: '1.1rem', sm: '1.3rem' },
+                    boxShadow:
+                      reveal && isAnswer
+                        ? `0 8px 0 ${palette.green650}`
+                        : `0 6px 0 ${withAlpha(palette.black, 0.12)}`,
                     transition: 'transform 0.12s, box-shadow 0.12s',
                     position: 'relative',
                     minHeight: 64,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    animation: reveal && isAnswer ? 'pop 0.4s ease both' : 'none',
-                    '&:hover': reveal ? {} : { transform: 'translateY(-3px)', boxShadow: '0 9px 0 rgba(0,0,0,0.12)' },
-                    '&:focus-visible': { outline: '3px solid #6a1b9a', outlineOffset: 2 },
+                    animation:
+                      reveal && isAnswer ? 'pop 0.4s ease both' : 'none',
+                    '&:hover': reveal
+                      ? {}
+                      : {
+                          transform: 'translateY(-3px)',
+                          boxShadow: `0 9px 0 ${withAlpha(palette.black, 0.12)}`,
+                        },
+                    '&:focus-visible': {
+                      outline: `3px solid ${palette.purple675}`,
+                      outlineOffset: 2,
+                    },
                   }}
                 >
                   {opt}
                   {reveal && isAnswer && (
-                    <Box aria-hidden sx={{ position: 'absolute', top: -10, right: -6, fontSize: '1.6rem', animation: 'burst 0.7s ease both' }}>🎉</Box>
+                    <Box
+                      aria-hidden
+                      sx={{
+                        position: 'absolute',
+                        top: -10,
+                        right: -6,
+                        fontSize: '1.6rem',
+                        animation: 'burst 0.7s ease both',
+                      }}
+                    >
+                      🎉
+                    </Box>
                   )}
                 </Box>
               );
@@ -879,7 +1375,10 @@ function PlayZoneSection() {
                   display: 'inline-block',
                   fontWeight: 900,
                   fontSize: '1.6rem',
-                  color: picked === round.answer ? '#00897b' : '#ef6c00',
+                  color:
+                    picked === round.answer
+                      ? palette.teal725
+                      : palette.orange775,
                   animation: 'pop 0.3s ease both',
                 }}
               >
@@ -894,7 +1393,15 @@ function PlayZoneSection() {
 }
 
 // ─── Little reusable chunky button ────────────────────────────────────────────
-function PlayButton({ children, color, onClick }: { children: React.ReactNode; color: string; onClick: () => void }) {
+function PlayButton({
+  children,
+  color,
+  onClick,
+}: {
+  children: React.ReactNode;
+  color: string;
+  onClick: () => void;
+}) {
   return (
     <Button
       onClick={onClick}
@@ -905,12 +1412,19 @@ function PlayButton({ children, color, onClick }: { children: React.ReactNode; c
         fontWeight: 900,
         fontSize: '1.1rem',
         textTransform: 'none',
-        color: '#fff',
+        color: palette.white,
         background: color,
-        border: '3px solid #fff',
-        boxShadow: `0 6px 0 rgba(0,0,0,0.15)`,
-        '&:hover': { background: color, transform: 'translateY(-2px)', boxShadow: '0 8px 0 rgba(0,0,0,0.15)' },
-        '&:active': { transform: 'translateY(2px)', boxShadow: '0 3px 0 rgba(0,0,0,0.15)' },
+        border: `3px solid ${palette.white}`,
+        boxShadow: `0 6px 0 ${withAlpha(palette.black, 0.15)}`,
+        '&:hover': {
+          background: color,
+          transform: 'translateY(-2px)',
+          boxShadow: `0 8px 0 ${withAlpha(palette.black, 0.15)}`,
+        },
+        '&:active': {
+          transform: 'translateY(2px)',
+          boxShadow: `0 3px 0 ${withAlpha(palette.black, 0.15)}`,
+        },
       }}
     >
       {children}

@@ -1,3 +1,4 @@
+import { palette, withAlpha } from '../theme/palette';
 import {
   Box,
   Button,
@@ -27,7 +28,9 @@ import {
   Replay as ReplayIcon,
   DeleteOutline as DeleteOutlineIcon,
 } from '@mui/icons-material';
-import SessionReviewDialog, { type ReviewQuestion } from './SessionReviewDialog';
+import SessionReviewDialog, {
+  type ReviewQuestion,
+} from './SessionReviewDialog';
 import ConfirmDeleteDialog from './ConfirmDeleteDialog';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Question } from '../types';
@@ -59,9 +62,9 @@ const encouragingCorrect = [
 
 const encouragingIncorrect = [
   'Almost! The answer is',
-  'Good try! It\'s actually',
+  "Good try! It's actually",
   'So close! The answer is',
-  'Nice effort! It\'s',
+  "Nice effort! It's",
 ];
 
 function getRandomEncouragement(correct: boolean): string {
@@ -69,7 +72,11 @@ function getRandomEncouragement(correct: boolean): string {
   return list[Math.floor(Math.random() * list.length)];
 }
 
-function generateLevelQuestions(difficulty: Difficulty, count: number, startId: number): Question[] {
+function generateLevelQuestions(
+  difficulty: Difficulty,
+  count: number,
+  startId: number
+): Question[] {
   const questions: Question[] = [];
 
   for (let i = 0; i < count; i++) {
@@ -141,7 +148,10 @@ function generateLevelQuestions(difficulty: Difficulty, count: number, startId: 
           num2 = Math.floor(Math.random() * 12) + 1;
         } else {
           const timesTableOptions = [2, 3, 5, 10];
-          num1 = timesTableOptions[Math.floor(Math.random() * timesTableOptions.length)];
+          num1 =
+            timesTableOptions[
+              Math.floor(Math.random() * timesTableOptions.length)
+            ];
           num2 = Math.floor(Math.random() * 10) + 1;
         }
         text = `What is ${num1} × ${num2}?`;
@@ -187,8 +197,15 @@ function generateLevelQuestions(difficulty: Difficulty, count: number, startId: 
       }
     }
 
-    const useMCQ = (difficulty === 'advanced' || difficulty === 'challenge') && Math.random() < 0.4;
-    questions.push({ id, text, answer, options: useMCQ ? mathOptions(Number(answer)) : undefined });
+    const useMCQ =
+      (difficulty === 'advanced' || difficulty === 'challenge') &&
+      Math.random() < 0.4;
+    questions.push({
+      id,
+      text,
+      answer,
+      options: useMCQ ? mathOptions(Number(answer)) : undefined,
+    });
   }
 
   return questions;
@@ -197,8 +214,16 @@ function generateLevelQuestions(difficulty: Difficulty, count: number, startId: 
 function generatePracticeQuestions(): Question[] {
   return [
     ...generateLevelQuestions('standard', PRACTICE_PER_GROUP, 1),
-    ...generateLevelQuestions('advanced', PRACTICE_PER_GROUP, 1 + PRACTICE_PER_GROUP),
-    ...generateLevelQuestions('challenge', PRACTICE_PER_GROUP, 1 + PRACTICE_PER_GROUP * 2),
+    ...generateLevelQuestions(
+      'advanced',
+      PRACTICE_PER_GROUP,
+      1 + PRACTICE_PER_GROUP
+    ),
+    ...generateLevelQuestions(
+      'challenge',
+      PRACTICE_PER_GROUP,
+      1 + PRACTICE_PER_GROUP * 2
+    ),
   ];
 }
 
@@ -223,7 +248,11 @@ function generateDivisionQuestions(): Question[] {
     }
   }
   facts.sort((x, y) => y.dividend - x.dividend || y.divisor - x.divisor);
-  return facts.map((f, i) => ({ id: i + 1, text: `${f.dividend} ÷ ${f.divisor}`, answer: f.quotient }));
+  return facts.map((f, i) => ({
+    id: i + 1,
+    text: `${f.dividend} ÷ ${f.divisor}`,
+    answer: f.quotient,
+  }));
 }
 
 // Fisher–Yates shuffle, then renumber ids 1..n to match the new order.
@@ -240,7 +269,8 @@ function shuffleQuestions(qs: Question[]): Question[] {
 // view of Times Tables / Division stays in its natural 2×2→9×9 / 81÷9→4÷2 order.
 function questionsForMode(m: MathMode, randomize = false): Question[] {
   switch (m) {
-    case 'olympiad': return generateOlympiadQuestions(OLYMPIAD_COUNT);
+    case 'olympiad':
+      return generateOlympiadQuestions(OLYMPIAD_COUNT);
     case 'multiplication': {
       const qs = generateMultiplicationQuestions();
       return randomize ? shuffleQuestions(qs) : qs;
@@ -249,7 +279,8 @@ function questionsForMode(m: MathMode, randomize = false): Question[] {
       const qs = generateDivisionQuestions();
       return randomize ? shuffleQuestions(qs) : qs;
     }
-    default: return generatePracticeQuestions();
+    default:
+      return generatePracticeQuestions();
   }
 }
 
@@ -265,7 +296,9 @@ function mathOptions(correct: number): string[] {
   const wrong = new Set<number>();
   const spread = Math.max(3, Math.round(Math.abs(ans) * 0.15) + 2);
   while (wrong.size < 3) {
-    const delta = Math.floor(Math.random() * spread * 2 + 1) * (Math.random() < 0.5 ? 1 : -1);
+    const delta =
+      Math.floor(Math.random() * spread * 2 + 1) *
+      (Math.random() < 0.5 ? 1 : -1);
     const candidate = ans + delta;
     if (candidate !== ans && !wrong.has(candidate)) wrong.add(candidate);
   }
@@ -274,7 +307,7 @@ function mathOptions(correct: number): string[] {
 
 const darkCard = {
   borderRadius: '16px',
-  boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
+  boxShadow: `0 4px 16px ${withAlpha(palette.black, 0.4)}`,
   transition: 'transform 0.2s',
   '&:hover': { transform: 'scale(1.02)' },
 };
@@ -290,15 +323,24 @@ function Whiteboard() {
   const dragDistance = useRef(0);
   const DRAG_THRESHOLD = 10;
 
-  const getPos = (e: React.MouseEvent | React.TouchEvent, canvas: HTMLCanvasElement) => {
+  const getPos = (
+    e: React.MouseEvent | React.TouchEvent,
+    canvas: HTMLCanvasElement
+  ) => {
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
     if ('touches' in e) {
       const t = e.touches[0];
-      return { x: (t.clientX - rect.left) * scaleX, y: (t.clientY - rect.top) * scaleY };
+      return {
+        x: (t.clientX - rect.left) * scaleX,
+        y: (t.clientY - rect.top) * scaleY,
+      };
     }
-    return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
+    return {
+      x: (e.clientX - rect.left) * scaleX,
+      y: (e.clientY - rect.top) * scaleY,
+    };
   };
 
   const startDraw = (e: React.MouseEvent | React.TouchEvent) => {
@@ -321,7 +363,7 @@ function Whiteboard() {
       ctx.beginPath();
       ctx.moveTo(lastPos.current.x, lastPos.current.y);
       ctx.lineTo(pos.x, pos.y);
-      ctx.strokeStyle = '#000000';
+      ctx.strokeStyle = palette.black;
       ctx.lineWidth = 3;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
@@ -340,7 +382,7 @@ function Whiteboard() {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = palette.white;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
   };
 
@@ -355,14 +397,17 @@ function Whiteboard() {
         canvas.height = height;
         const ctx = canvas.getContext('2d');
         if (ctx) {
-          ctx.fillStyle = '#ffffff';
+          ctx.fillStyle = palette.white;
           ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
       }
     };
     const t = setTimeout(size, 50);
     window.addEventListener('resize', size);
-    return () => { clearTimeout(t); window.removeEventListener('resize', size); };
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener('resize', size);
+    };
   }, [expanded]);
 
   const stopDrag = useCallback(() => {
@@ -453,23 +498,32 @@ function Whiteboard() {
             px: 2,
             py: 1,
             borderRadius: '24px',
-            bgcolor: 'rgba(10,14,26,0.92)',
-            border: '2px solid rgba(255,213,79,0.6)',
-            boxShadow: '0 0 12px rgba(255,213,79,0.3)',
+            bgcolor: withAlpha(palette.navy950, 0.92),
+            border: `2px solid ${withAlpha(palette.amber450, 0.6)}`,
+            boxShadow: `0 0 12px ${withAlpha(palette.amber450, 0.3)}`,
             cursor: 'grab',
             userSelect: 'none',
             backdropFilter: 'blur(8px)',
             touchAction: 'none',
             '&:hover': {
-              border: '2px solid #ffd54f',
-              boxShadow: '0 0 20px rgba(255,213,79,0.5)',
+              border: `2px solid ${palette.amber450}`,
+              boxShadow: `0 0 20px ${withAlpha(palette.amber450, 0.5)}`,
             },
             transition: 'all 0.2s',
             '&:active': { cursor: 'grabbing' },
           }}
         >
-          <WhiteboardIcon sx={{ color: '#ffd54f', fontSize: '1.2rem' }} />
-          <Typography sx={{ color: '#ffd54f', fontWeight: 'bold', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
+          <WhiteboardIcon
+            sx={{ color: palette.amber450, fontSize: '1.2rem' }}
+          />
+          <Typography
+            sx={{
+              color: palette.amber450,
+              fontWeight: 'bold',
+              fontSize: '0.85rem',
+              whiteSpace: 'nowrap',
+            }}
+          >
             ✏️ Whiteboard
           </Typography>
         </Box>
@@ -482,10 +536,10 @@ function Whiteboard() {
             height: '90vh',
             display: 'flex',
             flexDirection: 'column',
-            bgcolor: 'rgba(10,14,26,0.95)',
-            border: '2px solid rgba(255,213,79,0.5)',
+            bgcolor: withAlpha(palette.navy950, 0.95),
+            border: `2px solid ${withAlpha(palette.amber450, 0.5)}`,
             borderRadius: '16px',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.6), 0 0 20px rgba(255,213,79,0.2)',
+            boxShadow: `0 8px 32px ${withAlpha(palette.black, 0.6)}, 0 0 20px ${withAlpha(palette.amber450, 0.2)}`,
             backdropFilter: 'blur(12px)',
             overflow: 'hidden',
           }}
@@ -499,8 +553,8 @@ function Whiteboard() {
               justifyContent: 'space-between',
               px: 2,
               py: 1,
-              borderBottom: '1px solid rgba(255,213,79,0.25)',
-              bgcolor: 'rgba(255,213,79,0.07)',
+              borderBottom: `1px solid ${withAlpha(palette.amber450, 0.25)}`,
+              bgcolor: withAlpha(palette.amber450, 0.07),
               flexShrink: 0,
               cursor: 'grab',
               userSelect: 'none',
@@ -509,8 +563,16 @@ function Whiteboard() {
             }}
           >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <WhiteboardIcon sx={{ color: '#ffd54f', fontSize: '1.1rem' }} />
-              <Typography sx={{ color: '#ffd54f', fontWeight: 'bold', fontSize: '0.9rem' }}>
+              <WhiteboardIcon
+                sx={{ color: palette.amber450, fontSize: '1.1rem' }}
+              />
+              <Typography
+                sx={{
+                  color: palette.amber450,
+                  fontWeight: 'bold',
+                  fontSize: '0.9rem',
+                }}
+              >
                 Whiteboard
               </Typography>
             </Box>
@@ -524,31 +586,39 @@ function Whiteboard() {
                   textTransform: 'none',
                   fontSize: '0.75rem',
                   fontWeight: 'bold',
-                  color: '#ffd54f',
-                  border: '1px solid rgba(255,213,79,0.4)',
+                  color: palette.amber450,
+                  border: `1px solid ${withAlpha(palette.amber450, 0.4)}`,
                   px: 1.5,
                   py: 0.5,
                   minWidth: 0,
-                  '&:hover': { bgcolor: 'rgba(255,213,79,0.1)', borderColor: '#ffd54f' },
+                  '&:hover': {
+                    bgcolor: withAlpha(palette.amber450, 0.1),
+                    borderColor: palette.amber450,
+                  },
                 }}
               >
                 Clear
               </Button>
               <Button
                 size="small"
-                startIcon={<ExpandLessIcon sx={{ fontSize: '1rem !important' }} />}
+                startIcon={
+                  <ExpandLessIcon sx={{ fontSize: '1rem !important' }} />
+                }
                 onClick={() => setExpanded(false)}
                 sx={{
                   borderRadius: '14px',
                   textTransform: 'none',
                   fontSize: '0.75rem',
                   fontWeight: 'bold',
-                  color: '#90a4ae',
-                  border: '1px solid rgba(144,164,174,0.3)',
+                  color: palette.slate400,
+                  border: `1px solid ${withAlpha(palette.slate400, 0.3)}`,
                   px: 1.5,
                   py: 0.5,
                   minWidth: 0,
-                  '&:hover': { bgcolor: 'rgba(144,164,174,0.1)', borderColor: '#90a4ae' },
+                  '&:hover': {
+                    bgcolor: withAlpha(palette.slate400, 0.1),
+                    borderColor: palette.slate400,
+                  },
                 }}
               >
                 Minimize
@@ -556,7 +626,15 @@ function Whiteboard() {
             </Box>
           </Box>
 
-          <Box sx={{ touchAction: 'none', cursor: 'crosshair', flex: 1, display: 'flex', flexDirection: 'column' }}>
+          <Box
+            sx={{
+              touchAction: 'none',
+              cursor: 'crosshair',
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+          >
             <canvas
               ref={canvasRef}
               style={{ width: '100%', flex: 1, display: 'block' }}
@@ -568,7 +646,15 @@ function Whiteboard() {
               onTouchMove={draw}
               onTouchEnd={stopDraw}
             />
-            <Typography sx={{ color: '#37474f', fontSize: '0.7rem', textAlign: 'center', pb: 0.5, flexShrink: 0 }}>
+            <Typography
+              sx={{
+                color: palette.slate950,
+                fontSize: '0.7rem',
+                textAlign: 'center',
+                pb: 0.5,
+                flexShrink: 0,
+              }}
+            >
               draw with finger or mouse
             </Typography>
           </Box>
@@ -578,12 +664,42 @@ function Whiteboard() {
   );
 }
 
-type SectionKey = 'standard' | 'advanced' | 'challenge' | 'olympiad' | 'multiplication' | 'division';
+type SectionKey =
+  | 'standard'
+  | 'advanced'
+  | 'challenge'
+  | 'olympiad'
+  | 'multiplication'
+  | 'division';
 
-const PRACTICE_SECTIONS: { key: Difficulty; label: string; emoji: string; color: string; range: [number, number] }[] = [
-  { key: 'standard', label: 'Standard', emoji: '⭐', color: '#ffa726', range: [1, PRACTICE_PER_GROUP] },
-  { key: 'advanced', label: 'Advanced', emoji: '🌟', color: '#42a5f5', range: [PRACTICE_PER_GROUP + 1, PRACTICE_PER_GROUP * 2] },
-  { key: 'challenge', label: 'Challenge', emoji: '🔥', color: '#ef5350', range: [PRACTICE_PER_GROUP * 2 + 1, PRACTICE_PER_GROUP * 3] },
+const PRACTICE_SECTIONS: {
+  key: Difficulty;
+  label: string;
+  emoji: string;
+  color: string;
+  range: [number, number];
+}[] = [
+  {
+    key: 'standard',
+    label: 'Standard',
+    emoji: '⭐',
+    color: palette.orange275,
+    range: [1, PRACTICE_PER_GROUP],
+  },
+  {
+    key: 'advanced',
+    label: 'Advanced',
+    emoji: '🌟',
+    color: palette.blue425,
+    range: [PRACTICE_PER_GROUP + 1, PRACTICE_PER_GROUP * 2],
+  },
+  {
+    key: 'challenge',
+    label: 'Challenge',
+    emoji: '🔥',
+    color: palette.red425,
+    range: [PRACTICE_PER_GROUP * 2 + 1, PRACTICE_PER_GROUP * 3],
+  },
 ];
 
 const sectionsForMode = (m: MathMode): SectionKey[] =>
@@ -592,12 +708,16 @@ const sectionsForMode = (m: MathMode): SectionKey[] =>
 function MathSection() {
   const [mode, setMode] = useState<MathMode>(() => {
     const saved = localStorage.getItem('mathMode') as MathMode | null;
-    return saved && ['practice', 'olympiad', 'multiplication', 'division'].includes(saved) ? saved : 'practice';
+    return saved &&
+      ['practice', 'olympiad', 'multiplication', 'division'].includes(saved)
+      ? saved
+      : 'practice';
   });
   const [questions, setQuestions] = useState<Question[]>(() => {
     const saved = localStorage.getItem('mathQuestions');
     if (saved) return JSON.parse(saved);
-    const savedMode = (localStorage.getItem('mathMode') as MathMode | null) || 'practice';
+    const savedMode =
+      (localStorage.getItem('mathMode') as MathMode | null) || 'practice';
     return questionsForMode(savedMode);
   });
   const [answers, setAnswers] = useState<{ [key: number]: string }>(() => {
@@ -609,24 +729,39 @@ function MathSection() {
     const saved = localStorage.getItem('mathRevealed');
     return saved ? JSON.parse(saved) : {};
   });
-  const [sectionStart, setSectionStart] = useState<Record<string, number>>(() => {
-    const saved = localStorage.getItem('mathSectionStart');
-    if (saved) return JSON.parse(saved);
-    const m = localStorage.getItem('mathMode') === 'olympiad' ? 'olympiad' : 'practice';
-    const now = Date.now();
-    const o: Record<string, number> = {};
-    sectionsForMode(m as MathMode).forEach(k => { o[k] = now; });
-    return o;
-  });
-  const [sectionTime, setSectionTime] = useState<Record<string, number | null>>(() => {
-    const saved = localStorage.getItem('mathSectionTime');
-    return saved ? JSON.parse(saved) : {};
-  });
+  const [sectionStart, setSectionStart] = useState<Record<string, number>>(
+    () => {
+      const saved = localStorage.getItem('mathSectionStart');
+      if (saved) return JSON.parse(saved);
+      const m =
+        localStorage.getItem('mathMode') === 'olympiad'
+          ? 'olympiad'
+          : 'practice';
+      const now = Date.now();
+      const o: Record<string, number> = {};
+      sectionsForMode(m as MathMode).forEach(k => {
+        o[k] = now;
+      });
+      return o;
+    }
+  );
+  const [sectionTime, setSectionTime] = useState<Record<string, number | null>>(
+    () => {
+      const saved = localStorage.getItem('mathSectionTime');
+      return saved ? JSON.parse(saved) : {};
+    }
+  );
   const [showHistory, setShowHistory] = useState(false);
   const [history, setHistory] = useState<MathSessionResult[]>([]);
-  const [reviewResult, setReviewResult] = useState<MathSessionResult | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<MathSessionResult | null>(null);
-  const [feedbackMessages, setFeedbackMessages] = useState<{ [key: number]: string }>(() => {
+  const [reviewResult, setReviewResult] = useState<MathSessionResult | null>(
+    null
+  );
+  const [deleteTarget, setDeleteTarget] = useState<MathSessionResult | null>(
+    null
+  );
+  const [feedbackMessages, setFeedbackMessages] = useState<{
+    [key: number]: string;
+  }>(() => {
     const saved = localStorage.getItem('mathFeedbackMessages');
     return saved ? JSON.parse(saved) : {};
   });
@@ -656,7 +791,10 @@ function MathSection() {
   }, [sectionTime]);
 
   useEffect(() => {
-    localStorage.setItem('mathFeedbackMessages', JSON.stringify(feedbackMessages));
+    localStorage.setItem(
+      'mathFeedbackMessages',
+      JSON.stringify(feedbackMessages)
+    );
   }, [feedbackMessages]);
 
   useEffect(() => {
@@ -684,7 +822,12 @@ function MathSection() {
     (qs: Question[]) =>
       qs.filter(q => {
         const val = answers[q.id];
-        return val !== undefined && val !== null && val !== '' && Number(val) === Number(q.answer);
+        return (
+          val !== undefined &&
+          val !== null &&
+          val !== '' &&
+          Number(val) === Number(q.answer)
+        );
       }).length,
     [answers]
   );
@@ -698,7 +841,9 @@ function MathSection() {
     setSectionTime({});
     const now = Date.now();
     const starts: Record<string, number> = {};
-    sectionsForMode(m).forEach(k => { starts[k] = now; });
+    sectionsForMode(m).forEach(k => {
+      starts[k] = now;
+    });
     setSectionStart(starts);
   }, []);
 
@@ -721,7 +866,9 @@ function MathSection() {
       const sec = PRACTICE_SECTIONS.find(s => s.key === key);
       // single-section modes (olympiad / multiplication / division) span every question
       if (!sec) return questions;
-      return questions.filter(q => q.id >= sec.range[0] && q.id <= sec.range[1]);
+      return questions.filter(
+        q => q.id >= sec.range[0] && q.id <= sec.range[1]
+      );
     },
     [questions]
   );
@@ -740,7 +887,10 @@ function MathSection() {
       setFeedbackMessages(prev => {
         const next = { ...prev };
         qs.forEach(q => {
-          const ok = answers[q.id] !== undefined && answers[q.id] !== '' && Number(answers[q.id]) === Number(q.answer);
+          const ok =
+            answers[q.id] !== undefined &&
+            answers[q.id] !== '' &&
+            Number(answers[q.id]) === Number(q.answer);
           next[q.id] = getRandomEncouragement(ok);
         });
         return next;
@@ -773,29 +923,40 @@ function MathSection() {
   );
 
   // Get fresh questions for a single section without touching the others.
-  const regenerateSection = useCallback((key: SectionKey) => {
-    // single-section modes (olympiad / multiplication / division) reset the whole
-    // set; "More Questions" randomizes the drill order each time
-    if (key !== 'standard' && key !== 'advanced' && key !== 'challenge') {
-      resetSession(questionsForMode(key, true), key);
-      return;
-    }
-    const sec = PRACTICE_SECTIONS.find(s => s.key === key)!;
-    const fresh = generateLevelQuestions(sec.key, PRACTICE_PER_GROUP, sec.range[0]);
-    setQuestions(prev =>
-      prev.map(q => (q.id >= sec.range[0] && q.id <= sec.range[1] ? fresh[q.id - sec.range[0]] : q))
-    );
-    const clearRange = <T,>(obj: Record<number, T>) => {
-      const next = { ...obj };
-      for (let id = sec.range[0]; id <= sec.range[1]; id++) delete next[id];
-      return next;
-    };
-    setAnswers(prev => clearRange(prev));
-    setFeedbackMessages(prev => clearRange(prev));
-    setRevealed(prev => ({ ...prev, [key]: false }));
-    setSectionTime(prev => ({ ...prev, [key]: null }));
-    setSectionStart(prev => ({ ...prev, [key]: Date.now() }));
-  }, [resetSession]);
+  const regenerateSection = useCallback(
+    (key: SectionKey) => {
+      // single-section modes (olympiad / multiplication / division) reset the whole
+      // set; "More Questions" randomizes the drill order each time
+      if (key !== 'standard' && key !== 'advanced' && key !== 'challenge') {
+        resetSession(questionsForMode(key, true), key);
+        return;
+      }
+      const sec = PRACTICE_SECTIONS.find(s => s.key === key)!;
+      const fresh = generateLevelQuestions(
+        sec.key,
+        PRACTICE_PER_GROUP,
+        sec.range[0]
+      );
+      setQuestions(prev =>
+        prev.map(q =>
+          q.id >= sec.range[0] && q.id <= sec.range[1]
+            ? fresh[q.id - sec.range[0]]
+            : q
+        )
+      );
+      const clearRange = <T,>(obj: Record<number, T>) => {
+        const next = { ...obj };
+        for (let id = sec.range[0]; id <= sec.range[1]; id++) delete next[id];
+        return next;
+      };
+      setAnswers(prev => clearRange(prev));
+      setFeedbackMessages(prev => clearRange(prev));
+      setRevealed(prev => ({ ...prev, [key]: false }));
+      setSectionTime(prev => ({ ...prev, [key]: null }));
+      setSectionStart(prev => ({ ...prev, [key]: Date.now() }));
+    },
+    [resetSession]
+  );
 
   const renderQuestionCard = (question: Question, revealed: boolean) => {
     const isCorrect =
@@ -810,14 +971,14 @@ function MathSection() {
             ...darkCard,
             bgcolor: revealed
               ? isCorrect
-                ? 'rgba(76,175,80,0.15)'
-                : 'rgba(239,83,80,0.15)'
-              : 'rgba(255,255,255,0.06)',
+                ? withAlpha(palette.green425, 0.15)
+                : withAlpha(palette.red425, 0.15)
+              : withAlpha(palette.white, 0.06),
             border: revealed
               ? isCorrect
-                ? '2px solid #4caf50'
-                : '2px solid #ef5350'
-              : '2px solid rgba(255,255,255,0.12)',
+                ? `2px solid ${palette.green425}`
+                : `2px solid ${palette.red425}`
+              : `2px solid ${withAlpha(palette.white, 0.12)}`,
             backdropFilter: 'blur(10px)',
           }}
         >
@@ -825,7 +986,7 @@ function MathSection() {
             <Typography
               variant="h6"
               sx={{
-                color: '#ffcc80',
+                color: palette.orange150,
                 fontWeight: 'bold',
                 mb: 2,
                 fontSize: '1.05rem',
@@ -838,50 +999,69 @@ function MathSection() {
               <FormControl fullWidth>
                 <Select
                   value={answers[question.id] || ''}
-                  onChange={e => handleAnswerChange(question.id, e.target.value)}
+                  onChange={e =>
+                    handleAnswerChange(question.id, e.target.value)
+                  }
                   disabled={revealed}
                   displayEmpty
-                  renderValue={(value) => value ? value : '-- Please select'}
+                  renderValue={value => (value ? value : '-- Please select')}
                   sx={{
                     borderRadius: '10px',
-                    bgcolor: 'rgba(255,255,255,0.06)',
-                    color: answers[question.id] ? '#fff' : '#90a4ae',
+                    bgcolor: withAlpha(palette.white, 0.06),
+                    color: answers[question.id]
+                      ? palette.white
+                      : palette.slate400,
                     fontWeight: 'bold',
                     fontSize: '0.95rem',
                     '& .MuiOutlinedInput-notchedOutline': {
-                      borderColor: answers[question.id] && revealed
-                        ? answers[question.id] === String(question.answer)
-                          ? '#66bb6a'
-                          : '#ef5350'
-                        : 'rgba(255,255,255,0.2)'
+                      borderColor:
+                        answers[question.id] && revealed
+                          ? answers[question.id] === String(question.answer)
+                            ? palette.green350
+                            : palette.red425
+                          : withAlpha(palette.white, 0.2),
                     },
                     '&:hover .MuiOutlinedInput-notchedOutline': {
-                      borderColor: '#ffd54f'
+                      borderColor: palette.amber450,
                     },
                     '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                      borderColor: '#ffd54f'
+                      borderColor: palette.amber450,
                     },
-                    '& .MuiSelect-icon': { color: '#ffcc80' },
+                    '& .MuiSelect-icon': { color: palette.orange150 },
                     '&.Mui-disabled': {
                       opacity: 1,
                       color: answers[question.id]
                         ? answers[question.id] === String(question.answer)
-                          ? '#a5d6a7'
-                          : '#ef9a9a'
-                        : '#90a4ae'
+                          ? palette.green125
+                          : palette.red125
+                        : palette.slate400,
                     },
                   }}
                   MenuProps={{
                     PaperProps: {
-                      sx: { bgcolor: '#1a1f35', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '10px' }
-                    }
+                      sx: {
+                        bgcolor: palette.navy575,
+                        border: `1px solid ${withAlpha(palette.white, 0.2)}`,
+                        borderRadius: '10px',
+                      },
+                    },
                   }}
                 >
                   {question.options.map(opt => {
-                    const isThisCorrect = revealed && opt === String(question.answer);
+                    const isThisCorrect =
+                      revealed && opt === String(question.answer);
                     return (
-                      <MenuItem key={opt} value={opt} sx={{ color: isThisCorrect ? '#66bb6a' : '#cfd8dc' }}>
-                        {isThisCorrect ? '✅ ' : ''}{opt}
+                      <MenuItem
+                        key={opt}
+                        value={opt}
+                        sx={{
+                          color: isThisCorrect
+                            ? palette.green350
+                            : palette.slate25,
+                        }}
+                      >
+                        {isThisCorrect ? '✅ ' : ''}
+                        {opt}
                       </MenuItem>
                     );
                   })}
@@ -898,30 +1078,40 @@ function MathSection() {
                   mb: 1,
                   '& .MuiOutlinedInput-root': {
                     borderRadius: '12px',
-                    bgcolor: 'rgba(255,255,255,0.06)',
-                    color: '#fff',
-                    '& fieldset': { borderColor: 'rgba(255,255,255,0.2)' },
-                    '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.4)' },
-                    '&.Mui-focused fieldset': { borderColor: '#ffa726' },
+                    bgcolor: withAlpha(palette.white, 0.06),
+                    color: palette.white,
+                    '& fieldset': {
+                      borderColor: withAlpha(palette.white, 0.2),
+                    },
+                    '&:hover fieldset': {
+                      borderColor: withAlpha(palette.white, 0.4),
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: palette.orange275,
+                    },
                   },
-                  '& .MuiInputLabel-root': { color: '#90a4ae' },
-                  '& .MuiInputLabel-root.Mui-focused': { color: '#ffa726' },
+                  '& .MuiInputLabel-root': { color: palette.slate400 },
+                  '& .MuiInputLabel-root.Mui-focused': {
+                    color: palette.orange275,
+                  },
                 }}
                 fullWidth
               />
             )}
             {revealed && (
-              <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Box
+                sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 0.5 }}
+              >
                 {isCorrect ? (
-                  <CheckIcon sx={{ color: '#66bb6a' }} />
+                  <CheckIcon sx={{ color: palette.green350 }} />
                 ) : (
-                  <WrongIcon sx={{ color: '#ef5350' }} />
+                  <WrongIcon sx={{ color: palette.red425 }} />
                 )}
                 <Typography
                   sx={{
                     fontWeight: 'bold',
                     fontSize: '0.9rem',
-                    color: isCorrect ? '#a5d6a7' : '#ef9a9a',
+                    color: isCorrect ? palette.green125 : palette.red125,
                   }}
                 >
                   {isCorrect
@@ -948,16 +1138,20 @@ function MathSection() {
           allowScrollButtonsMobile
           sx={{
             maxWidth: '100%',
-            '& .MuiTabs-indicator': { backgroundColor: '#ef5350', height: 3, borderRadius: '3px' },
+            '& .MuiTabs-indicator': {
+              backgroundColor: palette.red425,
+              height: 3,
+              borderRadius: '3px',
+            },
             '& .MuiTabs-scrollButtons.Mui-disabled': { opacity: 0.3 },
             '& .MuiTab-root': {
               textTransform: 'none',
               fontWeight: 'bold',
               fontSize: '1rem',
-              color: '#90a4ae',
+              color: palette.slate400,
               minHeight: 48,
               px: 3,
-              '&.Mui-selected': { color: '#ff8a80' },
+              '&.Mui-selected': { color: palette.red225 },
             },
           }}
         >
@@ -975,20 +1169,32 @@ function MathSection() {
             mb: 3,
             p: 3,
             borderRadius: '20px',
-            background: 'linear-gradient(135deg, rgba(255,193,7,0.18) 0%, rgba(239,83,80,0.18) 100%)',
-            border: '2px solid rgba(255,213,79,0.45)',
+            background: `linear-gradient(135deg, ${withAlpha(palette.amber775, 0.18)} 0%, ${withAlpha(palette.red425, 0.18)} 100%)`,
+            border: `2px solid ${withAlpha(palette.amber450, 0.45)}`,
             textAlign: 'center',
-            boxShadow: '0 0 24px rgba(255,213,79,0.18)',
+            boxShadow: `0 0 24px ${withAlpha(palette.amber450, 0.18)}`,
           }}
         >
-          <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#ffd54f', mb: 1 }}>
+          <Typography
+            variant="h4"
+            sx={{ fontWeight: 'bold', color: palette.amber450, mb: 1 }}
+          >
             🏆 Maths Olympiad
           </Typography>
-          <Typography sx={{ color: '#fff8e1', fontSize: '1.05rem', fontStyle: 'italic' }}>
+          <Typography
+            sx={{
+              color: palette.amber25,
+              fontSize: '1.05rem',
+              fontStyle: 'italic',
+            }}
+          >
             Unleash the maths olympian in you!
           </Typography>
-          <Typography sx={{ color: '#ffe082', fontSize: '0.95rem', mt: 1 }}>
-            Patterns, puzzles, and tricky problems. Take your time. Show your working on the whiteboard.
+          <Typography
+            sx={{ color: palette.amber350, fontSize: '0.95rem', mt: 1 }}
+          >
+            Patterns, puzzles, and tricky problems. Take your time. Show your
+            working on the whiteboard.
           </Typography>
         </Box>
       )}
@@ -997,16 +1203,23 @@ function MathSection() {
       {mode === 'multiplication' && (
         <Box
           sx={{
-            mb: 3, p: 3, borderRadius: '20px',
-            background: 'linear-gradient(135deg, rgba(186,104,200,0.18) 0%, rgba(66,165,245,0.18) 100%)',
-            border: '2px solid rgba(186,104,200,0.45)', textAlign: 'center',
+            mb: 3,
+            p: 3,
+            borderRadius: '20px',
+            background: `linear-gradient(135deg, ${withAlpha(palette.purple350, 0.18)} 0%, ${withAlpha(palette.blue425, 0.18)} 100%)`,
+            border: `2px solid ${withAlpha(palette.purple350, 0.45)}`,
+            textAlign: 'center',
           }}
         >
-          <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#ce93d8', mb: 1 }}>
+          <Typography
+            variant="h4"
+            sx={{ fontWeight: 'bold', color: palette.purple225, mb: 1 }}
+          >
             ✖️ Times Tables
           </Typography>
-          <Typography sx={{ color: '#e1bee7', fontSize: '1.05rem' }}>
-            Every fact from <strong>2 × 2</strong> all the way to <strong>9 × 9</strong>. Practise them until they're automatic!
+          <Typography sx={{ color: palette.purple150, fontSize: '1.05rem' }}>
+            Every fact from <strong>2 × 2</strong> all the way to{' '}
+            <strong>9 × 9</strong>. Practise them until they're automatic!
           </Typography>
         </Box>
       )}
@@ -1015,16 +1228,23 @@ function MathSection() {
       {mode === 'division' && (
         <Box
           sx={{
-            mb: 3, p: 3, borderRadius: '20px',
-            background: 'linear-gradient(135deg, rgba(38,166,154,0.18) 0%, rgba(102,187,106,0.18) 100%)',
-            border: '2px solid rgba(38,166,154,0.45)', textAlign: 'center',
+            mb: 3,
+            p: 3,
+            borderRadius: '20px',
+            background: `linear-gradient(135deg, ${withAlpha(palette.teal450, 0.18)} 0%, ${withAlpha(palette.green350, 0.18)} 100%)`,
+            border: `2px solid ${withAlpha(palette.teal450, 0.45)}`,
+            textAlign: 'center',
           }}
         >
-          <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#4db6ac', mb: 1 }}>
+          <Typography
+            variant="h4"
+            sx={{ fontWeight: 'bold', color: palette.teal300, mb: 1 }}
+          >
             ➗ Division Facts
           </Typography>
-          <Typography sx={{ color: '#b2dfdb', fontSize: '1.05rem' }}>
-            The times tables in reverse — from <strong>81 ÷ 9</strong> down to <strong>4 ÷ 2</strong>. Keep practising!
+          <Typography sx={{ color: palette.teal100, fontSize: '1.05rem' }}>
+            The times tables in reverse — from <strong>81 ÷ 9</strong> down to{' '}
+            <strong>4 ÷ 2</strong>. Keep practising!
           </Typography>
         </Box>
       )}
@@ -1045,7 +1265,14 @@ function MathSection() {
               <Box key={section.key} sx={{ mb: 5 }}>
                 <Typography
                   variant="h5"
-                  sx={{ color: section.color, fontWeight: 'bold', mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}
+                  sx={{
+                    color: section.color,
+                    fontWeight: 'bold',
+                    mb: 2,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                  }}
                 >
                   <span>{section.emoji}</span>
                   <span>{section.label}</span>
@@ -1058,21 +1285,39 @@ function MathSection() {
                       p: 2,
                       borderRadius: '14px',
                       background: allRight
-                        ? 'linear-gradient(135deg, rgba(76,175,80,0.25) 0%, rgba(56,142,60,0.35) 100%)'
-                        : 'linear-gradient(135deg, rgba(255,152,0,0.18) 0%, rgba(239,83,80,0.18) 100%)',
-                      border: allRight ? '2px solid #4caf50' : '2px solid rgba(255,152,0,0.4)',
+                        ? `linear-gradient(135deg, ${withAlpha(palette.green425, 0.25)} 0%, ${withAlpha(palette.green575, 0.35)} 100%)`
+                        : `linear-gradient(135deg, ${withAlpha(palette.orange450, 0.18)} 0%, ${withAlpha(palette.red425, 0.18)} 100%)`,
+                      border: allRight
+                        ? `2px solid ${palette.green425}`
+                        : `2px solid ${withAlpha(palette.orange450, 0.4)}`,
                       textAlign: 'center',
                     }}
                   >
-                    <Typography sx={{ fontWeight: 'bold', fontSize: '1.1rem', color: allRight ? '#a5d6a7' : '#ffcc80' }}>
-                      {allRight ? `🎉 All ${total} correct! Superstar! 🌟` : `${correct}/${total} correct — keep going! 💪`}
+                    <Typography
+                      sx={{
+                        fontWeight: 'bold',
+                        fontSize: '1.1rem',
+                        color: allRight ? palette.green125 : palette.orange150,
+                      }}
+                    >
+                      {allRight
+                        ? `🎉 All ${total} correct! Superstar! 🌟`
+                        : `${correct}/${total} correct — keep going! 💪`}
                     </Typography>
                     {tTaken != null && (
                       <Chip
-                        icon={<TimerIcon sx={{ color: '#ffd54f !important' }} />}
+                        icon={
+                          <TimerIcon
+                            sx={{ color: `${palette.amber450} !important` }}
+                          />
+                        }
                         label={`Time: ${formatTime(tTaken)}`}
                         size="small"
-                        sx={{ mt: 1, bgcolor: 'rgba(255,255,255,0.1)', color: '#e0e0e0' }}
+                        sx={{
+                          mt: 1,
+                          bgcolor: withAlpha(palette.white, 0.1),
+                          color: palette.gray400,
+                        }}
                       />
                     )}
                   </Box>
@@ -1082,16 +1327,29 @@ function MathSection() {
                   {sectionQuestions.map(q => renderQuestionCard(q, isRevealed))}
                 </Grid>
 
-                <Box sx={{ mt: 2.5, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                <Box
+                  sx={{ mt: 2.5, display: 'flex', gap: 2, flexWrap: 'wrap' }}
+                >
                   <Button
                     variant="contained"
                     onClick={() => checkSection(section.key)}
                     disabled={isRevealed}
                     sx={{
-                      borderRadius: '25px', px: 3.5, py: 1.3, fontSize: '1rem', fontWeight: 'bold', textTransform: 'none',
+                      borderRadius: '25px',
+                      px: 3.5,
+                      py: 1.3,
+                      fontSize: '1rem',
+                      fontWeight: 'bold',
+                      textTransform: 'none',
                       bgcolor: section.color,
-                      '&:hover': { bgcolor: section.color, filter: 'brightness(0.92)' },
-                      '&.Mui-disabled': { bgcolor: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.4)' },
+                      '&:hover': {
+                        bgcolor: section.color,
+                        filter: 'brightness(0.92)',
+                      },
+                      '&.Mui-disabled': {
+                        bgcolor: withAlpha(palette.white, 0.12),
+                        color: withAlpha(palette.white, 0.4),
+                      },
                     }}
                   >
                     ✅ Check {section.label}
@@ -1100,9 +1358,20 @@ function MathSection() {
                     variant="outlined"
                     onClick={() => regenerateSection(section.key)}
                     sx={{
-                      borderRadius: '25px', px: 3.5, py: 1.3, fontSize: '1rem', fontWeight: 'bold', textTransform: 'none',
-                      color: section.color, borderColor: section.color, borderWidth: 2,
-                      '&:hover': { borderColor: section.color, borderWidth: 2, bgcolor: 'rgba(255,255,255,0.05)' },
+                      borderRadius: '25px',
+                      px: 3.5,
+                      py: 1.3,
+                      fontSize: '1rem',
+                      fontWeight: 'bold',
+                      textTransform: 'none',
+                      color: section.color,
+                      borderColor: section.color,
+                      borderWidth: 2,
+                      '&:hover': {
+                        borderColor: section.color,
+                        borderWidth: 2,
+                        bgcolor: withAlpha(palette.white, 0.05),
+                      },
                     }}
                   >
                     🔄 New {section.label} Questions
@@ -1125,22 +1394,45 @@ function MathSection() {
               {isRevealed && (
                 <Box
                   sx={{
-                    mb: 3, p: 3, borderRadius: '16px',
+                    mb: 3,
+                    p: 3,
+                    borderRadius: '16px',
                     background: allRight
-                      ? 'linear-gradient(135deg, rgba(76,175,80,0.3) 0%, rgba(56,142,60,0.4) 100%)'
-                      : 'linear-gradient(135deg, rgba(255,152,0,0.2) 0%, rgba(239,83,80,0.2) 100%)',
-                    border: allRight ? '2px solid #4caf50' : '2px solid rgba(255,152,0,0.4)',
+                      ? `linear-gradient(135deg, ${withAlpha(palette.green425, 0.3)} 0%, ${withAlpha(palette.green575, 0.4)} 100%)`
+                      : `linear-gradient(135deg, ${withAlpha(palette.orange450, 0.2)} 0%, ${withAlpha(palette.red425, 0.2)} 100%)`,
+                    border: allRight
+                      ? `2px solid ${palette.green425}`
+                      : `2px solid ${withAlpha(palette.orange450, 0.4)}`,
                     textAlign: 'center',
                   }}
                 >
-                  <Typography variant="h4" sx={{ fontWeight: 'bold', color: allRight ? '#a5d6a7' : '#ffcc80' }}>
-                    {allRight ? '🎉 AMAZING! You\'re a superstar! 🌟' : `${correct}/${total} correct! Keep going! 💪`}
+                  <Typography
+                    variant="h4"
+                    sx={{
+                      fontWeight: 'bold',
+                      color: allRight ? palette.green125 : palette.orange150,
+                    }}
+                  >
+                    {allRight
+                      ? "🎉 AMAZING! You're a superstar! 🌟"
+                      : `${correct}/${total} correct! Keep going! 💪`}
                   </Typography>
                   {tTaken != null && (
                     <Chip
-                      icon={<TimerIcon sx={{ color: '#ffd54f !important' }} />}
+                      icon={
+                        <TimerIcon
+                          sx={{ color: `${palette.amber450} !important` }}
+                        />
+                      }
                       label={`Time: ${formatTime(tTaken)}`}
-                      sx={{ mt: 1, fontSize: '1rem', py: 2, px: 1, bgcolor: 'rgba(255,255,255,0.1)', color: '#e0e0e0' }}
+                      sx={{
+                        mt: 1,
+                        fontSize: '1rem',
+                        py: 2,
+                        px: 1,
+                        bgcolor: withAlpha(palette.white, 0.1),
+                        color: palette.gray400,
+                      }}
                     />
                   )}
                 </Box>
@@ -1148,15 +1440,27 @@ function MathSection() {
               <Grid container spacing={3}>
                 {questions.map(q => renderQuestionCard(q, isRevealed))}
               </Grid>
-              <Box sx={{ mt: 3, mb: 3, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+              <Box
+                sx={{ mt: 3, mb: 3, display: 'flex', gap: 2, flexWrap: 'wrap' }}
+              >
                 <Button
                   variant="contained"
                   onClick={() => checkSection(key)}
                   disabled={isRevealed}
                   sx={{
-                    borderRadius: '25px', px: 4, py: 1.5, fontSize: '1.1rem', fontWeight: 'bold', textTransform: 'none',
-                    bgcolor: '#e91e63', '&:hover': { bgcolor: '#c2185b' }, boxShadow: '0 4px 15px rgba(233,30,99,0.3)',
-                    '&.Mui-disabled': { bgcolor: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.4)' },
+                    borderRadius: '25px',
+                    px: 4,
+                    py: 1.5,
+                    fontSize: '1.1rem',
+                    fontWeight: 'bold',
+                    textTransform: 'none',
+                    bgcolor: palette.pink950,
+                    '&:hover': { bgcolor: palette.magenta950 },
+                    boxShadow: `0 4px 15px ${withAlpha(palette.pink950, 0.3)}`,
+                    '&.Mui-disabled': {
+                      bgcolor: withAlpha(palette.white, 0.12),
+                      color: withAlpha(palette.white, 0.4),
+                    },
                   }}
                 >
                   ✅ Check Answers
@@ -1165,8 +1469,15 @@ function MathSection() {
                   variant="contained"
                   onClick={() => regenerateSection(key)}
                   sx={{
-                    borderRadius: '25px', px: 4, py: 1.5, fontSize: '1.1rem', fontWeight: 'bold', textTransform: 'none',
-                    bgcolor: '#ff9800', '&:hover': { bgcolor: '#f57c00' }, boxShadow: '0 4px 15px rgba(255,152,0,0.3)',
+                    borderRadius: '25px',
+                    px: 4,
+                    py: 1.5,
+                    fontSize: '1.1rem',
+                    fontWeight: 'bold',
+                    textTransform: 'none',
+                    bgcolor: palette.orange450,
+                    '&:hover': { bgcolor: palette.orange650 },
+                    boxShadow: `0 4px 15px ${withAlpha(palette.orange450, 0.3)}`,
                   }}
                 >
                   🔄 More Questions
@@ -1189,7 +1500,7 @@ function MathSection() {
             borderRadius: '20px',
             textTransform: 'none',
             fontWeight: 'bold',
-            color: '#ff8a80',
+            color: palette.red225,
             fontSize: '1rem',
           }}
         >
@@ -1199,9 +1510,22 @@ function MathSection() {
           <Grid container spacing={2} sx={{ mt: 1 }}>
             {history.map(result => (
               <Grid size={{ xs: 12, sm: 6, md: 4 }} key={result.id}>
-                <Card sx={{ ...darkCard, bgcolor: 'rgba(255,255,255,0.06)', border: '2px solid rgba(239,83,80,0.3)' }}>
+                <Card
+                  sx={{
+                    ...darkCard,
+                    bgcolor: withAlpha(palette.white, 0.06),
+                    border: `2px solid ${withAlpha(palette.red425, 0.3)}`,
+                  }}
+                >
                   <CardContent>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        mb: 1,
+                      }}
+                    >
                       <Chip
                         label={result.difficulty}
                         size="small"
@@ -1209,77 +1533,113 @@ function MathSection() {
                           fontWeight: 'bold',
                           bgcolor:
                             result.difficulty === 'olympiad'
-                              ? 'rgba(255,213,79,0.3)'
+                              ? withAlpha(palette.amber450, 0.3)
                               : result.difficulty === 'challenge'
-                                ? 'rgba(239,83,80,0.3)'
+                                ? withAlpha(palette.red425, 0.3)
                                 : result.difficulty === 'advanced'
-                                  ? 'rgba(66,165,245,0.3)'
+                                  ? withAlpha(palette.blue425, 0.3)
                                   : result.difficulty === 'mixed'
-                                    ? 'rgba(186,104,200,0.3)'
+                                    ? withAlpha(palette.purple350, 0.3)
                                     : result.difficulty === 'multiplication'
-                                      ? 'rgba(206,147,216,0.3)'
+                                      ? withAlpha(palette.purple225, 0.3)
                                       : result.difficulty === 'division'
-                                        ? 'rgba(77,182,172,0.3)'
-                                        : 'rgba(255,167,38,0.3)',
-                          color: '#fff',
+                                        ? withAlpha(palette.teal300, 0.3)
+                                        : withAlpha(palette.orange275, 0.3),
+                          color: palette.white,
                         }}
                       />
-                      <Typography variant="body2" sx={{ color: '#90a4ae' }}>
+                      <Typography
+                        variant="body2"
+                        sx={{ color: palette.slate400 }}
+                      >
                         {formatSavedDateTime(result.completedAt)}
                       </Typography>
                     </Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       {result.score === 100 ? (
-                        <TrophyIcon sx={{ color: '#ffd54f' }} />
+                        <TrophyIcon sx={{ color: palette.amber450 }} />
                       ) : (
-                        <StarIcon sx={{ color: '#ffa726' }} />
+                        <StarIcon sx={{ color: palette.orange275 }} />
                       )}
-                      <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#e0e0e0' }}>
-                        {result.correctCount}/{result.totalQuestions} ({result.score}%)
+                      <Typography
+                        variant="h6"
+                        sx={{ fontWeight: 'bold', color: palette.gray400 }}
+                      >
+                        {result.correctCount}/{result.totalQuestions} (
+                        {result.score}%)
                       </Typography>
                     </Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        mt: 1,
+                      }}
+                    >
                       <Chip
-                        icon={<TimerIcon sx={{ color: '#90a4ae !important' }} />}
+                        icon={
+                          <TimerIcon
+                            sx={{ color: `${palette.slate400} !important` }}
+                          />
+                        }
                         label={formatTime(result.timeTakenSeconds)}
                         size="small"
-                        sx={{ bgcolor: 'rgba(255,255,255,0.08)', color: '#b0bec5' }}
+                        sx={{
+                          bgcolor: withAlpha(palette.white, 0.08),
+                          color: palette.slate200,
+                        }}
                       />
                       <Box sx={{ display: 'flex', gap: 0.8 }}>
                         <Button
                           size="small"
-                          startIcon={<ReplayIcon sx={{ fontSize: '0.9rem !important' }} />}
+                          startIcon={
+                            <ReplayIcon
+                              sx={{ fontSize: '0.9rem !important' }}
+                            />
+                          }
                           onClick={() => setReviewResult(result)}
                           sx={{
                             borderRadius: '12px',
                             textTransform: 'none',
                             fontWeight: 'bold',
                             fontSize: '0.75rem',
-                            color: '#ff8a80',
-                            border: '1px solid rgba(239,83,80,0.35)',
+                            color: palette.red225,
+                            border: `1px solid ${withAlpha(palette.red425, 0.35)}`,
                             px: 1.2,
                             py: 0.4,
                             minWidth: 0,
-                            '&:hover': { bgcolor: 'rgba(239,83,80,0.1)', borderColor: '#ef5350' },
+                            '&:hover': {
+                              bgcolor: withAlpha(palette.red425, 0.1),
+                              borderColor: palette.red425,
+                            },
                           }}
                         >
                           Review
                         </Button>
                         <Button
                           size="small"
-                          startIcon={<DeleteOutlineIcon sx={{ fontSize: '0.9rem !important' }} />}
+                          startIcon={
+                            <DeleteOutlineIcon
+                              sx={{ fontSize: '0.9rem !important' }}
+                            />
+                          }
                           onClick={() => setDeleteTarget(result)}
                           sx={{
                             borderRadius: '12px',
                             textTransform: 'none',
                             fontWeight: 'bold',
                             fontSize: '0.75rem',
-                            color: '#78909c',
-                            border: '1px solid rgba(120,144,156,0.3)',
+                            color: palette.slate575,
+                            border: `1px solid ${withAlpha(palette.slate575, 0.3)}`,
                             px: 1.2,
                             py: 0.4,
                             minWidth: 0,
-                            '&:hover': { bgcolor: 'rgba(239,83,80,0.1)', color: '#ef9a9a', borderColor: '#ef5350' },
+                            '&:hover': {
+                              bgcolor: withAlpha(palette.red425, 0.1),
+                              color: palette.red125,
+                              borderColor: palette.red425,
+                            },
                           }}
                         >
                           Delete
@@ -1292,7 +1652,9 @@ function MathSection() {
             ))}
             {history.length === 0 && (
               <Grid size={{ xs: 12 }}>
-                <Typography sx={{ color: '#78909c', textAlign: 'center', py: 2 }}>
+                <Typography
+                  sx={{ color: palette.slate575, textAlign: 'center', py: 2 }}
+                >
                   No results yet. Complete a session to see your history! 📝
                 </Typography>
               </Grid>
@@ -1306,8 +1668,10 @@ function MathSection() {
           onClose={() => setReviewResult(null)}
           title="⚔️ Math Session Review"
           subtitle={`Mode: ${reviewResult.difficulty}`}
-          accentColor="#ef5350"
-          questions={JSON.parse(reviewResult.questionsData || '[]') as ReviewQuestion[]}
+          accentColor={palette.red425}
+          questions={
+            JSON.parse(reviewResult.questionsData || '[]') as ReviewQuestion[]
+          }
           score={reviewResult.score}
           correctCount={reviewResult.correctCount}
           totalQuestions={reviewResult.totalQuestions}
@@ -1316,7 +1680,11 @@ function MathSection() {
       )}
       <ConfirmDeleteDialog
         open={!!deleteTarget}
-        description={deleteTarget ? `Delete the ${deleteTarget.difficulty} session from ${new Date(deleteTarget.completedAt).toLocaleDateString()}? This cannot be undone.` : undefined}
+        description={
+          deleteTarget
+            ? `Delete the ${deleteTarget.difficulty} session from ${new Date(deleteTarget.completedAt).toLocaleDateString()}? This cannot be undone.`
+            : undefined
+        }
         onConfirm={handleDeleteConfirm}
         onCancel={() => setDeleteTarget(null)}
       />

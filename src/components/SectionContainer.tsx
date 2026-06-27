@@ -1,3 +1,4 @@
+import { palette, withAlpha } from '../theme/palette';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { Box, IconButton, Typography } from '@mui/material';
 import { useCallback, type ReactNode } from 'react';
@@ -9,12 +10,13 @@ export interface SectionProps {
   children: ReactNode;
 }
 
-const subjectConfig: Record<supportedSubject, { emoji: string; glow: string }> = {
-  Math: { emoji: '⚔️', glow: 'rgba(239,83,80,0.15)' },
-  English: { emoji: '📜', glow: 'rgba(66,165,245,0.15)' },
-  Science: { emoji: '🧪', glow: 'rgba(102,187,106,0.15)' },
-  Thinking: { emoji: '🧠', glow: 'rgba(206,147,216,0.15)' },
-};
+const subjectConfig: Record<supportedSubject, { emoji: string; glow: string }> =
+  {
+    Math: { emoji: '⚔️', glow: withAlpha(palette.red425, 0.15) },
+    English: { emoji: '📜', glow: withAlpha(palette.blue425, 0.15) },
+    Science: { emoji: '🧪', glow: withAlpha(palette.green350, 0.15) },
+    Thinking: { emoji: '🧠', glow: withAlpha(palette.purple225, 0.15) },
+  };
 
 function SectionContainer({ name, children }: SectionProps) {
   const navigate = useNavigate();
@@ -31,23 +33,23 @@ function SectionContainer({ name, children }: SectionProps) {
         px: { xs: 2, sm: 4, md: 6 },
         py: 4,
         background: `
-          linear-gradient(135deg, rgba(16, 20, 45, 0.92) 0%, rgba(25, 55, 95, 0.88) 50%, rgba(40, 20, 60, 0.92) 100%),
+          linear-gradient(135deg, ${withAlpha(palette.navy725, 0.92)} 0%, ${withAlpha(palette.navy25, 0.88)} 50%, ${withAlpha(palette.purple875, 0.92)} 100%),
           repeating-linear-gradient(
             0deg,
             transparent,
             transparent 48px,
-            rgba(100, 200, 255, 0.03) 48px,
-            rgba(100, 200, 255, 0.03) 50px
+            ${withAlpha(palette.blue300, 0.03)} 48px,
+            ${withAlpha(palette.blue300, 0.03)} 50px
           ),
           repeating-linear-gradient(
             90deg,
             transparent,
             transparent 48px,
-            rgba(100, 200, 255, 0.03) 48px,
-            rgba(100, 200, 255, 0.03) 50px
+            ${withAlpha(palette.blue300, 0.03)} 48px,
+            ${withAlpha(palette.blue300, 0.03)} 50px
           )
         `,
-        backgroundColor: '#0a0e1a',
+        backgroundColor: palette.navy950,
         position: 'relative',
         overflow: 'hidden',
         '&::before': {
@@ -92,13 +94,13 @@ function SectionContainer({ name, children }: SectionProps) {
         <IconButton
           onClick={handleBackToDashboard}
           sx={{
-            bgcolor: 'rgba(255,255,255,0.1)',
-            color: '#b0bec5',
-            border: '2px solid rgba(255,255,255,0.15)',
+            bgcolor: withAlpha(palette.white, 0.1),
+            color: palette.slate200,
+            border: `2px solid ${withAlpha(palette.white, 0.15)}`,
             borderRadius: '14px',
             '&:hover': {
-              bgcolor: 'rgba(255,255,255,0.2)',
-              color: '#fff',
+              bgcolor: withAlpha(palette.white, 0.2),
+              color: palette.white,
             },
           }}
           size="large"
@@ -116,7 +118,7 @@ function SectionContainer({ name, children }: SectionProps) {
           mb: 3,
           position: 'relative',
           zIndex: 1,
-          background: 'linear-gradient(90deg, #ffd54f, #ff8a65, #ce93d8, #64b5f6)',
+          background: `linear-gradient(90deg, ${palette.amber450}, ${palette.orange400}, ${palette.purple225}, ${palette.blue350})`,
           backgroundClip: 'text',
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
@@ -127,9 +129,7 @@ function SectionContainer({ name, children }: SectionProps) {
       </Typography>
 
       {/* Content */}
-      <Box sx={{ position: 'relative', zIndex: 1 }}>
-        {children}
-      </Box>
+      <Box sx={{ position: 'relative', zIndex: 1 }}>{children}</Box>
     </Box>
   );
 }

@@ -1,3 +1,4 @@
+import { palette, withAlpha } from '../theme/palette';
 import {
   Button,
   Dialog,
@@ -15,7 +16,12 @@ interface ConfirmDeleteDialogProps {
   onCancel: () => void;
 }
 
-function ConfirmDeleteDialog({ open, description, onConfirm, onCancel }: ConfirmDeleteDialogProps) {
+function ConfirmDeleteDialog({
+  open,
+  description,
+  onConfirm,
+  onCancel,
+}: ConfirmDeleteDialogProps) {
   return (
     <Dialog
       open={open}
@@ -24,21 +30,25 @@ function ConfirmDeleteDialog({ open, description, onConfirm, onCancel }: Confirm
       fullWidth
       PaperProps={{
         sx: {
-          bgcolor: '#0f1623',
-          border: '2px solid rgba(239,83,80,0.4)',
+          bgcolor: palette.navy800,
+          border: `2px solid ${withAlpha(palette.red425, 0.4)}`,
           borderRadius: '16px',
           backgroundImage: 'none',
         },
       }}
     >
       <DialogTitle sx={{ pb: 1 }}>
-        <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#ef9a9a' }}>
+        <Typography
+          variant="h6"
+          sx={{ fontWeight: 'bold', color: palette.red125 }}
+        >
           🗑️ Delete this record?
         </Typography>
       </DialogTitle>
       <DialogContent sx={{ pb: 1 }}>
-        <Typography sx={{ color: '#90a4ae', fontSize: '0.95rem' }}>
-          {description ?? 'This record will be permanently deleted and cannot be recovered.'}
+        <Typography sx={{ color: palette.slate400, fontSize: '0.95rem' }}>
+          {description ??
+            'This record will be permanently deleted and cannot be recovered.'}
         </Typography>
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
@@ -48,10 +58,10 @@ function ConfirmDeleteDialog({ open, description, onConfirm, onCancel }: Confirm
             borderRadius: '12px',
             textTransform: 'none',
             fontWeight: 'bold',
-            color: '#90a4ae',
-            border: '1px solid rgba(144,164,174,0.3)',
+            color: palette.slate400,
+            border: `1px solid ${withAlpha(palette.slate400, 0.3)}`,
             px: 2.5,
-            '&:hover': { bgcolor: 'rgba(144,164,174,0.1)' },
+            '&:hover': { bgcolor: withAlpha(palette.slate400, 0.1) },
           }}
         >
           Cancel
@@ -63,11 +73,14 @@ function ConfirmDeleteDialog({ open, description, onConfirm, onCancel }: Confirm
             borderRadius: '12px',
             textTransform: 'none',
             fontWeight: 'bold',
-            bgcolor: 'rgba(239,83,80,0.2)',
-            color: '#ef5350',
-            border: '1px solid rgba(239,83,80,0.5)',
+            bgcolor: withAlpha(palette.red425, 0.2),
+            color: palette.red425,
+            border: `1px solid ${withAlpha(palette.red425, 0.5)}`,
             px: 2.5,
-            '&:hover': { bgcolor: 'rgba(239,83,80,0.3)', borderColor: '#ef5350' },
+            '&:hover': {
+              bgcolor: withAlpha(palette.red425, 0.3),
+              borderColor: palette.red425,
+            },
           }}
         >
           Delete

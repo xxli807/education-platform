@@ -1,5 +1,12 @@
 import { lazy, Suspense } from 'react';
-import { createRouter, createRoute, createRootRoute, redirect, createHashHistory, Outlet } from '@tanstack/react-router';
+import {
+  createRouter,
+  createRoute,
+  createRootRoute,
+  redirect,
+  createHashHistory,
+  Outlet,
+} from '@tanstack/react-router';
 
 const USER_STORAGE_KEY = 'user';
 
@@ -29,9 +36,14 @@ const MathSection = lazy(() => import('./components/MathSection'));
 const EnglishSection = lazy(() => import('./components/EnglishSection'));
 const ScienceSection = lazy(() => import('./components/ScienceSection'));
 const ThinkingSection = lazy(() => import('./components/ThinkingSection'));
-const HolidayTodoSection = lazy(() => import('./components/HolidayTodoSection'));
+const HolidayTodoSection = lazy(
+  () => import('./components/HolidayTodoSection')
+);
 const PlayZoneSection = lazy(() => import('./components/PlayZoneSection'));
-const MathsOlympiadSection = lazy(() => import('./components/MathsOlympiadSection'));
+const MathsOlympiadSection = lazy(
+  () => import('./components/MathsOlympiadSection')
+);
+const TestsSection = lazy(() => import('./components/TestsSection'));
 
 // Root route
 const rootRoute = createRootRoute({
@@ -107,6 +119,13 @@ const olympiadRoute = createRoute({
   component: MathsOlympiadSection,
 });
 
+const testsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/tests',
+  beforeLoad: authGuard,
+  component: TestsSection,
+});
+
 // Build route tree
 const routeTree = rootRoute.addChildren([
   loginRoute,
@@ -118,6 +137,7 @@ const routeTree = rootRoute.addChildren([
   holidayTodoRoute,
   playRoute,
   olympiadRoute,
+  testsRoute,
 ]);
 
 // Create router

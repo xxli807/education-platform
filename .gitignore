@@ -45,6 +45,7 @@ Thumbs.db
 # Build and bundle output
 /public/build/
 /public/assets/
+/public/images/
 
 # Temporary files
 *.tmp
