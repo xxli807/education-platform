@@ -1,3 +1,4 @@
+import { palette, withAlpha } from '../theme/palette';
 import {
   Box,
   Chip,
@@ -56,7 +57,7 @@ function SessionReviewDialog({
       fullWidth
       PaperProps={{
         sx: {
-          bgcolor: '#0f1623',
+          bgcolor: palette.navy800,
           border: `2px solid ${accentColor}40`,
           borderRadius: '20px',
           backgroundImage: 'none',
@@ -64,31 +65,63 @@ function SessionReviewDialog({
       }}
     >
       <DialogTitle sx={{ pb: 1 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+          }}
+        >
           <Box>
-            <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#e0e0e0' }}>
+            <Typography
+              variant="h6"
+              sx={{ fontWeight: 'bold', color: palette.gray400 }}
+            >
               {title}
             </Typography>
             {subtitle && (
-              <Typography variant="body2" sx={{ color: '#78909c', mt: 0.3 }}>
+              <Typography
+                variant="body2"
+                sx={{ color: palette.slate575, mt: 0.3 }}
+              >
                 {subtitle}
               </Typography>
             )}
-            <Typography variant="caption" sx={{ color: '#546e7a' }}>
-              {date.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
+            <Typography variant="caption" sx={{ color: palette.slate775 }}>
+              {date.toLocaleDateString('en-AU', {
+                weekday: 'short',
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric',
+              })}
             </Typography>
           </Box>
-          <IconButton onClick={onClose} sx={{ color: '#78909c', mt: -0.5 }}>
+          <IconButton
+            onClick={onClose}
+            sx={{ color: palette.slate575, mt: -0.5 }}
+          >
             <CloseIcon />
           </IconButton>
         </Box>
 
         {/* Score bar */}
         <Box sx={{ mt: 1.5 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+          <Box
+            sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}
+          >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
-              {score === 100 && <TrophyIcon sx={{ color: '#ffd54f', fontSize: '1.1rem' }} />}
-              <Typography sx={{ fontWeight: 'bold', color: score === 100 ? '#ffd54f' : accentColor, fontSize: '0.95rem' }}>
+              {score === 100 && (
+                <TrophyIcon
+                  sx={{ color: palette.amber450, fontSize: '1.1rem' }}
+                />
+              )}
+              <Typography
+                sx={{
+                  fontWeight: 'bold',
+                  color: score === 100 ? palette.amber450 : accentColor,
+                  fontSize: '0.95rem',
+                }}
+              >
                 {correctCount}/{totalQuestions} correct
               </Typography>
             </Box>
@@ -97,8 +130,18 @@ function SessionReviewDialog({
               size="small"
               sx={{
                 fontWeight: 'bold',
-                bgcolor: score === 100 ? 'rgba(76,175,80,0.3)' : score >= 70 ? 'rgba(255,167,38,0.25)' : 'rgba(239,83,80,0.2)',
-                color: score === 100 ? '#a5d6a7' : score >= 70 ? '#ffcc80' : '#ef9a9a',
+                bgcolor:
+                  score === 100
+                    ? withAlpha(palette.green425, 0.3)
+                    : score >= 70
+                      ? withAlpha(palette.orange275, 0.25)
+                      : withAlpha(palette.red425, 0.2),
+                color:
+                  score === 100
+                    ? palette.green125
+                    : score >= 70
+                      ? palette.orange150
+                      : palette.red125,
               }}
             />
           </Box>
@@ -108,9 +151,14 @@ function SessionReviewDialog({
             sx={{
               height: 6,
               borderRadius: 3,
-              bgcolor: 'rgba(255,255,255,0.08)',
+              bgcolor: withAlpha(palette.white, 0.08),
               '& .MuiLinearProgress-bar': {
-                bgcolor: score === 100 ? '#4caf50' : score >= 70 ? '#ffa726' : '#ef5350',
+                bgcolor:
+                  score === 100
+                    ? palette.green425
+                    : score >= 70
+                      ? palette.orange275
+                      : palette.red425,
                 borderRadius: 3,
               },
             }}
@@ -118,7 +166,7 @@ function SessionReviewDialog({
         </Box>
       </DialogTitle>
 
-      <Divider sx={{ borderColor: 'rgba(255,255,255,0.08)' }} />
+      <Divider sx={{ borderColor: withAlpha(palette.white, 0.08) }} />
 
       <DialogContent sx={{ px: 2.5, pt: 2, pb: 3 }}>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
@@ -128,38 +176,84 @@ function SessionReviewDialog({
               sx={{
                 p: 1.8,
                 borderRadius: '12px',
-                bgcolor: q.isCorrect ? 'rgba(76,175,80,0.08)' : 'rgba(239,83,80,0.08)',
-                border: `1px solid ${q.isCorrect ? 'rgba(76,175,80,0.3)' : 'rgba(239,83,80,0.3)'}`,
+                bgcolor: q.isCorrect
+                  ? withAlpha(palette.green425, 0.08)
+                  : withAlpha(palette.red425, 0.08),
+                border: `1px solid ${q.isCorrect ? '${withAlpha(palette.green425, 0.3)}' : '${withAlpha(palette.red425, 0.3)}'}`,
               }}
             >
               {/* Question number + icon */}
-              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, mb: 0.8 }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: 1,
+                  mb: 0.8,
+                }}
+              >
                 <Chip
                   label={`Q${idx + 1}`}
                   size="small"
-                  sx={{ bgcolor: 'rgba(255,255,255,0.08)', color: '#90a4ae', fontWeight: 'bold', fontSize: '0.7rem', height: 20 }}
+                  sx={{
+                    bgcolor: withAlpha(palette.white, 0.08),
+                    color: palette.slate400,
+                    fontWeight: 'bold',
+                    fontSize: '0.7rem',
+                    height: 20,
+                  }}
                 />
-                {q.isCorrect
-                  ? <CheckIcon sx={{ color: '#66bb6a', fontSize: '1.1rem', mt: '1px' }} />
-                  : <WrongIcon sx={{ color: '#ef5350', fontSize: '1.1rem', mt: '1px' }} />}
+                {q.isCorrect ? (
+                  <CheckIcon
+                    sx={{
+                      color: palette.green350,
+                      fontSize: '1.1rem',
+                      mt: '1px',
+                    }}
+                  />
+                ) : (
+                  <WrongIcon
+                    sx={{
+                      color: palette.red425,
+                      fontSize: '1.1rem',
+                      mt: '1px',
+                    }}
+                  />
+                )}
               </Box>
 
               {/* Question text */}
-              <Typography sx={{ color: '#cfd8dc', fontSize: '0.88rem', fontWeight: 500, whiteSpace: 'pre-line', mb: 1, lineHeight: 1.5 }}>
+              <Typography
+                sx={{
+                  color: palette.slate25,
+                  fontSize: '0.88rem',
+                  fontWeight: 500,
+                  whiteSpace: 'pre-line',
+                  mb: 1,
+                  lineHeight: 1.5,
+                }}
+              >
                 {q.text}
               </Typography>
 
               {/* Lucas's answer */}
               <Box sx={{ display: 'flex', gap: 0.8, flexWrap: 'wrap' }}>
                 <Box sx={{ flex: 1 }}>
-                  <Typography sx={{ fontSize: '0.72rem', color: '#546e7a', mb: 0.2, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                  <Typography
+                    sx={{
+                      fontSize: '0.72rem',
+                      color: palette.slate775,
+                      mb: 0.2,
+                      textTransform: 'uppercase',
+                      letterSpacing: 0.5,
+                    }}
+                  >
                     Lucas answered
                   </Typography>
                   <Typography
                     sx={{
                       fontSize: '0.9rem',
                       fontWeight: 'bold',
-                      color: q.isCorrect ? '#a5d6a7' : '#ef9a9a',
+                      color: q.isCorrect ? palette.green125 : palette.red125,
                       fontStyle: q.userAnswer ? 'normal' : 'italic',
                     }}
                   >
@@ -169,10 +263,24 @@ function SessionReviewDialog({
 
                 {!q.isCorrect && (
                   <Box sx={{ flex: 1 }}>
-                    <Typography sx={{ fontSize: '0.72rem', color: '#546e7a', mb: 0.2, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                    <Typography
+                      sx={{
+                        fontSize: '0.72rem',
+                        color: palette.slate775,
+                        mb: 0.2,
+                        textTransform: 'uppercase',
+                        letterSpacing: 0.5,
+                      }}
+                    >
                       Correct answer
                     </Typography>
-                    <Typography sx={{ fontSize: '0.9rem', fontWeight: 'bold', color: '#a5d6a7' }}>
+                    <Typography
+                      sx={{
+                        fontSize: '0.9rem',
+                        fontWeight: 'bold',
+                        color: palette.green125,
+                      }}
+                    >
                       {q.correctAnswer}
                     </Typography>
                   </Box>

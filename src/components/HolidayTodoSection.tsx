@@ -1,3 +1,4 @@
+import { palette, withAlpha } from '../theme/palette';
 import { useEffect, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import {
@@ -293,7 +294,7 @@ function HolidayTodoSection() {
   };
 
   const handleDeletePlan = (planId: number) => {
-    const plan = plans.find((p) => p.id === planId);
+    const plan = plans.find(p => p.id === planId);
     setDeleteConfirm({
       open: true,
       type: 'plan',
@@ -335,7 +336,7 @@ function HolidayTodoSection() {
     window.print();
   };
 
-  const currentPlan = plans.find((p) => p.id === selectedPlanId);
+  const currentPlan = plans.find(p => p.id === selectedPlanId);
 
   return (
     <Box
@@ -344,23 +345,23 @@ function HolidayTodoSection() {
         px: { xs: 2, sm: 4, md: 6 },
         py: 4,
         background: `
-          linear-gradient(135deg, rgba(16, 20, 45, 0.92) 0%, rgba(25, 55, 95, 0.88) 50%, rgba(40, 20, 60, 0.92) 100%),
+          linear-gradient(135deg, ${withAlpha(palette.navy725, 0.92)} 0%, ${withAlpha(palette.navy25, 0.88)} 50%, ${withAlpha(palette.purple875, 0.92)} 100%),
           repeating-linear-gradient(
             0deg,
             transparent,
             transparent 48px,
-            rgba(100, 200, 255, 0.03) 48px,
-            rgba(100, 200, 255, 0.03) 50px
+            ${withAlpha(palette.blue300, 0.03)} 48px,
+            ${withAlpha(palette.blue300, 0.03)} 50px
           ),
           repeating-linear-gradient(
             90deg,
             transparent,
             transparent 48px,
-            rgba(100, 200, 255, 0.03) 48px,
-            rgba(100, 200, 255, 0.03) 50px
+            ${withAlpha(palette.blue300, 0.03)} 48px,
+            ${withAlpha(palette.blue300, 0.03)} 50px
           )
         `,
-        backgroundColor: '#0a0e1a',
+        backgroundColor: palette.navy950,
         position: 'relative',
         overflow: 'hidden',
         '&::before': {
@@ -371,9 +372,9 @@ function HolidayTodoSection() {
           right: 0,
           bottom: 0,
           background: `
-            radial-gradient(circle at 15% 20%, rgba(0, 200, 83, 0.12) 0%, transparent 40%),
-            radial-gradient(circle at 85% 30%, rgba(33, 150, 243, 0.12) 0%, transparent 40%),
-            radial-gradient(circle at 50% 80%, rgba(156, 39, 176, 0.1) 0%, transparent 40%)
+            radial-gradient(circle at 15% 20%, ${withAlpha(palette.green500, 0.12)} 0%, transparent 40%),
+            radial-gradient(circle at 85% 30%, ${withAlpha(palette.blue475, 0.12)} 0%, transparent 40%),
+            radial-gradient(circle at 50% 80%, ${withAlpha(palette.purple550, 0.1)} 0%, transparent 40%)
           `,
           pointerEvents: 'none',
         },
@@ -401,7 +402,7 @@ function HolidayTodoSection() {
         <IconButton
           onClick={() => navigate({ to: '/' })}
           sx={{
-            color: '#b0bec5',
+            color: palette.slate200,
             mr: 2,
             '@media print': {
               display: 'none',
@@ -414,7 +415,7 @@ function HolidayTodoSection() {
           variant="h3"
           sx={{
             fontWeight: 900,
-            background: 'linear-gradient(90deg, #ffd54f, #ff8a65, #ce93d8, #64b5f6)',
+            background: `linear-gradient(90deg, ${palette.amber450}, ${palette.orange400}, ${palette.purple225}, ${palette.blue350})`,
             backgroundClip: 'text',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
@@ -422,7 +423,7 @@ function HolidayTodoSection() {
             letterSpacing: '1px',
             '@media print': {
               WebkitTextFillColor: 'unset',
-              color: '#000',
+              color: palette.black,
             },
           }}
         >
@@ -446,8 +447,8 @@ function HolidayTodoSection() {
         <Grid size={{ xs: 12, md: 4 }}>
           <Card
             sx={{
-              background: 'linear-gradient(135deg, #1a1f3a 0%, #2d2a4a 100%)',
-              border: '2px solid #26a69a',
+              background: `linear-gradient(135deg, ${palette.navy475} 0%, ${palette.navy175} 100%)`,
+              border: `2px solid ${palette.teal450}`,
               borderRadius: '15px',
               '@media print': {
                 display: 'none',
@@ -455,28 +456,46 @@ function HolidayTodoSection() {
             }}
           >
             <CardContent>
-              <Typography variant="h6" sx={{ color: '#b2dfdb', mb: 2, fontWeight: 'bold' }}>
+              <Typography
+                variant="h6"
+                sx={{ color: palette.teal100, mb: 2, fontWeight: 'bold' }}
+              >
                 Your Plans
               </Typography>
 
               {plans.length === 0 ? (
-                <Typography sx={{ color: '#80cbc4', mb: 2, fontStyle: 'italic' }}>
+                <Typography
+                  sx={{ color: palette.teal175, mb: 2, fontStyle: 'italic' }}
+                >
                   No plans yet. Create one to get started!
                 </Typography>
               ) : (
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 2 }}>
-                  {plans.map((plan) => (
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 1,
+                    mb: 2,
+                  }}
+                >
+                  {plans.map(plan => (
                     <Box
                       key={plan.id}
                       sx={{
                         p: 1.5,
-                        bgcolor: selectedPlanId === plan.id ? 'rgba(38, 166, 154, 0.2)' : 'rgba(255, 255, 255, 0.05)',
-                        border: selectedPlanId === plan.id ? '2px solid #26a69a' : '1px solid rgba(38, 166, 154, 0.3)',
+                        bgcolor:
+                          selectedPlanId === plan.id
+                            ? withAlpha(palette.teal450, 0.2)
+                            : withAlpha(palette.white, 0.05),
+                        border:
+                          selectedPlanId === plan.id
+                            ? `2px solid ${palette.teal450}`
+                            : `1px solid ${withAlpha(palette.teal450, 0.3)}`,
                         borderRadius: '8px',
                         cursor: 'pointer',
                         transition: 'all 0.2s',
                         '&:hover': {
-                          bgcolor: 'rgba(38, 166, 154, 0.15)',
+                          bgcolor: withAlpha(palette.teal450, 0.15),
                         },
                         display: 'flex',
                         justifyContent: 'space-between',
@@ -487,7 +506,10 @@ function HolidayTodoSection() {
                       <Box>
                         <Typography
                           sx={{
-                            color: selectedPlanId === plan.id ? '#80cbc4' : '#b2dfdb',
+                            color:
+                              selectedPlanId === plan.id
+                                ? palette.teal175
+                                : palette.teal100,
                             fontWeight: 'bold',
                           }}
                         >
@@ -495,18 +517,22 @@ function HolidayTodoSection() {
                         </Typography>
                         <Typography
                           variant="caption"
-                          sx={{ color: '#64b5b0', display: 'block', mt: 0.5 }}
+                          sx={{
+                            color: palette.teal250,
+                            display: 'block',
+                            mt: 0.5,
+                          }}
                         >
                           📅 {new Date(plan.holidayDate).toLocaleDateString()}
                         </Typography>
                       </Box>
                       <IconButton
                         size="small"
-                        onClick={(e) => {
+                        onClick={e => {
                           e.stopPropagation();
                           handleDeletePlan(plan.id!);
                         }}
-                        sx={{ color: '#ef5350' }}
+                        sx={{ color: palette.red425 }}
                       >
                         <DeleteIcon fontSize="small" />
                       </IconButton>
@@ -524,11 +550,11 @@ function HolidayTodoSection() {
                   setPlanErrors({ name: '', date: '' });
                 }}
                 sx={{
-                  bgcolor: '#26a69a',
-                  color: '#fff',
+                  bgcolor: palette.teal450,
+                  color: palette.white,
                   fontWeight: 'bold',
                   '&:hover': {
-                    bgcolor: '#00897b',
+                    bgcolor: palette.teal725,
                   },
                 }}
               >
@@ -542,8 +568,8 @@ function HolidayTodoSection() {
         <Grid size={{ xs: 12, md: 8 }}>
           <Card
             sx={{
-              background: 'linear-gradient(135deg, #1a1f3a 0%, #2d2a4a 100%)',
-              border: '2px solid #26a69a',
+              background: `linear-gradient(135deg, ${palette.navy475} 0%, ${palette.navy175} 100%)`,
+              border: `2px solid ${palette.teal450}`,
               borderRadius: '15px',
             }}
           >
@@ -565,12 +591,13 @@ function HolidayTodoSection() {
                     <Box>
                       <Typography
                         variant="h5"
-                        sx={{ color: '#b2dfdb', fontWeight: 'bold' }}
+                        sx={{ color: palette.teal100, fontWeight: 'bold' }}
                       >
                         {currentPlan.holidayName}
                       </Typography>
-                      <Typography sx={{ color: '#80cbc4', mt: 0.5 }}>
-                        📅 {new Date(currentPlan.holidayDate).toLocaleDateString()}
+                      <Typography sx={{ color: palette.teal175, mt: 0.5 }}>
+                        📅{' '}
+                        {new Date(currentPlan.holidayDate).toLocaleDateString()}
                       </Typography>
                     </Box>
                     <Box
@@ -587,14 +614,18 @@ function HolidayTodoSection() {
                         startIcon={<AddIcon />}
                         onClick={() => {
                           setOpenNewItemDialog(true);
-                          setItemErrors({ startTime: '', endTime: '', description: '' });
+                          setItemErrors({
+                            startTime: '',
+                            endTime: '',
+                            description: '',
+                          });
                         }}
                         sx={{
-                          bgcolor: '#26a69a',
-                          color: '#fff',
+                          bgcolor: palette.teal450,
+                          color: palette.white,
                           fontWeight: 'bold',
                           '&:hover': {
-                            bgcolor: '#00897b',
+                            bgcolor: palette.teal725,
                           },
                         }}
                       >
@@ -605,11 +636,11 @@ function HolidayTodoSection() {
                         startIcon={<PrintIcon />}
                         onClick={handlePrint}
                         sx={{
-                          bgcolor: '#42a5f5',
-                          color: '#fff',
+                          bgcolor: palette.blue425,
+                          color: palette.white,
                           fontWeight: 'bold',
                           '&:hover': {
-                            bgcolor: '#1e88e5',
+                            bgcolor: palette.blue625,
                           },
                         }}
                       >
@@ -619,7 +650,14 @@ function HolidayTodoSection() {
                   </Box>
 
                   {todoItems.length === 0 ? (
-                    <Typography sx={{ color: '#80cbc4', mt: 3, fontStyle: 'italic', textAlign: 'center' }}>
+                    <Typography
+                      sx={{
+                        color: palette.teal175,
+                        mt: 3,
+                        fontStyle: 'italic',
+                        textAlign: 'center',
+                      }}
+                    >
                       No items yet. Add one to get started! ✨
                     </Typography>
                   ) : (
@@ -642,51 +680,99 @@ function HolidayTodoSection() {
                         <TableHead
                           sx={{
                             '@media print': {
-                              background: '#f5f5f5',
+                              background: palette.gray25,
                             },
                           }}
                         >
                           <TableRow>
-                            <TableCell sx={{ color: '#b2dfdb', fontWeight: 'bold', width: '80px', '@media print': { color: '#000' } }}>
+                            <TableCell
+                              sx={{
+                                color: palette.teal100,
+                                fontWeight: 'bold',
+                                width: '80px',
+                                '@media print': { color: palette.black },
+                              }}
+                            >
                               Done
                             </TableCell>
-                            <TableCell sx={{ color: '#b2dfdb', fontWeight: 'bold', width: '100px', '@media print': { color: '#000' } }}>
+                            <TableCell
+                              sx={{
+                                color: palette.teal100,
+                                fontWeight: 'bold',
+                                width: '100px',
+                                '@media print': { color: palette.black },
+                              }}
+                            >
                               Start
                             </TableCell>
-                            <TableCell sx={{ color: '#b2dfdb', fontWeight: 'bold', width: '100px', '@media print': { color: '#000' } }}>
+                            <TableCell
+                              sx={{
+                                color: palette.teal100,
+                                fontWeight: 'bold',
+                                width: '100px',
+                                '@media print': { color: palette.black },
+                              }}
+                            >
                               End
                             </TableCell>
-                            <TableCell sx={{ color: '#b2dfdb', fontWeight: 'bold', '@media print': { color: '#000' } }}>
+                            <TableCell
+                              sx={{
+                                color: palette.teal100,
+                                fontWeight: 'bold',
+                                '@media print': { color: palette.black },
+                              }}
+                            >
                               Task
                             </TableCell>
-                            <TableCell sx={{ color: '#b2dfdb', fontWeight: 'bold', width: '60px', textAlign: 'center', '@media print': { display: 'none' } }}>
+                            <TableCell
+                              sx={{
+                                color: palette.teal100,
+                                fontWeight: 'bold',
+                                width: '60px',
+                                textAlign: 'center',
+                                '@media print': { display: 'none' },
+                              }}
+                            >
                               Delete
                             </TableCell>
                           </TableRow>
                         </TableHead>
                         <TableBody>
-                          {todoItems.map((item) => (
+                          {todoItems.map(item => (
                             <TableRow
                               key={item.id}
                               sx={{
-                                bgcolor: item.completed ? 'rgba(76, 175, 80, 0.1)' : 'rgba(255, 255, 255, 0.05)',
+                                bgcolor: item.completed
+                                  ? withAlpha(palette.green425, 0.1)
+                                  : withAlpha(palette.white, 0.05),
                                 transition: 'all 0.2s',
                                 '&:hover': {
-                                  bgcolor: 'rgba(38, 166, 154, 0.1)',
+                                  bgcolor: withAlpha(palette.teal450, 0.1),
                                 },
                                 '@media print': {
-                                  bgcolor: item.completed ? '#e8f5e9' : 'white',
+                                  bgcolor: item.completed
+                                    ? palette.green50
+                                    : 'white',
                                 },
                               }}
                             >
-                              <TableCell sx={{ '@media print': { color: '#000' } }}>
+                              <TableCell
+                                sx={{
+                                  '@media print': { color: palette.black },
+                                }}
+                              >
                                 <Checkbox
                                   checked={item.completed}
-                                  onChange={() => handleToggleTodoItem(item.id!, item.completed)}
+                                  onChange={() =>
+                                    handleToggleTodoItem(
+                                      item.id!,
+                                      item.completed
+                                    )
+                                  }
                                   sx={{
-                                    color: '#26a69a',
+                                    color: palette.teal450,
                                     '&.Mui-checked': {
-                                      color: '#4caf50',
+                                      color: palette.green425,
                                     },
                                     '@media print': {
                                       display: 'none',
@@ -700,7 +786,7 @@ function HolidayTodoSection() {
                                       display: 'none',
                                       '@media print': {
                                         display: 'inline',
-                                        color: '#4caf50',
+                                        color: palette.green425,
                                         fontWeight: 'bold',
                                       },
                                     }}
@@ -711,27 +797,39 @@ function HolidayTodoSection() {
                               </TableCell>
                               <TableCell
                                 sx={{
-                                  color: item.completed ? '#90a4ae' : '#80cbc4',
-                                  textDecoration: item.completed ? 'line-through' : 'none',
-                                  '@media print': { color: '#000' },
+                                  color: item.completed
+                                    ? palette.slate400
+                                    : palette.teal175,
+                                  textDecoration: item.completed
+                                    ? 'line-through'
+                                    : 'none',
+                                  '@media print': { color: palette.black },
                                 }}
                               >
                                 {item.startTime}
                               </TableCell>
                               <TableCell
                                 sx={{
-                                  color: item.completed ? '#90a4ae' : '#80cbc4',
-                                  textDecoration: item.completed ? 'line-through' : 'none',
-                                  '@media print': { color: '#000' },
+                                  color: item.completed
+                                    ? palette.slate400
+                                    : palette.teal175,
+                                  textDecoration: item.completed
+                                    ? 'line-through'
+                                    : 'none',
+                                  '@media print': { color: palette.black },
                                 }}
                               >
                                 {item.endTime}
                               </TableCell>
                               <TableCell
                                 sx={{
-                                  color: item.completed ? '#90a4ae' : '#b2dfdb',
-                                  textDecoration: item.completed ? 'line-through' : 'none',
-                                  '@media print': { color: '#000' },
+                                  color: item.completed
+                                    ? palette.slate400
+                                    : palette.teal100,
+                                  textDecoration: item.completed
+                                    ? 'line-through'
+                                    : 'none',
+                                  '@media print': { color: palette.black },
                                 }}
                               >
                                 {item.description}
@@ -745,7 +843,7 @@ function HolidayTodoSection() {
                                 <IconButton
                                   size="small"
                                   onClick={() => handleDeleteTodoItem(item.id!)}
-                                  sx={{ color: '#ef5350' }}
+                                  sx={{ color: palette.red425 }}
                                 >
                                   <DeleteIcon fontSize="small" />
                                 </IconButton>
@@ -759,7 +857,7 @@ function HolidayTodoSection() {
                 </>
               ) : (
                 <Box sx={{ textAlign: 'center', py: 4 }}>
-                  <Typography sx={{ color: '#80cbc4', mb: 2 }}>
+                  <Typography sx={{ color: palette.teal175, mb: 2 }}>
                     Create a new plan to get started! 🎉
                   </Typography>
                 </Box>
@@ -775,19 +873,21 @@ function HolidayTodoSection() {
         onClose={() => setOpenNewPlanDialog(false)}
         PaperProps={{
           sx: {
-            background: 'linear-gradient(135deg, #1a1f3a 0%, #2d2a4a 100%)',
-            border: '2px solid #26a69a',
+            background: `linear-gradient(135deg, ${palette.navy475} 0%, ${palette.navy175} 100%)`,
+            border: `2px solid ${palette.teal450}`,
           },
         }}
       >
-        <DialogTitle sx={{ color: '#b2dfdb', fontWeight: 'bold', pb: 1 }}>Create New Holiday Plan</DialogTitle>
+        <DialogTitle sx={{ color: palette.teal100, fontWeight: 'bold', pb: 1 }}>
+          Create New Holiday Plan
+        </DialogTitle>
         <DialogContent sx={{ pt: 4, minWidth: '400px' }}>
           {/* Holiday Name Section */}
           <Box sx={{ mb: 4 }}>
             <Typography
               variant="body2"
               sx={{
-                color: '#64b5b0',
+                color: palette.teal250,
                 fontSize: '0.75rem',
                 fontWeight: 'bold',
                 mb: 1.5,
@@ -800,7 +900,7 @@ function HolidayTodoSection() {
             <TextField
               fullWidth
               value={newPlanData.name}
-              onChange={(e) => {
+              onChange={e => {
                 setNewPlanData({ ...newPlanData, name: e.target.value });
                 if (planErrors.name) {
                   setPlanErrors({ ...planErrors, name: '' });
@@ -810,24 +910,30 @@ function HolidayTodoSection() {
               placeholder="e.g., Summer Holidays"
               sx={{
                 '& .MuiOutlinedInput-root': {
-                  color: planErrors.name ? '#ef5350' : '#80cbc4',
+                  color: planErrors.name ? palette.red425 : palette.teal175,
                   '& fieldset': {
-                    borderColor: planErrors.name ? '#ef5350' : '#26a69a',
+                    borderColor: planErrors.name
+                      ? palette.red425
+                      : palette.teal450,
                     borderWidth: '2px',
                   },
                   '&:hover fieldset': {
-                    borderColor: planErrors.name ? '#ef5350' : '#80cbc4',
+                    borderColor: planErrors.name
+                      ? palette.red425
+                      : palette.teal175,
                   },
                   '&.Mui-focused fieldset': {
-                    borderColor: planErrors.name ? '#ef5350' : '#4dd0e1',
+                    borderColor: planErrors.name
+                      ? palette.red425
+                      : palette.cyan400,
                   },
                 },
                 '& .MuiInputBase-input::placeholder': {
-                  color: '#64b5b0',
+                  color: palette.teal250,
                   opacity: 0.7,
                 },
                 '& .MuiInputLabel-root': {
-                  color: planErrors.name ? '#ef5350' : '#80cbc4',
+                  color: planErrors.name ? palette.red425 : palette.teal175,
                 },
               }}
             />
@@ -835,7 +941,7 @@ function HolidayTodoSection() {
               <Typography
                 variant="caption"
                 sx={{
-                  color: '#ef5350',
+                  color: palette.red425,
                   display: 'block',
                   mt: 0.75,
                   fontWeight: 'bold',
@@ -851,7 +957,7 @@ function HolidayTodoSection() {
             <Typography
               variant="body2"
               sx={{
-                color: '#64b5b0',
+                color: palette.teal250,
                 fontSize: '0.75rem',
                 fontWeight: 'bold',
                 mb: 1.5,
@@ -863,7 +969,7 @@ function HolidayTodoSection() {
             </Typography>
             <CustomDatePicker
               value={newPlanData.date}
-              onChange={(date) => {
+              onChange={date => {
                 setNewPlanData({ ...newPlanData, date });
                 if (planErrors.date) {
                   setPlanErrors({ ...planErrors, date: '' });
@@ -875,7 +981,7 @@ function HolidayTodoSection() {
               <Typography
                 variant="caption"
                 sx={{
-                  color: '#ef5350',
+                  color: palette.red425,
                   display: 'block',
                   mt: 0.75,
                   fontWeight: 'bold',
@@ -885,10 +991,12 @@ function HolidayTodoSection() {
               </Typography>
             )}
           </Box>
-          <Box sx={{ display: 'flex', gap: 1, mt: 3, justifyContent: 'flex-end' }}>
+          <Box
+            sx={{ display: 'flex', gap: 1, mt: 3, justifyContent: 'flex-end' }}
+          >
             <Button
               onClick={() => setOpenNewPlanDialog(false)}
-              sx={{ color: '#80cbc4' }}
+              sx={{ color: palette.teal175 }}
             >
               Cancel
             </Button>
@@ -896,11 +1004,11 @@ function HolidayTodoSection() {
               variant="contained"
               onClick={handleCreatePlan}
               sx={{
-                bgcolor: '#26a69a',
-                color: '#fff',
+                bgcolor: palette.teal450,
+                color: palette.white,
                 fontWeight: 'bold',
                 '&:hover': {
-                  bgcolor: '#00897b',
+                  bgcolor: palette.teal725,
                 },
               }}
             >
@@ -916,12 +1024,14 @@ function HolidayTodoSection() {
         onClose={() => setOpenNewItemDialog(false)}
         PaperProps={{
           sx: {
-            background: 'linear-gradient(135deg, #1a1f3a 0%, #2d2a4a 100%)',
-            border: '2px solid #26a69a',
+            background: `linear-gradient(135deg, ${palette.navy475} 0%, ${palette.navy175} 100%)`,
+            border: `2px solid ${palette.teal450}`,
           },
         }}
       >
-        <DialogTitle sx={{ color: '#b2dfdb', fontWeight: 'bold' }}>Add Todo Item</DialogTitle>
+        <DialogTitle sx={{ color: palette.teal100, fontWeight: 'bold' }}>
+          Add Todo Item
+        </DialogTitle>
         <DialogContent sx={{ pt: 3, minWidth: '450px' }}>
           {/* Time range section */}
           <Box sx={{ mb: 3, position: 'relative' }}>
@@ -931,7 +1041,7 @@ function HolidayTodoSection() {
                 position: 'absolute',
                 top: '-28px',
                 left: '0',
-                color: '#80cbc4',
+                color: palette.teal175,
                 fontWeight: 'bold',
                 letterSpacing: '0.5px',
                 display: 'flex',
@@ -947,7 +1057,7 @@ function HolidayTodoSection() {
                   <Typography
                     variant="body2"
                     sx={{
-                      color: '#64b5b0',
+                      color: palette.teal250,
                       fontSize: '0.75rem',
                       fontWeight: 'bold',
                       mb: 0.5,
@@ -961,28 +1071,43 @@ function HolidayTodoSection() {
                     fullWidth
                     type="time"
                     value={newItemData.startTime}
-                    onChange={(e) => {
-                      setNewItemData({ ...newItemData, startTime: e.target.value });
+                    onChange={e => {
+                      setNewItemData({
+                        ...newItemData,
+                        startTime: e.target.value,
+                      });
                       if (itemErrors.startTime) {
                         setItemErrors({ ...itemErrors, startTime: '' });
                       }
                     }}
                     error={!!itemErrors.startTime}
                     inputProps={{
-                      style: { padding: '10px', fontSize: '16px', textAlign: 'center' },
+                      style: {
+                        padding: '10px',
+                        fontSize: '16px',
+                        textAlign: 'center',
+                      },
                     }}
                     sx={{
                       '& .MuiOutlinedInput-root': {
-                        color: itemErrors.startTime ? '#ef5350' : '#80cbc4',
+                        color: itemErrors.startTime
+                          ? palette.red425
+                          : palette.teal175,
                         '& fieldset': {
-                          borderColor: itemErrors.startTime ? '#ef5350' : '#26a69a',
+                          borderColor: itemErrors.startTime
+                            ? palette.red425
+                            : palette.teal450,
                           borderWidth: '2px',
                         },
                         '&:hover fieldset': {
-                          borderColor: itemErrors.startTime ? '#ef5350' : '#80cbc4',
+                          borderColor: itemErrors.startTime
+                            ? palette.red425
+                            : palette.teal175,
                         },
                         '&.Mui-focused fieldset': {
-                          borderColor: itemErrors.startTime ? '#ef5350' : '#4dd0e1',
+                          borderColor: itemErrors.startTime
+                            ? palette.red425
+                            : palette.cyan400,
                         },
                       },
                       '& input': {
@@ -997,7 +1122,7 @@ function HolidayTodoSection() {
                     <Typography
                       variant="caption"
                       sx={{
-                        color: '#ef5350',
+                        color: palette.red425,
                         display: 'block',
                         mt: 0.5,
                         fontWeight: 'bold',
@@ -1013,7 +1138,7 @@ function HolidayTodoSection() {
                   <Typography
                     variant="body2"
                     sx={{
-                      color: '#64b5b0',
+                      color: palette.teal250,
                       fontSize: '0.75rem',
                       fontWeight: 'bold',
                       mb: 0.5,
@@ -1027,28 +1152,43 @@ function HolidayTodoSection() {
                     fullWidth
                     type="time"
                     value={newItemData.endTime}
-                    onChange={(e) => {
-                      setNewItemData({ ...newItemData, endTime: e.target.value });
+                    onChange={e => {
+                      setNewItemData({
+                        ...newItemData,
+                        endTime: e.target.value,
+                      });
                       if (itemErrors.endTime) {
                         setItemErrors({ ...itemErrors, endTime: '' });
                       }
                     }}
                     error={!!itemErrors.endTime}
                     inputProps={{
-                      style: { padding: '10px', fontSize: '16px', textAlign: 'center' },
+                      style: {
+                        padding: '10px',
+                        fontSize: '16px',
+                        textAlign: 'center',
+                      },
                     }}
                     sx={{
                       '& .MuiOutlinedInput-root': {
-                        color: itemErrors.endTime ? '#ef5350' : '#80cbc4',
+                        color: itemErrors.endTime
+                          ? palette.red425
+                          : palette.teal175,
                         '& fieldset': {
-                          borderColor: itemErrors.endTime ? '#ef5350' : '#26a69a',
+                          borderColor: itemErrors.endTime
+                            ? palette.red425
+                            : palette.teal450,
                           borderWidth: '2px',
                         },
                         '&:hover fieldset': {
-                          borderColor: itemErrors.endTime ? '#ef5350' : '#80cbc4',
+                          borderColor: itemErrors.endTime
+                            ? palette.red425
+                            : palette.teal175,
                         },
                         '&.Mui-focused fieldset': {
-                          borderColor: itemErrors.endTime ? '#ef5350' : '#4dd0e1',
+                          borderColor: itemErrors.endTime
+                            ? palette.red425
+                            : palette.cyan400,
                         },
                       },
                       '& input': {
@@ -1063,7 +1203,7 @@ function HolidayTodoSection() {
                     <Typography
                       variant="caption"
                       sx={{
-                        color: '#ef5350',
+                        color: palette.red425,
                         display: 'block',
                         mt: 0.5,
                         fontWeight: 'bold',
@@ -1085,7 +1225,7 @@ function HolidayTodoSection() {
                 position: 'absolute',
                 top: '-24px',
                 left: '0',
-                color: '#80cbc4',
+                color: palette.teal175,
                 fontWeight: 'bold',
                 letterSpacing: '0.5px',
               }}
@@ -1096,7 +1236,7 @@ function HolidayTodoSection() {
               fullWidth
               label="What will you do?"
               value={newItemData.description}
-              onChange={(e) => {
+              onChange={e => {
                 setNewItemData({ ...newItemData, description: e.target.value });
                 if (itemErrors.description) {
                   setItemErrors({ ...itemErrors, description: '' });
@@ -1109,24 +1249,34 @@ function HolidayTodoSection() {
               sx={{
                 mt: 1,
                 '& .MuiOutlinedInput-root': {
-                  color: itemErrors.description ? '#ef5350' : '#80cbc4',
+                  color: itemErrors.description
+                    ? palette.red425
+                    : palette.teal175,
                   '& fieldset': {
-                    borderColor: itemErrors.description ? '#ef5350' : '#26a69a',
+                    borderColor: itemErrors.description
+                      ? palette.red425
+                      : palette.teal450,
                     borderWidth: '2px',
                   },
                   '&:hover fieldset': {
-                    borderColor: itemErrors.description ? '#ef5350' : '#80cbc4',
+                    borderColor: itemErrors.description
+                      ? palette.red425
+                      : palette.teal175,
                   },
                   '&.Mui-focused fieldset': {
-                    borderColor: itemErrors.description ? '#ef5350' : '#4dd0e1',
+                    borderColor: itemErrors.description
+                      ? palette.red425
+                      : palette.cyan400,
                   },
                 },
                 '& .MuiInputBase-input::placeholder': {
-                  color: '#64b5b0',
+                  color: palette.teal250,
                   opacity: 0.7,
                 },
                 '& .MuiInputLabel-root': {
-                  color: itemErrors.description ? '#ef5350' : '#80cbc4',
+                  color: itemErrors.description
+                    ? palette.red425
+                    : palette.teal175,
                 },
               }}
             />
@@ -1134,7 +1284,7 @@ function HolidayTodoSection() {
               <Typography
                 variant="caption"
                 sx={{
-                  color: '#ef5350',
+                  color: palette.red425,
                   display: 'block',
                   mt: 0.5,
                   fontWeight: 'bold',
@@ -1145,10 +1295,12 @@ function HolidayTodoSection() {
             )}
           </Box>
 
-          <Box sx={{ display: 'flex', gap: 1, mt: 4, justifyContent: 'flex-end' }}>
+          <Box
+            sx={{ display: 'flex', gap: 1, mt: 4, justifyContent: 'flex-end' }}
+          >
             <Button
               onClick={() => setOpenNewItemDialog(false)}
-              sx={{ color: '#80cbc4' }}
+              sx={{ color: palette.teal175 }}
             >
               Cancel
             </Button>
@@ -1156,11 +1308,11 @@ function HolidayTodoSection() {
               variant="contained"
               onClick={handleAddTodoItem}
               sx={{
-                bgcolor: '#26a69a',
-                color: '#fff',
+                bgcolor: palette.teal450,
+                color: palette.white,
                 fontWeight: 'bold',
                 '&:hover': {
-                  bgcolor: '#00897b',
+                  bgcolor: palette.teal725,
                 },
               }}
             >

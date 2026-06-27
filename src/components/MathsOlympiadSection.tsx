@@ -1,4 +1,12 @@
-import { Box, Button, IconButton, TextField, Typography, Collapse } from '@mui/material';
+import { palette, withAlpha } from '../theme/palette';
+import {
+  Box,
+  Button,
+  IconButton,
+  TextField,
+  Typography,
+  Collapse,
+} from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import LightbulbIcon from '@mui/icons-material/Lightbulb';
 import RefreshIcon from '@mui/icons-material/Refresh';
@@ -18,14 +26,18 @@ function MathsOlympiadSection() {
     const saved = localStorage.getItem('olympiadCategory');
     return (saved as OlympiadCategory) || 'mix';
   });
-  const [problem, setProblem] = useState<OlympiadProblem>(() => nextOlympiadProblem(
-    (localStorage.getItem('olympiadCategory') as OlympiadCategory) || 'mix'
-  ));
+  const [problem, setProblem] = useState<OlympiadProblem>(() =>
+    nextOlympiadProblem(
+      (localStorage.getItem('olympiadCategory') as OlympiadCategory) || 'mix'
+    )
+  );
   const [revealed, setRevealed] = useState(false);
   const [attempt, setAttempt] = useState('');
   const [scratch, setScratch] = useState('');
   const [showScratch, setShowScratch] = useState(false);
-  const [solved, setSolved] = useState(() => Number(localStorage.getItem('olympiadSolved') || '0'));
+  const [solved, setSolved] = useState(() =>
+    Number(localStorage.getItem('olympiadSolved') || '0')
+  );
 
   const changeCategory = useCallback((cat: OlympiadCategory) => {
     setCategory(cat);
@@ -64,11 +76,11 @@ function MathsOlympiadSection() {
         position: 'relative',
         overflow: 'hidden',
         background: `
-          linear-gradient(135deg, rgba(20,16,8,0.96) 0%, rgba(40,30,10,0.92) 50%, rgba(30,20,8,0.96) 100%),
-          radial-gradient(circle at 15% 15%, rgba(255,213,79,0.12) 0%, transparent 40%),
-          radial-gradient(circle at 85% 85%, rgba(255,152,0,0.1) 0%, transparent 40%)
+          linear-gradient(135deg, ${withAlpha(palette.brown950, 0.96)} 0%, ${withAlpha(palette.brown650, 0.92)} 50%, ${withAlpha(palette.brown800, 0.96)} 100%),
+          radial-gradient(circle at 15% 15%, ${withAlpha(palette.amber450, 0.12)} 0%, transparent 40%),
+          radial-gradient(circle at 85% 85%, ${withAlpha(palette.orange450, 0.1)} 0%, transparent 40%)
         `,
-        backgroundColor: '#0a0e1a',
+        backgroundColor: palette.navy950,
       }}
     >
       {/* floating medals */}
@@ -90,16 +102,25 @@ function MathsOlympiadSection() {
       ))}
 
       {/* Top bar */}
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, position: 'relative', zIndex: 1 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          mb: 2,
+          position: 'relative',
+          zIndex: 1,
+        }}
+      >
         <IconButton
           onClick={() => navigate({ to: '/' })}
           aria-label="Back to dashboard"
           sx={{
-            bgcolor: 'rgba(255,255,255,0.08)',
-            color: '#ffd54f',
-            border: '2px solid rgba(255,213,79,0.4)',
+            bgcolor: withAlpha(palette.white, 0.08),
+            color: palette.amber450,
+            border: `2px solid ${withAlpha(palette.amber450, 0.4)}`,
             borderRadius: '14px',
-            '&:hover': { bgcolor: 'rgba(255,213,79,0.15)' },
+            '&:hover': { bgcolor: withAlpha(palette.amber450, 0.15) },
           }}
           size="large"
         >
@@ -107,12 +128,19 @@ function MathsOlympiadSection() {
         </IconButton>
         <Box
           sx={{
-            display: 'flex', alignItems: 'center', gap: 1,
-            bgcolor: 'rgba(255,213,79,0.12)', border: '2px solid rgba(255,213,79,0.4)',
-            borderRadius: '999px', px: 2, py: 0.5,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            bgcolor: withAlpha(palette.amber450, 0.12),
+            border: `2px solid ${withAlpha(palette.amber450, 0.4)}`,
+            borderRadius: '999px',
+            px: 2,
+            py: 0.5,
           }}
         >
-          <Typography sx={{ fontWeight: 900, color: '#ffd54f' }}>🏅 {solved} solved</Typography>
+          <Typography sx={{ fontWeight: 900, color: palette.amber450 }}>
+            🏅 {solved} solved
+          </Typography>
         </Box>
       </Box>
 
@@ -122,7 +150,7 @@ function MathsOlympiadSection() {
           variant="h3"
           sx={{
             fontWeight: 900,
-            background: 'linear-gradient(90deg, #ffd54f, #ffb300, #ff8f00, #ffd54f)',
+            background: `linear-gradient(90deg, ${palette.amber450}, ${palette.amber875}, ${palette.orange575}, ${palette.amber450})`,
             backgroundClip: 'text',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
@@ -131,16 +159,36 @@ function MathsOlympiadSection() {
         >
           🏅 Maths Olympiad
         </Typography>
-        <Typography sx={{ color: '#ffe082', fontWeight: 700, fontSize: '1.1rem', fontStyle: 'italic', mt: 0.5 }}>
+        <Typography
+          sx={{
+            color: palette.amber350,
+            fontWeight: 700,
+            fontSize: '1.1rem',
+            fontStyle: 'italic',
+            mt: 0.5,
+          }}
+        >
           Unleash the Maths Olympian in You!
         </Typography>
-        <Typography sx={{ color: '#bcaaa4', fontWeight: 600, fontSize: '0.9rem' }}>
+        <Typography
+          sx={{ color: palette.brown25, fontWeight: 600, fontSize: '0.9rem' }}
+        >
           Junior level · Year 2–3 · take your time and show your working
         </Typography>
       </Box>
 
       {/* Category selector */}
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center', mb: 3, position: 'relative', zIndex: 1 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: 1,
+          justifyContent: 'center',
+          mb: 3,
+          position: 'relative',
+          zIndex: 1,
+        }}
+      >
         {OLYMPIAD_CATEGORIES.map(c => {
           const sel = category === c.id;
           return (
@@ -150,7 +198,12 @@ function MathsOlympiadSection() {
               tabIndex={0}
               aria-pressed={sel}
               onClick={() => changeCategory(c.id)}
-              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); changeCategory(c.id); } }}
+              onKeyDown={e => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  changeCategory(c.id);
+                }
+              }}
               sx={{
                 cursor: 'pointer',
                 userSelect: 'none',
@@ -159,12 +212,21 @@ function MathsOlympiadSection() {
                 py: 0.9,
                 fontWeight: 800,
                 fontSize: '0.9rem',
-                color: sel ? '#1a1206' : '#ffd54f',
-                background: sel ? 'linear-gradient(150deg, #ffd54f, #ffb300)' : 'rgba(255,213,79,0.08)',
-                border: `2px solid ${sel ? '#ffd54f' : 'rgba(255,213,79,0.3)'}`,
+                color: sel ? palette.brown875 : palette.amber450,
+                background: sel
+                  ? `linear-gradient(150deg, ${palette.amber450}, ${palette.amber875})`
+                  : withAlpha(palette.amber450, 0.08),
+                border: `2px solid ${sel ? '${palette.amber450}' : '${withAlpha(palette.amber450, 0.3)}'}`,
                 transition: 'all 0.15s',
-                '&:hover': { background: sel ? 'linear-gradient(150deg, #ffe082, #ffc107)' : 'rgba(255,213,79,0.18)' },
-                '&:focus-visible': { outline: '3px solid #ffd54f', outlineOffset: 2 },
+                '&:hover': {
+                  background: sel
+                    ? `linear-gradient(150deg, ${palette.amber350}, ${palette.amber775})`
+                    : withAlpha(palette.amber450, 0.18),
+                },
+                '&:focus-visible': {
+                  outline: `3px solid ${palette.amber450}`,
+                  outlineOffset: 2,
+                },
               }}
             >
               {c.emoji} {c.label}
@@ -180,21 +242,30 @@ function MathsOlympiadSection() {
           mx: 'auto',
           position: 'relative',
           zIndex: 1,
-          bgcolor: 'rgba(255,255,255,0.05)',
-          border: '2px solid rgba(255,213,79,0.35)',
+          bgcolor: withAlpha(palette.white, 0.05),
+          border: `2px solid ${withAlpha(palette.amber450, 0.35)}`,
           borderRadius: '20px',
-          boxShadow: '0 8px 28px rgba(0,0,0,0.4)',
+          boxShadow: `0 8px 28px ${withAlpha(palette.black, 0.4)}`,
           p: { xs: 2.5, sm: 4 },
           backdropFilter: 'blur(8px)',
         }}
       >
-        <Typography sx={{ color: catMeta ? '#ffb300' : '#ffd54f', fontWeight: 800, fontSize: '0.85rem', letterSpacing: '0.1em', textTransform: 'uppercase', mb: 1.5 }}>
+        <Typography
+          sx={{
+            color: catMeta ? palette.amber875 : palette.amber450,
+            fontWeight: 800,
+            fontSize: '0.85rem',
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            mb: 1.5,
+          }}
+        >
           {catMeta?.emoji} {catMeta?.label}
         </Typography>
 
         <Typography
           sx={{
-            color: '#fff8e1',
+            color: palette.amber25,
             fontWeight: 700,
             fontSize: { xs: '1.15rem', sm: '1.35rem' },
             lineHeight: 1.5,
@@ -207,7 +278,14 @@ function MathsOlympiadSection() {
         {/* optional grid */}
         {problem.grid && (
           <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2.5 }}>
-            <Box sx={{ display: 'inline-block', border: '2px solid rgba(255,213,79,0.4)', borderRadius: '12px', overflow: 'hidden' }}>
+            <Box
+              sx={{
+                display: 'inline-block',
+                border: `2px solid ${withAlpha(palette.amber450, 0.4)}`,
+                borderRadius: '12px',
+                overflow: 'hidden',
+              }}
+            >
               {problem.grid.map((row, ri) => (
                 <Box key={ri} sx={{ display: 'flex' }}>
                   {row.map((cell, ci) => (
@@ -221,10 +299,20 @@ function MathsOlympiadSection() {
                         justifyContent: 'center',
                         fontWeight: 900,
                         fontSize: { xs: '1.2rem', sm: '1.5rem' },
-                        color: cell === '?' ? '#ff8a65' : '#fff8e1',
-                        bgcolor: ci === row.length - 1 ? 'rgba(255,213,79,0.12)' : 'transparent',
-                        borderRight: ci < row.length - 1 ? '1px solid rgba(255,213,79,0.25)' : 'none',
-                        borderBottom: ri < problem.grid!.length - 1 ? '1px solid rgba(255,213,79,0.25)' : 'none',
+                        color:
+                          cell === '?' ? palette.orange400 : palette.amber25,
+                        bgcolor:
+                          ci === row.length - 1
+                            ? withAlpha(palette.amber450, 0.12)
+                            : 'transparent',
+                        borderRight:
+                          ci < row.length - 1
+                            ? `1px solid ${withAlpha(palette.amber450, 0.25)}`
+                            : 'none',
+                        borderBottom:
+                          ri < problem.grid!.length - 1
+                            ? `1px solid ${withAlpha(palette.amber450, 0.25)}`
+                            : 'none',
                       }}
                     >
                       {cell}
@@ -246,14 +334,16 @@ function MathsOlympiadSection() {
             mt: 3,
             '& .MuiOutlinedInput-root': {
               borderRadius: '12px',
-              bgcolor: 'rgba(0,0,0,0.3)',
-              color: '#fff8e1',
+              bgcolor: withAlpha(palette.black, 0.3),
+              color: palette.amber25,
               fontWeight: 700,
-              '& fieldset': { borderColor: 'rgba(255,213,79,0.3)' },
-              '&:hover fieldset': { borderColor: 'rgba(255,213,79,0.5)' },
-              '&.Mui-focused fieldset': { borderColor: '#ffd54f' },
+              '& fieldset': { borderColor: withAlpha(palette.amber450, 0.3) },
+              '&:hover fieldset': {
+                borderColor: withAlpha(palette.amber450, 0.5),
+              },
+              '&.Mui-focused fieldset': { borderColor: palette.amber450 },
             },
-            '& input::placeholder': { color: '#8d7b5f', opacity: 1 },
+            '& input::placeholder': { color: palette.brown100, opacity: 1 },
           }}
         />
 
@@ -262,7 +352,12 @@ function MathsOlympiadSection() {
           <Button
             onClick={() => setShowScratch(s => !s)}
             startIcon={<EditNoteIcon />}
-            sx={{ color: '#bcaaa4', textTransform: 'none', fontWeight: 700, fontSize: '0.85rem' }}
+            sx={{
+              color: palette.brown25,
+              textTransform: 'none',
+              fontWeight: 700,
+              fontSize: '0.85rem',
+            }}
           >
             {showScratch ? 'Hide working pad' : 'Show working pad'}
           </Button>
@@ -278,12 +373,15 @@ function MathsOlympiadSection() {
                 mt: 1,
                 '& .MuiOutlinedInput-root': {
                   borderRadius: '12px',
-                  bgcolor: 'rgba(0,0,0,0.3)',
-                  color: '#cfd8dc',
+                  bgcolor: withAlpha(palette.black, 0.3),
+                  color: palette.slate25,
                   fontFamily: 'monospace',
-                  '& fieldset': { borderColor: 'rgba(255,255,255,0.15)' },
+                  '& fieldset': { borderColor: withAlpha(palette.white, 0.15) },
                 },
-                '& textarea::placeholder': { color: '#6d6050', opacity: 1 },
+                '& textarea::placeholder': {
+                  color: palette.brown250,
+                  opacity: 1,
+                },
               }}
             />
           </Collapse>
@@ -297,10 +395,17 @@ function MathsOlympiadSection() {
               startIcon={<LightbulbIcon />}
               variant="contained"
               sx={{
-                borderRadius: '999px', px: 3, py: 1.2, fontWeight: 900, textTransform: 'none',
-                color: '#1a1206', background: 'linear-gradient(150deg, #ffd54f, #ffb300)',
-                boxShadow: '0 4px 14px rgba(255,179,0,0.4)',
-                '&:hover': { background: 'linear-gradient(150deg, #ffe082, #ffc107)' },
+                borderRadius: '999px',
+                px: 3,
+                py: 1.2,
+                fontWeight: 900,
+                textTransform: 'none',
+                color: palette.brown875,
+                background: `linear-gradient(150deg, ${palette.amber450}, ${palette.amber875})`,
+                boxShadow: `0 4px 14px ${withAlpha(palette.amber875, 0.4)}`,
+                '&:hover': {
+                  background: `linear-gradient(150deg, ${palette.amber350}, ${palette.amber775})`,
+                },
               }}
             >
               Reveal Answer
@@ -311,9 +416,19 @@ function MathsOlympiadSection() {
             startIcon={<RefreshIcon />}
             variant="outlined"
             sx={{
-              borderRadius: '999px', px: 3, py: 1.2, fontWeight: 900, textTransform: 'none',
-              color: '#ffd54f', borderColor: 'rgba(255,213,79,0.5)', borderWidth: 2,
-              '&:hover': { borderColor: '#ffd54f', bgcolor: 'rgba(255,213,79,0.1)', borderWidth: 2 },
+              borderRadius: '999px',
+              px: 3,
+              py: 1.2,
+              fontWeight: 900,
+              textTransform: 'none',
+              color: palette.amber450,
+              borderColor: withAlpha(palette.amber450, 0.5),
+              borderWidth: 2,
+              '&:hover': {
+                borderColor: palette.amber450,
+                bgcolor: withAlpha(palette.amber450, 0.1),
+                borderWidth: 2,
+              },
             }}
           >
             Next Problem
@@ -327,17 +442,40 @@ function MathsOlympiadSection() {
               mt: 3,
               p: 2.5,
               borderRadius: '16px',
-              bgcolor: 'rgba(76,175,80,0.12)',
-              border: '2px solid rgba(129,199,132,0.5)',
+              bgcolor: withAlpha(palette.green425, 0.12),
+              border: `2px solid ${withAlpha(palette.green250, 0.5)}`,
             }}
           >
-            <Typography sx={{ color: '#a5d6a7', fontWeight: 900, fontSize: '1.2rem', mb: 1 }}>
+            <Typography
+              sx={{
+                color: palette.green125,
+                fontWeight: 900,
+                fontSize: '1.2rem',
+                mb: 1,
+              }}
+            >
               ✅ Answer: {problem.answer}
             </Typography>
-            <Typography sx={{ color: '#c8e6c9', fontWeight: 700, fontSize: '0.85rem', letterSpacing: '0.08em', textTransform: 'uppercase', mb: 0.5 }}>
+            <Typography
+              sx={{
+                color: palette.green100,
+                fontWeight: 700,
+                fontSize: '0.85rem',
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+                mb: 0.5,
+              }}
+            >
               How to solve it
             </Typography>
-            <Typography sx={{ color: '#e8f5e9', fontSize: '1rem', lineHeight: 1.6, whiteSpace: 'pre-line' }}>
+            <Typography
+              sx={{
+                color: palette.green50,
+                fontSize: '1rem',
+                lineHeight: 1.6,
+                whiteSpace: 'pre-line',
+              }}
+            >
               {problem.working}
             </Typography>
           </Box>

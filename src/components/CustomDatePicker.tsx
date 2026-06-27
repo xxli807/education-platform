@@ -1,6 +1,10 @@
+import { palette, withAlpha } from '../theme/palette';
 import { Box, Button, Typography, Popover } from '@mui/material';
 import { useState, useRef } from 'react';
-import { ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon } from '@mui/icons-material';
+import {
+  ChevronLeft as ChevronLeftIcon,
+  ChevronRight as ChevronRightIcon,
+} from '@mui/icons-material';
 
 interface CustomDatePickerProps {
   value: string;
@@ -9,7 +13,12 @@ interface CustomDatePickerProps {
   disabled?: boolean;
 }
 
-function CustomDatePicker({ value, onChange, error, disabled }: CustomDatePickerProps) {
+function CustomDatePicker({
+  value,
+  onChange,
+  error,
+  disabled,
+}: CustomDatePickerProps) {
   const [open, setOpen] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date(value || new Date()));
   const anchorRef = useRef<HTMLDivElement>(null);
@@ -23,15 +32,23 @@ function CustomDatePicker({ value, onChange, error, disabled }: CustomDatePicker
   };
 
   const handlePrevMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1));
+    setCurrentDate(
+      new Date(currentDate.getFullYear(), currentDate.getMonth() - 1)
+    );
   };
 
   const handleNextMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1));
+    setCurrentDate(
+      new Date(currentDate.getFullYear(), currentDate.getMonth() + 1)
+    );
   };
 
   const handleSelectDay = (day: number) => {
-    const selected = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+    const selected = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth(),
+      day
+    );
     const dateString = selected.toISOString().split('T')[0];
     onChange(dateString);
     setOpen(false);
@@ -43,8 +60,18 @@ function CustomDatePicker({ value, onChange, error, disabled }: CustomDatePicker
   const emptyDays = Array.from({ length: firstDay }, (_, i) => i);
 
   const monthNames = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December',
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
   ];
 
   const displayDate = value
@@ -63,18 +90,20 @@ function CustomDatePicker({ value, onChange, error, disabled }: CustomDatePicker
         sx={{
           p: '12px 16px',
           border: '2px solid',
-          borderColor: error ? '#ef5350' : '#26a69a',
+          borderColor: error ? palette.red425 : palette.teal450,
           borderRadius: '4px',
-          bgcolor: 'rgba(38, 166, 154, 0.05)',
-          color: error ? '#ef5350' : '#80cbc4',
+          bgcolor: withAlpha(palette.teal450, 0.05),
+          color: error ? palette.red425 : palette.teal175,
           cursor: disabled ? 'default' : 'pointer',
           userSelect: 'none',
           fontSize: '16px',
           fontWeight: 500,
           transition: 'all 0.2s',
           '&:hover': {
-            bgcolor: disabled ? 'rgba(38, 166, 154, 0.05)' : 'rgba(38, 166, 154, 0.1)',
-            borderColor: error ? '#ef5350' : '#80cbc4',
+            bgcolor: disabled
+              ? withAlpha(palette.teal450, 0.05)
+              : withAlpha(palette.teal450, 0.1),
+            borderColor: error ? palette.red425 : palette.teal175,
           },
         }}
       >
@@ -95,8 +124,8 @@ function CustomDatePicker({ value, onChange, error, disabled }: CustomDatePicker
         }}
         PaperProps={{
           sx: {
-            background: 'linear-gradient(135deg, #1a1f3a 0%, #2d2a4a 100%)',
-            border: '2px solid #26a69a',
+            background: `linear-gradient(135deg, ${palette.navy475} 0%, ${palette.navy175} 100%)`,
+            border: `2px solid ${palette.teal450}`,
             mt: 1,
           },
         }}
@@ -114,13 +143,13 @@ function CustomDatePicker({ value, onChange, error, disabled }: CustomDatePicker
             <Button
               onClick={handlePrevMonth}
               size="small"
-              sx={{ color: '#80cbc4', minWidth: 'auto', p: 0.5 }}
+              sx={{ color: palette.teal175, minWidth: 'auto', p: 0.5 }}
             >
               <ChevronLeftIcon />
             </Button>
             <Typography
               sx={{
-                color: '#b2dfdb',
+                color: palette.teal100,
                 fontWeight: 'bold',
                 textAlign: 'center',
                 flex: 1,
@@ -131,7 +160,7 @@ function CustomDatePicker({ value, onChange, error, disabled }: CustomDatePicker
             <Button
               onClick={handleNextMonth}
               size="small"
-              sx={{ color: '#80cbc4', minWidth: 'auto', p: 0.5 }}
+              sx={{ color: palette.teal175, minWidth: 'auto', p: 0.5 }}
             >
               <ChevronRightIcon />
             </Button>
@@ -146,12 +175,12 @@ function CustomDatePicker({ value, onChange, error, disabled }: CustomDatePicker
               mb: 1,
             }}
           >
-            {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((day) => (
+            {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => (
               <Box
                 key={day}
                 sx={{
                   textAlign: 'center',
-                  color: '#64b5b0',
+                  color: palette.teal250,
                   fontSize: '12px',
                   fontWeight: 'bold',
                   py: 0.5,
@@ -173,7 +202,7 @@ function CustomDatePicker({ value, onChange, error, disabled }: CustomDatePicker
             {emptyDays.map((_, i) => (
               <Box key={`empty-${i}`} />
             ))}
-            {days.map((day) => {
+            {days.map(day => {
               const isSelected =
                 value &&
                 new Date(value).getDate() === day &&
@@ -194,14 +223,23 @@ function CustomDatePicker({ value, onChange, error, disabled }: CustomDatePicker
                     width: '100%',
                     aspectRatio: '1',
                     p: 0,
-                    color: isSelected ? '#fff' : '#80cbc4',
-                    bgcolor: isSelected ? '#26a69a' : isToday ? 'rgba(38, 166, 154, 0.3)' : 'transparent',
-                    border: isToday && !isSelected ? '2px solid #26a69a' : 'none',
+                    color: isSelected ? palette.white : palette.teal175,
+                    bgcolor: isSelected
+                      ? palette.teal450
+                      : isToday
+                        ? withAlpha(palette.teal450, 0.3)
+                        : 'transparent',
+                    border:
+                      isToday && !isSelected
+                        ? `2px solid ${palette.teal450}`
+                        : 'none',
                     borderRadius: '4px',
                     fontSize: '14px',
                     fontWeight: isToday ? 'bold' : 'normal',
                     '&:hover': {
-                      bgcolor: isSelected ? '#26a69a' : 'rgba(38, 166, 154, 0.2)',
+                      bgcolor: isSelected
+                        ? palette.teal450
+                        : withAlpha(palette.teal450, 0.2),
                     },
                   }}
                 >

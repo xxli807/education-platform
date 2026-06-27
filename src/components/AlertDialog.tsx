@@ -1,3 +1,4 @@
+import { palette } from '../theme/palette';
 import {
   Button,
   Dialog,
@@ -15,7 +16,13 @@ interface AlertDialogProps {
   type?: 'error' | 'success' | 'info';
 }
 
-function AlertDialog({ open, title, message, onClose, type = 'info' }: AlertDialogProps) {
+function AlertDialog({
+  open,
+  title,
+  message,
+  onClose,
+  type = 'info',
+}: AlertDialogProps) {
   const iconMap = {
     error: '⚠️',
     success: '✅',
@@ -23,9 +30,21 @@ function AlertDialog({ open, title, message, onClose, type = 'info' }: AlertDial
   };
 
   const colorMap = {
-    error: { title: '#ef9a9a', message: '#ef5350', border: '#ef5350' },
-    success: { title: '#81c784', message: '#4caf50', border: '#4caf50' },
-    info: { title: '#64b5f6', message: '#42a5f5', border: '#42a5f5' },
+    error: {
+      title: palette.red125,
+      message: palette.red425,
+      border: palette.red425,
+    },
+    success: {
+      title: palette.green250,
+      message: palette.green425,
+      border: palette.green425,
+    },
+    info: {
+      title: palette.blue350,
+      message: palette.blue425,
+      border: palette.blue425,
+    },
   };
 
   const colors = colorMap[type];
@@ -38,7 +57,7 @@ function AlertDialog({ open, title, message, onClose, type = 'info' }: AlertDial
       fullWidth
       PaperProps={{
         sx: {
-          bgcolor: '#0f1623',
+          bgcolor: palette.navy800,
           border: `2px solid rgba(${type === 'error' ? '239,83,80' : type === 'success' ? '76,175,80' : '66,165,245'},0.4)`,
           borderRadius: '16px',
           backgroundImage: 'none',
@@ -46,12 +65,15 @@ function AlertDialog({ open, title, message, onClose, type = 'info' }: AlertDial
       }}
     >
       <DialogTitle sx={{ pb: 1 }}>
-        <Typography variant="h6" sx={{ fontWeight: 'bold', color: colors.title }}>
+        <Typography
+          variant="h6"
+          sx={{ fontWeight: 'bold', color: colors.title }}
+        >
           {iconMap[type]} {title}
         </Typography>
       </DialogTitle>
       <DialogContent sx={{ pb: 1 }}>
-        <Typography sx={{ color: '#90a4ae', fontSize: '0.95rem' }}>
+        <Typography sx={{ color: palette.slate400, fontSize: '0.95rem' }}>
           {message}
         </Typography>
       </DialogContent>
@@ -65,7 +87,9 @@ function AlertDialog({ open, title, message, onClose, type = 'info' }: AlertDial
             color: colors.border,
             border: `1px solid ${colors.border}`,
             px: 2.5,
-            '&:hover': { bgcolor: `rgba(${type === 'error' ? '239,83,80' : type === 'success' ? '76,175,80' : '66,165,245'},0.1)` },
+            '&:hover': {
+              bgcolor: `rgba(${type === 'error' ? '239,83,80' : type === 'success' ? '76,175,80' : '66,165,245'},0.1)`,
+            },
           }}
         >
           OK
