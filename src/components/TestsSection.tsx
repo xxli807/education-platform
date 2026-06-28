@@ -360,8 +360,8 @@ function BlockView({ block, blockId }: { block: TestBlock; blockId: string }) {
               bgcolor: C.subBg,
               border: `1px solid ${C.border}`,
               position: { md: 'sticky' },
-              top: { md: HEADER_OFFSET + 8 },
-              maxHeight: { md: `calc(100vh - ${HEADER_OFFSET + 24}px)` },
+              top: { md: 8 },
+              maxHeight: { md: `calc(100dvh - ${HEADER_OFFSET + 24}px)` },
               overflowY: { md: 'auto' },
             }}
           >
@@ -473,12 +473,19 @@ function TestsSection() {
 
   return (
     <AnswersContext.Provider value={ctx}>
-      <Box sx={{ minHeight: '100vh', bgcolor: C.pageBg }}>
-        {/* Sticky top panel */}
+      <Box
+        sx={{
+          height: '100dvh',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          bgcolor: C.pageBg,
+        }}
+      >
+        {/* Fixed top panel — stays in place while the content below scrolls */}
         <Box
           sx={{
-            position: 'sticky',
-            top: 0,
+            flexShrink: 0,
             zIndex: 10,
             bgcolor: palette.white,
             borderBottom: `1px solid ${C.border}`,
@@ -583,16 +590,17 @@ function TestsSection() {
           </Tabs>
         </Box>
 
-        {/* Scrollable content */}
-        <Box
-          sx={{
-            px: { xs: 2, sm: 4, md: 6 },
-            py: 3,
-            maxWidth: 980,
-            mx: 'auto',
-          }}
-        >
-          {week.overview.length > 0 && (
+        {/* Scrollable content — this is the only region that scrolls */}
+        <Box sx={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
+          <Box
+            sx={{
+              px: { xs: 2, sm: 4, md: 6 },
+              py: 3,
+              maxWidth: 980,
+              mx: 'auto',
+            }}
+          >
+            {week.overview.length > 0 && (
             <Box
               sx={{
                 mb: 3,
@@ -632,6 +640,7 @@ function TestsSection() {
               <DayView key={i} day={day} dayId={`${book}.${tab}.${i}`} />
             ))
           )}
+          </Box>
         </Box>
       </Box>
     </AnswersContext.Provider>
