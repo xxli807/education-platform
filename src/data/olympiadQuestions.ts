@@ -168,9 +168,10 @@ const countingByGroups: OlympiadGenerator = () => {
 };
 
 const remainderRiddle: OlympiadGenerator = () => {
-  const groups = rand(3, 6);
   const perGroup = rand(4, 8);
-  const left = rand(1, groups - 1);
+  const groups = rand(3, 6);
+  // the left-over must be smaller than the bag size, or it isn't a remainder
+  const left = rand(1, perGroup - 1);
   const total = groups * perGroup + left;
   return {
     text: `${total} sweets are shared into bags of ${perGroup}. How many sweets are left over?`,

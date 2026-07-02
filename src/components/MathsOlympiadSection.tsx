@@ -11,6 +11,9 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import LightbulbIcon from '@mui/icons-material/Lightbulb';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import EditNoteIcon from '@mui/icons-material/EditNote';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import Whiteboard from './Whiteboard';
 import { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import {
@@ -19,6 +22,56 @@ import {
   type OlympiadCategory,
   type OlympiadProblem,
 } from '../data/olympiadJuniorProblems';
+
+// Renders a problem's grid (used by the active card and the history list).
+function ProblemGrid({ grid }: { grid: string[][] }) {
+  return (
+    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2.5 }}>
+      <Box
+        sx={{
+          display: 'inline-block',
+          border: `2px solid ${withAlpha(palette.amber450, 0.4)}`,
+          borderRadius: '12px',
+          overflow: 'hidden',
+        }}
+      >
+        {grid.map((row, ri) => (
+          <Box key={ri} sx={{ display: 'flex' }}>
+            {row.map((cell, ci) => (
+              <Box
+                key={ci}
+                sx={{
+                  width: { xs: 52, sm: 64 },
+                  height: { xs: 52, sm: 64 },
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 900,
+                  fontSize: { xs: '1.2rem', sm: '1.5rem' },
+                  color: cell === '?' ? palette.orange400 : palette.amber25,
+                  bgcolor:
+                    ci === row.length - 1
+                      ? withAlpha(palette.amber450, 0.12)
+                      : 'transparent',
+                  borderRight:
+                    ci < row.length - 1
+                      ? `1px solid ${withAlpha(palette.amber450, 0.25)}`
+                      : 'none',
+                  borderBottom:
+                    ri < grid.length - 1
+                      ? `1px solid ${withAlpha(palette.amber450, 0.25)}`
+                      : 'none',
+                }}
+              >
+                {cell}
+              </Box>
+            ))}
+          </Box>
+        ))}
+      </Box>
+    </Box>
+  );
+}
 
 function MathsOlympiadSection() {
   const navigate = useNavigate();
@@ -38,22 +91,49 @@ function MathsOlympiadSection() {
   const [solved, setSolved] = useState(() =>
     Number(localStorage.getItem('olympiadSolved') || '0')
   );
+  const [history, setHistory] = useState<OlympiadProblem[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('olympiadHistory') || '[]');
+    } catch {
+      return [];
+    }
+  });
+  const [showHistory, setShowHistory] = useState(false);
 
-  const changeCategory = useCallback((cat: OlympiadCategory) => {
-    setCategory(cat);
-    localStorage.setItem('olympiadCategory', cat);
-    setProblem(nextOlympiadProblem(cat));
-    setRevealed(false);
-    setAttempt('');
-    setScratch('');
+  // Save a problem we're moving away from so it can be reviewed later.
+  const archive = useCallback((p: OlympiadProblem) => {
+    setHistory(prev => {
+      const next = [p, ...prev].slice(0, 50);
+      localStorage.setItem('olympiadHistory', JSON.stringify(next));
+      return next;
+    });
   }, []);
 
+  const clearHistory = useCallback(() => {
+    setHistory([]);
+    localStorage.removeItem('olympiadHistory');
+  }, []);
+
+  const changeCategory = useCallback(
+    (cat: OlympiadCategory) => {
+      archive(problem);
+      setCategory(cat);
+      localStorage.setItem('olympiadCategory', cat);
+      setProblem(nextOlympiadProblem(cat));
+      setRevealed(false);
+      setAttempt('');
+      setScratch('');
+    },
+    [problem, archive]
+  );
+
   const nextProblem = useCallback(() => {
+    archive(problem);
     setProblem(nextOlympiadProblem(category));
     setRevealed(false);
     setAttempt('');
     setScratch('');
-  }, [category]);
+  }, [category, problem, archive]);
 
   const reveal = useCallback(() => {
     setRevealed(true);
@@ -276,53 +356,7 @@ function MathsOlympiadSection() {
         </Typography>
 
         {/* optional grid */}
-        {problem.grid && (
-          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2.5 }}>
-            <Box
-              sx={{
-                display: 'inline-block',
-                border: `2px solid ${withAlpha(palette.amber450, 0.4)}`,
-                borderRadius: '12px',
-                overflow: 'hidden',
-              }}
-            >
-              {problem.grid.map((row, ri) => (
-                <Box key={ri} sx={{ display: 'flex' }}>
-                  {row.map((cell, ci) => (
-                    <Box
-                      key={ci}
-                      sx={{
-                        width: { xs: 52, sm: 64 },
-                        height: { xs: 52, sm: 64 },
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontWeight: 900,
-                        fontSize: { xs: '1.2rem', sm: '1.5rem' },
-                        color:
-                          cell === '?' ? palette.orange400 : palette.amber25,
-                        bgcolor:
-                          ci === row.length - 1
-                            ? withAlpha(palette.amber450, 0.12)
-                            : 'transparent',
-                        borderRight:
-                          ci < row.length - 1
-                            ? `1px solid ${withAlpha(palette.amber450, 0.25)}`
-                            : 'none',
-                        borderBottom:
-                          ri < problem.grid!.length - 1
-                            ? `1px solid ${withAlpha(palette.amber450, 0.25)}`
-                            : 'none',
-                      }}
-                    >
-                      {cell}
-                    </Box>
-                  ))}
-                </Box>
-              ))}
-            </Box>
-          </Box>
-        )}
+        {problem.grid && <ProblemGrid grid={problem.grid} />}
 
         {/* self-check answer box */}
         <TextField
@@ -481,6 +515,106 @@ function MathsOlympiadSection() {
           </Box>
         </Collapse>
       </Box>
+
+      {/* History — revisit previous problems */}
+      {history.length > 0 && (
+        <Box
+          sx={{ maxWidth: 760, mx: 'auto', mt: 4, position: 'relative', zIndex: 1 }}
+        >
+          <Button
+            onClick={() => setShowHistory(s => !s)}
+            startIcon={showHistory ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+            sx={{
+              color: palette.amber450,
+              textTransform: 'none',
+              fontWeight: 800,
+              fontSize: '0.95rem',
+            }}
+          >
+            {showHistory ? 'Hide' : 'Show'} previous problems ({history.length})
+          </Button>
+          <Collapse in={showHistory}>
+            <Box
+              sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}
+            >
+              {history.map((h, i) => {
+                const meta = OLYMPIAD_CATEGORIES.find(c => c.id === h.category);
+                return (
+                  <Box
+                    key={i}
+                    sx={{
+                      p: { xs: 2, sm: 2.5 },
+                      borderRadius: '16px',
+                      bgcolor: withAlpha(palette.white, 0.04),
+                      border: `1px solid ${withAlpha(palette.amber450, 0.25)}`,
+                    }}
+                  >
+                    <Typography
+                      sx={{
+                        color: palette.amber450,
+                        fontWeight: 800,
+                        fontSize: '0.75rem',
+                        letterSpacing: '0.1em',
+                        textTransform: 'uppercase',
+                        mb: 0.75,
+                      }}
+                    >
+                      {meta?.emoji} {meta?.label}
+                    </Typography>
+                    <Typography
+                      sx={{
+                        color: palette.amber25,
+                        fontWeight: 700,
+                        fontSize: '1rem',
+                        lineHeight: 1.5,
+                        whiteSpace: 'pre-line',
+                      }}
+                    >
+                      {h.question}
+                    </Typography>
+                    {h.grid && <ProblemGrid grid={h.grid} />}
+                    <Typography
+                      sx={{
+                        color: palette.green125,
+                        fontWeight: 800,
+                        fontSize: '1.05rem',
+                        mt: 1.5,
+                      }}
+                    >
+                      ✅ Answer: {h.answer}
+                    </Typography>
+                    <Typography
+                      sx={{
+                        color: palette.green50,
+                        fontSize: '0.95rem',
+                        lineHeight: 1.6,
+                        whiteSpace: 'pre-line',
+                        mt: 0.5,
+                      }}
+                    >
+                      {h.working}
+                    </Typography>
+                  </Box>
+                );
+              })}
+            </Box>
+            <Button
+              onClick={clearHistory}
+              sx={{
+                color: palette.brown100,
+                textTransform: 'none',
+                fontSize: '0.8rem',
+                mt: 1.5,
+              }}
+            >
+              Clear history
+            </Button>
+          </Collapse>
+        </Box>
+      )}
+
+      {/* Floating drawing whiteboard */}
+      <Whiteboard />
     </Box>
   );
 }

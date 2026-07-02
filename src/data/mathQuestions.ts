@@ -126,9 +126,11 @@ export function generateMissingNumberProblem(): Question {
       break;
     }
     default: {
-      answer = rand(2, 12);
+      // ? ÷ b = quotient  →  the missing number is quotient × b
+      const quotient = rand(2, 12);
       const b = rand(2, 12);
-      text = `? ÷ ${b} = ${answer}`;
+      answer = quotient * b;
+      text = `? ÷ ${b} = ${quotient}`;
       break;
     }
   }
