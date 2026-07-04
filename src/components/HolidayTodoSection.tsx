@@ -333,6 +333,8 @@ function HolidayTodoSection() {
   };
 
   const handlePrint = () => {
+    // The selected plan's items are already in state, so the hidden print
+    // view is populated — just open the print dialog.
     window.print();
   };
 
@@ -380,12 +382,23 @@ function HolidayTodoSection() {
         },
         '@media print': {
           background: 'white !important',
+          minHeight: 'auto',
+          overflow: 'visible',
+          px: 0,
+          py: 0,
           '&::before': {
             display: 'none',
           },
         },
       }}
     >
+      {/* A4 page setup for printing */}
+      <style>{`
+        @media print {
+          @page { size: A4; margin: 14mm; }
+          body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+      `}</style>
       {/* Header with back button */}
       <Box
         sx={{
@@ -395,7 +408,7 @@ function HolidayTodoSection() {
           position: 'relative',
           zIndex: 1,
           '@media print': {
-            mb: 2,
+            display: 'none',
           },
         }}
       >
@@ -439,7 +452,7 @@ function HolidayTodoSection() {
           position: 'relative',
           zIndex: 1,
           '@media print': {
-            spacing: 1,
+            display: 'none',
           },
         }}
       >
@@ -866,6 +879,78 @@ function HolidayTodoSection() {
           </Card>
         </Grid>
       </Grid>
+
+      {/* Print-only: the selected plan laid out for A4 */}
+      {currentPlan && (
+        <Box
+          sx={{
+            display: 'none',
+            '@media print': { display: 'block', color: palette.black },
+          }}
+        >
+          <Typography
+            sx={{ fontWeight: 900, fontSize: '1.6rem', color: palette.black }}
+          >
+            {currentPlan.holidayName}
+          </Typography>
+          <Typography
+            sx={{ fontSize: '1rem', color: palette.black, mb: 2 }}
+          >
+            📅 {new Date(currentPlan.holidayDate).toLocaleDateString()}
+          </Typography>
+          {todoItems.length === 0 ? (
+            <Typography sx={{ fontStyle: 'italic', color: palette.black }}>
+              No items yet.
+            </Typography>
+          ) : (
+            <Table
+              size="small"
+              sx={{
+                '& th, & td': {
+                  border: `1px solid ${palette.black}`,
+                  color: palette.black,
+                  px: 1,
+                  py: 0.5,
+                  fontSize: '0.95rem',
+                },
+              }}
+            >
+              <TableHead>
+                <TableRow>
+                  <TableCell
+                    sx={{
+                      fontWeight: 'bold',
+                      width: '32px',
+                      textAlign: 'center',
+                    }}
+                  >
+                    ✓
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 'bold', width: '70px' }}>
+                    Start
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 'bold', width: '70px' }}>
+                    End
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Task</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {todoItems.map(item => (
+                  <TableRow key={item.id} sx={{ pageBreakInside: 'avoid' }}>
+                    <TableCell sx={{ textAlign: 'center' }}>
+                      {item.completed ? '☑' : '☐'}
+                    </TableCell>
+                    <TableCell>{item.startTime}</TableCell>
+                    <TableCell>{item.endTime}</TableCell>
+                    <TableCell>{item.description}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </Box>
+      )}
 
       {/* Dialog: Create New Plan */}
       <Dialog
