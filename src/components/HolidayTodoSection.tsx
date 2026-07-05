@@ -26,6 +26,7 @@ import {
   Delete as DeleteIcon,
   Add as AddIcon,
   Print as PrintIcon,
+  Edit as EditIcon,
 } from '@mui/icons-material';
 import { db, HolidayPlan, HolidayTodoItem } from '../db/database';
 import CustomDatePicker from './CustomDatePicker';
@@ -44,6 +45,9 @@ function HolidayTodoSection() {
   // Dialog states
   const [openNewPlanDialog, setOpenNewPlanDialog] = useState(false);
   const [openNewItemDialog, setOpenNewItemDialog] = useState(false);
+  // When set, the plan/item dialog is editing an existing row instead of adding.
+  const [editingPlanId, setEditingPlanId] = useState<number | null>(null);
+  const [editingItemId, setEditingItemId] = useState<number | null>(null);
   const [newPlanData, setNewPlanData] = useState({ name: '', date: '' });
   const [planErrors, setPlanErrors] = useState({ name: '', date: '' });
   const [newItemData, setNewItemData] = useState({
@@ -149,38 +153,62 @@ function HolidayTodoSection() {
     return !errors.name && !errors.date;
   };
 
-  const handleCreatePlan = async () => {
+  const openEditPlan = (plan: HolidayPlan) => {
+    setEditingPlanId(plan.id!);
+    setNewPlanData({ name: plan.holidayName, date: plan.holidayDate });
+    setPlanErrors({ name: '', date: '' });
+    setOpenNewPlanDialog(true);
+  };
+
+  const handleClosePlanDialog = () => {
+    setOpenNewPlanDialog(false);
+    setEditingPlanId(null);
+    setNewPlanData({ name: '', date: '' });
+    setPlanErrors({ name: '', date: '' });
+  };
+
+  const handleSavePlan = async () => {
     if (!validatePlanForm()) {
       return;
     }
 
+    const isEdit = editingPlanId !== null;
     try {
-      const id = await db.holidayPlans.add({
-        holidayName: newPlanData.name,
-        holidayDate: newPlanData.date,
-        createdAt: new Date(),
-        userId: 'lucas',
-      });
-      setOpenNewPlanDialog(false);
-      setNewPlanData({ name: '', date: '' });
-      setPlanErrors({ name: '', date: '' });
+      let newId: number | undefined;
+      if (isEdit) {
+        await db.holidayPlans.update(editingPlanId, {
+          holidayName: newPlanData.name,
+          holidayDate: newPlanData.date,
+        });
+      } else {
+        const id = await db.holidayPlans.add({
+          holidayName: newPlanData.name,
+          holidayDate: newPlanData.date,
+          createdAt: new Date(),
+          userId: 'lucas',
+        });
+        if (typeof id === 'number') newId = id;
+      }
+      handleClosePlanDialog();
       setAlertDialog({
         open: true,
         type: 'success',
-        title: 'Plan Created!',
-        message: `${newPlanData.name} has been added to your holiday plans.`,
+        title: isEdit ? 'Plan Updated!' : 'Plan Created!',
+        message: isEdit
+          ? `"${newPlanData.name}" has been updated.`
+          : `${newPlanData.name} has been added to your holiday plans.`,
       });
       await loadPlans();
-      if (typeof id === 'number') {
-        setSelectedPlanId(id);
+      if (newId !== undefined) {
+        setSelectedPlanId(newId);
       }
     } catch (error) {
-      console.error('Error creating plan:', error);
+      console.error('Error saving plan:', error);
       setAlertDialog({
         open: true,
         type: 'error',
-        title: 'Creation Failed',
-        message: 'Failed to create the holiday plan. Please try again.',
+        title: isEdit ? 'Update Failed' : 'Creation Failed',
+        message: `Failed to ${isEdit ? 'update' : 'create'} the holiday plan. Please try again.`,
       });
     }
   };
@@ -206,7 +234,25 @@ function HolidayTodoSection() {
     return !errors.startTime && !errors.endTime && !errors.description;
   };
 
-  const handleAddTodoItem = async () => {
+  const openEditItem = (item: HolidayTodoItem) => {
+    setEditingItemId(item.id!);
+    setNewItemData({
+      startTime: item.startTime,
+      endTime: item.endTime,
+      description: item.description,
+    });
+    setItemErrors({ startTime: '', endTime: '', description: '' });
+    setOpenNewItemDialog(true);
+  };
+
+  const handleCloseItemDialog = () => {
+    setOpenNewItemDialog(false);
+    setEditingItemId(null);
+    setNewItemData({ startTime: '', endTime: '', description: '' });
+    setItemErrors({ startTime: '', endTime: '', description: '' });
+  };
+
+  const handleSaveTodoItem = async () => {
     if (!selectedPlanId) {
       setAlertDialog({
         open: true,
@@ -221,33 +267,42 @@ function HolidayTodoSection() {
       return;
     }
 
+    const isEdit = editingItemId !== null;
     try {
-      await db.holidayTodoItems.add({
-        planId: selectedPlanId,
-        startTime: newItemData.startTime,
-        endTime: newItemData.endTime,
-        description: newItemData.description,
-        completed: false,
-        createdAt: new Date(),
-        userId: 'lucas',
-      });
-      setOpenNewItemDialog(false);
-      setNewItemData({ startTime: '', endTime: '', description: '' });
-      setItemErrors({ startTime: '', endTime: '', description: '' });
+      if (isEdit) {
+        await db.holidayTodoItems.update(editingItemId, {
+          startTime: newItemData.startTime,
+          endTime: newItemData.endTime,
+          description: newItemData.description,
+        });
+      } else {
+        await db.holidayTodoItems.add({
+          planId: selectedPlanId,
+          startTime: newItemData.startTime,
+          endTime: newItemData.endTime,
+          description: newItemData.description,
+          completed: false,
+          createdAt: new Date(),
+          userId: 'lucas',
+        });
+      }
+      handleCloseItemDialog();
       setAlertDialog({
         open: true,
         type: 'success',
-        title: 'Item Added!',
-        message: `"${newItemData.description}" has been added to your todo list.`,
+        title: isEdit ? 'Item Updated!' : 'Item Added!',
+        message: isEdit
+          ? `"${newItemData.description}" has been updated.`
+          : `"${newItemData.description}" has been added to your todo list.`,
       });
       await loadTodoItems(selectedPlanId);
     } catch (error) {
-      console.error('Error adding todo item:', error);
+      console.error('Error saving todo item:', error);
       setAlertDialog({
         open: true,
         type: 'error',
-        title: 'Creation Failed',
-        message: 'Failed to add the todo item. Please try again.',
+        title: isEdit ? 'Update Failed' : 'Creation Failed',
+        message: `Failed to ${isEdit ? 'update' : 'add'} the todo item. Please try again.`,
       });
     }
   };
@@ -539,16 +594,28 @@ function HolidayTodoSection() {
                           📅 {new Date(plan.holidayDate).toLocaleDateString()}
                         </Typography>
                       </Box>
-                      <IconButton
-                        size="small"
-                        onClick={e => {
-                          e.stopPropagation();
-                          handleDeletePlan(plan.id!);
-                        }}
-                        sx={{ color: palette.red425 }}
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
+                      <Box sx={{ display: 'flex', flexShrink: 0 }}>
+                        <IconButton
+                          size="small"
+                          onClick={e => {
+                            e.stopPropagation();
+                            openEditPlan(plan);
+                          }}
+                          sx={{ color: palette.teal175 }}
+                        >
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          onClick={e => {
+                            e.stopPropagation();
+                            handleDeletePlan(plan.id!);
+                          }}
+                          sx={{ color: palette.red425 }}
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </Box>
                     </Box>
                   ))}
                 </Box>
@@ -559,8 +626,10 @@ function HolidayTodoSection() {
                 variant="contained"
                 startIcon={<AddIcon />}
                 onClick={() => {
-                  setOpenNewPlanDialog(true);
+                  setEditingPlanId(null);
+                  setNewPlanData({ name: '', date: '' });
                   setPlanErrors({ name: '', date: '' });
+                  setOpenNewPlanDialog(true);
                 }}
                 sx={{
                   bgcolor: palette.teal450,
@@ -626,12 +695,18 @@ function HolidayTodoSection() {
                         variant="contained"
                         startIcon={<AddIcon />}
                         onClick={() => {
-                          setOpenNewItemDialog(true);
+                          setEditingItemId(null);
+                          setNewItemData({
+                            startTime: '',
+                            endTime: '',
+                            description: '',
+                          });
                           setItemErrors({
                             startTime: '',
                             endTime: '',
                             description: '',
                           });
+                          setOpenNewItemDialog(true);
                         }}
                         sx={{
                           bgcolor: palette.teal450,
@@ -741,12 +816,12 @@ function HolidayTodoSection() {
                               sx={{
                                 color: palette.teal100,
                                 fontWeight: 'bold',
-                                width: '60px',
+                                width: '90px',
                                 textAlign: 'center',
                                 '@media print': { display: 'none' },
                               }}
                             >
-                              Delete
+                              Actions
                             </TableCell>
                           </TableRow>
                         </TableHead>
@@ -850,9 +925,17 @@ function HolidayTodoSection() {
                               <TableCell
                                 sx={{
                                   textAlign: 'center',
+                                  whiteSpace: 'nowrap',
                                   '@media print': { display: 'none' },
                                 }}
                               >
+                                <IconButton
+                                  size="small"
+                                  onClick={() => openEditItem(item)}
+                                  sx={{ color: palette.teal175 }}
+                                >
+                                  <EditIcon fontSize="small" />
+                                </IconButton>
                                 <IconButton
                                   size="small"
                                   onClick={() => handleDeleteTodoItem(item.id!)}
@@ -955,7 +1038,7 @@ function HolidayTodoSection() {
       {/* Dialog: Create New Plan */}
       <Dialog
         open={openNewPlanDialog}
-        onClose={() => setOpenNewPlanDialog(false)}
+        onClose={handleClosePlanDialog}
         PaperProps={{
           sx: {
             background: `linear-gradient(135deg, ${palette.navy475} 0%, ${palette.navy175} 100%)`,
@@ -964,7 +1047,9 @@ function HolidayTodoSection() {
         }}
       >
         <DialogTitle sx={{ color: palette.teal100, fontWeight: 'bold', pb: 1 }}>
-          Create New Holiday Plan
+          {editingPlanId !== null
+            ? 'Edit Holiday Plan'
+            : 'Create New Holiday Plan'}
         </DialogTitle>
         <DialogContent sx={{ pt: 4, minWidth: '400px' }}>
           {/* Holiday Name Section */}
@@ -1080,14 +1165,14 @@ function HolidayTodoSection() {
             sx={{ display: 'flex', gap: 1, mt: 3, justifyContent: 'flex-end' }}
           >
             <Button
-              onClick={() => setOpenNewPlanDialog(false)}
+              onClick={handleClosePlanDialog}
               sx={{ color: palette.teal175 }}
             >
               Cancel
             </Button>
             <Button
               variant="contained"
-              onClick={handleCreatePlan}
+              onClick={handleSavePlan}
               sx={{
                 bgcolor: palette.teal450,
                 color: palette.white,
@@ -1097,7 +1182,7 @@ function HolidayTodoSection() {
                 },
               }}
             >
-              Create
+              {editingPlanId !== null ? 'Save' : 'Create'}
             </Button>
           </Box>
         </DialogContent>
@@ -1106,7 +1191,7 @@ function HolidayTodoSection() {
       {/* Dialog: Add New Todo Item */}
       <Dialog
         open={openNewItemDialog}
-        onClose={() => setOpenNewItemDialog(false)}
+        onClose={handleCloseItemDialog}
         PaperProps={{
           sx: {
             background: `linear-gradient(135deg, ${palette.navy475} 0%, ${palette.navy175} 100%)`,
@@ -1115,7 +1200,7 @@ function HolidayTodoSection() {
         }}
       >
         <DialogTitle sx={{ color: palette.teal100, fontWeight: 'bold' }}>
-          Add Todo Item
+          {editingItemId !== null ? 'Edit Todo Item' : 'Add Todo Item'}
         </DialogTitle>
         <DialogContent sx={{ pt: 3, minWidth: '450px' }}>
           {/* Time range section */}
@@ -1384,14 +1469,14 @@ function HolidayTodoSection() {
             sx={{ display: 'flex', gap: 1, mt: 4, justifyContent: 'flex-end' }}
           >
             <Button
-              onClick={() => setOpenNewItemDialog(false)}
+              onClick={handleCloseItemDialog}
               sx={{ color: palette.teal175 }}
             >
               Cancel
             </Button>
             <Button
               variant="contained"
-              onClick={handleAddTodoItem}
+              onClick={handleSaveTodoItem}
               sx={{
                 bgcolor: palette.teal450,
                 color: palette.white,
@@ -1401,7 +1486,7 @@ function HolidayTodoSection() {
                 },
               }}
             >
-              Add Item
+              {editingItemId !== null ? 'Save' : 'Add Item'}
             </Button>
           </Box>
         </DialogContent>

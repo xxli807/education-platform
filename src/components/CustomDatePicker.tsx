@@ -13,6 +13,20 @@ interface CustomDatePickerProps {
   disabled?: boolean;
 }
 
+const pad = (n: number) => String(n).padStart(2, '0');
+
+// Parse a 'YYYY-MM-DD' string as a LOCAL date (new Date('YYYY-MM-DD') parses as
+// UTC, which shifts the day in non-UTC timezones).
+const parseLocalDate = (s: string): Date => {
+  const [y, m, d] = s.split('-').map(Number);
+  return new Date(y, m - 1, d);
+};
+
+// Format a Date as 'YYYY-MM-DD' from its LOCAL components (never toISOString,
+// which converts to UTC and can shift the day back).
+const formatLocalDate = (d: Date): string =>
+  `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
 function CustomDatePicker({
   value,
   onChange,
@@ -20,7 +34,9 @@ function CustomDatePicker({
   disabled,
 }: CustomDatePickerProps) {
   const [open, setOpen] = useState(false);
-  const [currentDate, setCurrentDate] = useState(new Date(value || new Date()));
+  const [currentDate, setCurrentDate] = useState(
+    value ? parseLocalDate(value) : new Date()
+  );
   const anchorRef = useRef<HTMLDivElement>(null);
 
   const getDaysInMonth = (date: Date) => {
@@ -49,8 +65,7 @@ function CustomDatePicker({
       currentDate.getMonth(),
       day
     );
-    const dateString = selected.toISOString().split('T')[0];
-    onChange(dateString);
+    onChange(formatLocalDate(selected));
     setOpen(false);
   };
 
@@ -75,12 +90,14 @@ function CustomDatePicker({
   ];
 
   const displayDate = value
-    ? new Date(value).toLocaleDateString('en-US', {
+    ? parseLocalDate(value).toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'short',
         day: 'numeric',
       })
     : 'Select date';
+
+  const todayString = formatLocalDate(new Date());
 
   return (
     <Box>
@@ -203,16 +220,15 @@ function CustomDatePicker({
               <Box key={`empty-${i}`} />
             ))}
             {days.map(day => {
-              const isSelected =
-                value &&
-                new Date(value).getDate() === day &&
-                new Date(value).getMonth() === currentDate.getMonth() &&
-                new Date(value).getFullYear() === currentDate.getFullYear();
-
-              const isToday =
-                new Date().getDate() === day &&
-                new Date().getMonth() === currentDate.getMonth() &&
-                new Date().getFullYear() === currentDate.getFullYear();
+              const dayString = formatLocalDate(
+                new Date(
+                  currentDate.getFullYear(),
+                  currentDate.getMonth(),
+                  day
+                )
+              );
+              const isSelected = value === dayString;
+              const isToday = todayString === dayString;
 
               return (
                 <Button
