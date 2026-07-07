@@ -69,17 +69,22 @@ function NumberBadge({ n }: { n: string }) {
 /** A single small inline input used in place of a `__` blank. */
 function BlankInput({ id }: { id: string }) {
   const { get, set } = useAnswers();
+  const value = get(id);
   return (
     <TextField
       variant="outlined"
       size="small"
-      value={get(id)}
+      value={value}
       onChange={e => set(id, e.target.value)}
       sx={{
-        width: 72,
         mx: 0.5,
         ...inputFieldSx,
-        '& .MuiOutlinedInput-input': { textAlign: 'center', py: 0.5 },
+        '& .MuiOutlinedInput-input': {
+          textAlign: 'center',
+          py: 0.5,
+          // Grow with the answer so long words like "thousands" fit.
+          width: `${Math.min(Math.max(value.length + 2, 8), 32)}ch`,
+        },
       }}
     />
   );
@@ -189,7 +194,7 @@ function QuestionView({ q, qid }: { q: TestQuestion; qid: string }) {
                   value={get(id)}
                   onChange={e => set(id, e.target.value)}
                   sx={{
-                    width: (q.inputs ?? 1) > 1 ? 140 : 220,
+                    width: (q.inputs ?? 1) > 1 ? 200 : 320,
                     ...inputFieldSx,
                   }}
                 />
