@@ -11,12 +11,14 @@ import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import VolumeOffIcon from '@mui/icons-material/VolumeOff';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
+import LetterTracing from './LetterTracing';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Level = 'year1' | 'year2';
 
 type GameId =
   // Year 1 (gentle)
+  | 'letterTrace'
   | 'letterMatch'
   | 'beginningSound'
   | 'missingLetter'
@@ -62,6 +64,14 @@ interface GameMeta {
 const ROUNDS_PER_GAME = 8;
 
 const GAMES_Y1: GameMeta[] = [
+  {
+    id: 'letterTrace',
+    title: 'ABC Tracing',
+    emoji: '✍️',
+    blurb: 'Trace big & little letters',
+    color: palette.blue675,
+    color2: palette.teal375,
+  },
   {
     id: 'letterMatch',
     title: 'Letter Match',
@@ -410,7 +420,10 @@ function numberOptions(correct: number, spread: number): string[] {
 }
 
 // ─── Round generators ─────────────────────────────────────────────────────────
-function makeRound(game: GameId): Round {
+/** every game except the free-drawing tracing activity runs on quiz rounds */
+type QuizGameId = Exclude<GameId, 'letterTrace'>;
+
+function makeRound(game: QuizGameId): Round {
   switch (game) {
     case 'letterMatch': {
       const letter = pick(ALPHABET);
@@ -788,11 +801,11 @@ function PlayZoneSection() {
     setPicked(null);
     setFeedback(null);
     setFinished(false);
-    setRound(makeRound(id));
+    setRound(id === 'letterTrace' ? null : makeRound(id));
   }, []);
 
   const nextRound = useCallback(() => {
-    if (!activeGame) return;
+    if (!activeGame || activeGame === 'letterTrace') return;
     if (roundNum >= ROUNDS_PER_GAME) {
       setFinished(true);
       // bank the stars earned this game
@@ -1192,6 +1205,9 @@ function PlayZoneSection() {
           </Box>
         </Box>
       )}
+
+      {/* ─── TRACING (free drawing, no rounds) ─── */}
+      {activeGame === 'letterTrace' && <LetterTracing />}
 
       {/* ─── PLAYING ─── */}
       {activeGame && !finished && round && meta && (
