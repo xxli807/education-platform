@@ -719,6 +719,10 @@ function MathSection() {
                 label="Your Answer"
                 variant="outlined"
                 type="number"
+                // iOS ignores type="number" for keyboard choice; inputMode brings up the digit pad
+                slotProps={{
+                  htmlInput: { inputMode: 'numeric', pattern: '[0-9]*' },
+                }}
                 value={answers[question.id] || ''}
                 onChange={e => handleAnswerChange(question.id, e.target.value)}
                 sx={{
