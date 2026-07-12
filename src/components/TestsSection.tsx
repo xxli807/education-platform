@@ -58,6 +58,9 @@ const inputFieldSx = {
 
 const BLANK_RE = /_{2,}/;
 
+/** iPads/phones show the digit keypad for inputs marked this way. */
+const numericInputProps = { inputMode: 'numeric' as const, pattern: '[0-9]*' };
+
 function NumberBadge({ n }: { n: string }) {
   return (
     <Box component="span" sx={{ color: C.accent, fontWeight: 700, mr: 1 }}>
@@ -67,7 +70,7 @@ function NumberBadge({ n }: { n: string }) {
 }
 
 /** A single small inline input used in place of a `__` blank. */
-function BlankInput({ id }: { id: string }) {
+function BlankInput({ id, numeric }: { id: string; numeric?: boolean }) {
   const { get, set } = useAnswers();
   const value = get(id);
   return (
@@ -76,6 +79,7 @@ function BlankInput({ id }: { id: string }) {
       size="small"
       value={value}
       onChange={e => set(id, e.target.value)}
+      slotProps={numeric ? { htmlInput: numericInputProps } : undefined}
       sx={{
         mx: 0.5,
         ...inputFieldSx,
@@ -91,7 +95,15 @@ function BlankInput({ id }: { id: string }) {
 }
 
 /** Renders a prompt that contains `__` blanks as text with one input per blank. */
-function InlineBlanks({ prompt, qid }: { prompt: string; qid: string }) {
+function InlineBlanks({
+  prompt,
+  qid,
+  numeric,
+}: {
+  prompt: string;
+  qid: string;
+  numeric?: boolean;
+}) {
   const parts = prompt.split(/_{2,}/);
   return (
     <>
@@ -105,16 +117,29 @@ function InlineBlanks({ prompt, qid }: { prompt: string; qid: string }) {
               {part}
             </Typography>
           )}
-          {i < parts.length - 1 && <BlankInput id={`${qid}-b${i}`} />}
+          {i < parts.length - 1 && (
+            <BlankInput id={`${qid}-b${i}`} numeric={numeric} />
+          )}
         </Fragment>
       ))}
     </>
   );
 }
 
-function QuestionView({ q, qid }: { q: TestQuestion; qid: string }) {
+function QuestionView({
+  q,
+  qid,
+  blockNumeric,
+}: {
+  q: TestQuestion;
+  qid: string;
+  blockNumeric?: boolean;
+}) {
   const { get, set } = useAnswers();
   const inlineBlanks = q.type === 'short' && BLANK_RE.test(q.prompt);
+  // question-level flag wins over the block default
+  const numeric =
+    q.type === 'short' ? (q.numeric ?? blockNumeric ?? false) : false;
 
   return (
     <Box sx={{ mb: 2 }}>
@@ -128,7 +153,7 @@ function QuestionView({ q, qid }: { q: TestQuestion; qid: string }) {
           }}
         >
           {q.n ? <NumberBadge n={q.n} /> : null}
-          <InlineBlanks prompt={q.prompt} qid={qid} />
+          <InlineBlanks prompt={q.prompt} qid={qid} numeric={numeric} />
         </Box>
       ) : (
         <Typography
@@ -193,6 +218,9 @@ function QuestionView({ q, qid }: { q: TestQuestion; qid: string }) {
                   placeholder="Your answer"
                   value={get(id)}
                   onChange={e => set(id, e.target.value)}
+                  slotProps={
+                    numeric ? { htmlInput: numericInputProps } : undefined
+                  }
                   sx={{
                     width: (q.inputs ?? 1) > 1 ? 200 : 320,
                     ...inputFieldSx,
@@ -384,7 +412,7 @@ function BlockView({ block, blockId }: { block: TestBlock; blockId: string }) {
 
           <Box sx={{ flex: 1, width: '100%', minWidth: 0 }}>
             {block.questions.map((q, i) => (
-              <QuestionView key={i} q={q} qid={`${blockId}.${i}`} />
+              <QuestionView key={i} q={q} qid={`${blockId}.${i}`} blockNumeric={block.numeric} />
             ))}
           </Box>
         </Box>
@@ -418,7 +446,7 @@ function BlockView({ block, blockId }: { block: TestBlock; blockId: string }) {
           )}
 
           {block.questions.map((q, i) => (
-            <QuestionView key={i} q={q} qid={`${blockId}.${i}`} />
+            <QuestionView key={i} q={q} qid={`${blockId}.${i}`} blockNumeric={block.numeric} />
           ))}
         </>
       )}

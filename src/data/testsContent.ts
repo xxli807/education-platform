@@ -19,6 +19,12 @@ export type TestQuestion =
       example?: string;
       /** How many answer boxes to render (defaults to 1). */
       inputs?: number;
+      /**
+       * Answer is digits only → show the numeric keypad on touch devices.
+       * Overrides the block-level default. Leave off for answers needing
+       * letters, commas, colons, "/", "$" etc. — the iOS keypad has none.
+       */
+      numeric?: boolean;
     }
   | { type: 'long'; n?: string; prompt: string }
   | {
@@ -41,6 +47,8 @@ export interface TestBlock {
   diagram?: string;
   /** Optional multi-line note / planning tips shown full-width above the questions. */
   note?: string;
+  /** Default for the block's short questions: digits-only answers → numeric keypad. */
+  numeric?: boolean;
   questions: TestQuestion[];
 }
 
@@ -93,6 +101,7 @@ const year2Book1Weeks: TestWeek[] = [
           },
           {
             heading: 'Test Your Skills — Ordering numbers',
+            numeric: true,
             instructions: 'Put these numbers in order from lowest to highest.',
             questions: [
               { type: 'short', n: '5', prompt: '83, 87, 72, 79', inputs: 4 },
@@ -107,6 +116,7 @@ const year2Book1Weeks: TestWeek[] = [
           },
           {
             heading: 'Test Your Skills — Number lines',
+            numeric: true,
             instructions:
               'Fill in the three missing numbers on each number line.',
             questions: [
@@ -121,6 +131,7 @@ const year2Book1Weeks: TestWeek[] = [
           },
           {
             heading: 'Test Your Skills — Missing numbers',
+            numeric: true,
             instructions: 'Fill in the missing numbers.',
             questions: [
               { type: 'short', n: '11', prompt: '8 + __ = 10' },
@@ -134,6 +145,7 @@ const year2Book1Weeks: TestWeek[] = [
           },
           {
             heading: 'Test Your Skills — Place value',
+            numeric: true,
             instructions: 'Write the numbers.',
             questions: [
               { type: 'short', n: '15', prompt: 'forty-seven' },
@@ -148,6 +160,7 @@ const year2Book1Weeks: TestWeek[] = [
           },
           {
             heading: 'Test Your Skills — Partitioning',
+            numeric: true,
             instructions: 'Fill in the blanks.',
             questions: [
               {
@@ -251,6 +264,7 @@ const year2Book1Weeks: TestWeek[] = [
         blocks: [
           {
             heading: 'Test Your Skills — Shape patterns',
+            numeric: true,
             instructions:
               'Here is a pattern of shapes: □ ○ △ ◇ ◆ □ □ ○ △ ◇ □ □ ○ □ …',
             questions: [
@@ -263,6 +277,7 @@ const year2Book1Weeks: TestWeek[] = [
                 type: 'short',
                 n: '2',
                 prompt: 'Which shape will come next in the pattern?',
+                numeric: false,
               },
               {
                 type: 'short',
@@ -279,6 +294,7 @@ const year2Book1Weeks: TestWeek[] = [
           },
           {
             heading: 'Test Your Skills — Diamond shapes made with sticks',
+            numeric: true,
             instructions:
               'Here is a pattern of diamond shapes made with sticks. Each diamond is made from 4 sticks. Count the sticks in each shape.',
             diagram: [
@@ -316,6 +332,7 @@ const year2Book1Weeks: TestWeek[] = [
           },
           {
             heading: 'Test Your Skills — Straws pattern',
+            numeric: true,
             instructions:
               'Here is a pattern of triangles made with straws. Each new triangle shares one side with the last. Count the straws in each shape.',
             diagram: [
@@ -358,6 +375,7 @@ const year2Book1Weeks: TestWeek[] = [
           },
           {
             heading: 'Test Your Skills — Number patterns',
+            numeric: true,
             instructions:
               'Write down the next number in each pattern (these patterns add the same number each time).',
             questions: [
@@ -370,6 +388,7 @@ const year2Book1Weeks: TestWeek[] = [
           },
           {
             heading: 'Test Your Skills — Building a pattern',
+            numeric: true,
             instructions:
               'A pattern is formed by adding 3 each time. The first number is 4.',
             questions: [
@@ -380,6 +399,7 @@ const year2Book1Weeks: TestWeek[] = [
           },
           {
             heading: 'Test Your Skills — What is being added or subtracted?',
+            numeric: true,
             instructions:
               'What number is being added each time in these patterns?',
             questions: [
@@ -400,6 +420,7 @@ const year2Book1Weeks: TestWeek[] = [
           },
           {
             heading: 'Test Your Skills — Missing numbers in patterns',
+            numeric: true,
             instructions: 'Fill in the missing number in each pattern.',
             questions: [
               { type: 'short', n: '17', prompt: '3, 6, 9, 12, __, 18, 21, 24' },
@@ -409,6 +430,7 @@ const year2Book1Weeks: TestWeek[] = [
           },
           {
             heading: 'Test Your Skills — Number sentences',
+            numeric: true,
             instructions:
               'Fill in the numbers to make these number sentences true.',
             questions: [
@@ -1146,6 +1168,7 @@ const year2Book1Weeks: TestWeek[] = [
         blocks: [
           {
             heading: 'Test Your Skills — Related number facts',
+            numeric: true,
             instructions: 'Fill in the blanks.',
             questions: [
               { type: 'short', n: '1', prompt: '5 + __ = 7' },
@@ -1161,6 +1184,7 @@ const year2Book1Weeks: TestWeek[] = [
           },
           {
             heading: 'Test Your Skills — Counting problems',
+            numeric: true,
             questions: [
               {
                 type: 'short',
@@ -1211,6 +1235,7 @@ const year2Book1Weeks: TestWeek[] = [
           },
           {
             heading: 'Test Your Skills — Making numbers easier',
+            numeric: true,
             instructions: 'Fill in the blanks.',
             questions: [
               { type: 'short', n: '18', prompt: '32 + 18 = 30 + __' },
@@ -1221,6 +1246,7 @@ const year2Book1Weeks: TestWeek[] = [
           },
           {
             heading: 'Test Your Skills — Multiplication and division',
+            numeric: true,
             instructions: 'Fill in the blanks and answer the questions.',
             questions: [
               { type: 'short', n: '1', prompt: '3 + 3 + 3 + 3 = __ × 3' },
@@ -2649,13 +2675,14 @@ const year2Book1Weeks: TestWeek[] = [
                 n: '1',
                 prompt: 'List in order the 12 months of the year.',
               },
-              { type: 'short', n: '2', prompt: 'How many days are in April?' },
-              { type: 'short', n: '3', prompt: 'How many days are in June?' },
-              { type: 'short', n: '4', prompt: 'How many days are in August?' },
+              { type: 'short', n: '2', prompt: 'How many days are in April?', numeric: true },
+              { type: 'short', n: '3', prompt: 'How many days are in June?', numeric: true },
+              { type: 'short', n: '4', prompt: 'How many days are in August?', numeric: true },
               {
                 type: 'short',
                 n: '5',
                 prompt: 'How many days are in October?',
+                numeric: true,
               },
               {
                 type: 'short',
@@ -3809,6 +3836,7 @@ const year2Book1Weeks: TestWeek[] = [
                 type: 'short',
                 n: '1',
                 prompt: 'How many races did Bella win?',
+                numeric: true,
               },
               {
                 type: 'short',
@@ -3820,11 +3848,13 @@ const year2Book1Weeks: TestWeek[] = [
                 type: 'short',
                 n: '4',
                 prompt: 'How many races did Max and Jack win altogether?',
+                numeric: true,
               },
               {
                 type: 'short',
                 n: '5',
                 prompt: 'How many more races did Ben win than Tara?',
+                numeric: true,
               },
             ],
           },
@@ -3837,6 +3867,7 @@ const year2Book1Weeks: TestWeek[] = [
                 type: 'short',
                 n: '6',
                 prompt: 'Favourite fruit: How many students voted for apple?',
+                numeric: true,
               },
               {
                 type: 'short',
@@ -3886,6 +3917,7 @@ const year2Book1Weeks: TestWeek[] = [
                 type: 'short',
                 n: '15',
                 prompt: 'How many more students chose gorilla than koala?',
+                numeric: true,
               },
             ],
           },
