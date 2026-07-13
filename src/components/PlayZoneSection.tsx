@@ -12,6 +12,7 @@ import VolumeOffIcon from '@mui/icons-material/VolumeOff';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import LetterTracing from './LetterTracing';
+import FrogRiver from './FrogRiver';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Level = 'year1' | 'year2';
@@ -74,11 +75,11 @@ const GAMES_Y1: GameMeta[] = [
   },
   {
     id: 'letterMatch',
-    title: 'Letter Match',
-    emoji: '🔤',
-    blurb: 'Match big & little letters',
-    color: palette.pink650,
-    color2: palette.orange325,
+    title: 'Froggy Letters',
+    emoji: '🐸',
+    blurb: 'Hop to the little letter!',
+    color: palette.green550,
+    color2: palette.teal375,
   },
   {
     id: 'beginningSound',
@@ -98,11 +99,11 @@ const GAMES_Y1: GameMeta[] = [
   },
   {
     id: 'countTap',
-    title: 'Count It',
-    emoji: '🐣',
-    blurb: 'How many can you see?',
-    color: palette.teal375,
-    color2: palette.cyan25,
+    title: 'Froggy Counting',
+    emoji: '🪷',
+    blurb: 'Count, then hop the river!',
+    color: palette.teal525,
+    color2: palette.blue350,
   },
   {
     id: 'addUp',
@@ -434,7 +435,7 @@ function makeRound(game: QuizGameId): Round {
       );
       return {
         display: letter,
-        prompt: `Find the little letter for "${letter}"`,
+        prompt: `Hop to the little letter for "${letter}"`,
         options: others,
         answer: letter.toLowerCase(),
         bigOptions: true,
@@ -480,7 +481,7 @@ function makeRound(game: QuizGameId): Round {
       );
       return {
         display: emoji.repeat(n),
-        prompt: 'How many do you see?',
+        prompt: 'Count them, then hop to that number!',
         options,
         answer: String(n),
         bigOptions: true,
@@ -859,6 +860,8 @@ function PlayZoneSection() {
   }, []);
 
   const meta = activeGame ? ALL_GAMES.find(g => g.id === activeGame)! : null;
+  // these two render as the animated frog-river scene instead of answer cards
+  const isFrogGame = activeGame === 'letterMatch' || activeGame === 'countTap';
 
   return (
     <Box
@@ -1247,140 +1250,153 @@ function PlayZoneSection() {
             />
           </Box>
 
-          {/* question card */}
-          <Box
-            sx={{
-              bgcolor: withAlpha(palette.white, 0.85),
-              border: `5px solid ${palette.white}`,
-              borderRadius: '28px',
-              boxShadow: `0 12px 30px ${withAlpha(palette.black, 0.12)}`,
-              p: { xs: 2.5, sm: 4 },
-              textAlign: 'center',
-              mb: 3,
-            }}
-          >
-            <Typography
-              key={roundNum}
-              sx={{
-                fontSize: round.displaySmall
-                  ? { xs: '1.4rem', sm: '1.7rem' }
-                  : { xs: '2.6rem', sm: '3.4rem' },
-                fontWeight: round.displaySmall ? 800 : 900,
-                lineHeight: 1.3,
-                whiteSpace: 'pre-line',
-                color: palette.slate950,
-                mb: 1,
-                animation: 'pop 0.35s ease both',
-                wordBreak: 'break-word',
-              }}
-            >
-              {round.display}
-            </Typography>
-            <Typography
-              sx={{
-                fontWeight: 700,
-                color: palette.purple675,
-                fontSize: '1.15rem',
-              }}
-            >
-              {round.prompt}
-            </Typography>
-          </Box>
-
-          {/* options */}
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: { xs: '1fr 1fr', sm: 'repeat(4, 1fr)' },
-              gap: 2,
-            }}
-          >
-            {round.options.map(opt => {
-              const isPicked = picked === opt;
-              const isAnswer = opt === round.answer;
-              const reveal = picked !== null;
-              let bg = `linear-gradient(150deg, ${palette.white} 0%, ${palette.purple25} 100%)`;
-              let border = palette.purple300;
-              let textColor = palette.purple750;
-              if (reveal && isAnswer) {
-                bg = `linear-gradient(150deg, ${palette.green175} 0%, ${palette.green500} 100%)`;
-                border = palette.green500;
-                textColor = palette.white;
-              } else if (reveal && isPicked && !isAnswer) {
-                bg = `linear-gradient(150deg, ${palette.red225} 0%, ${palette.red325} 100%)`;
-                border = palette.red325;
-                textColor = palette.white;
-              }
-              return (
-                <Box
-                  key={opt}
-                  role="button"
-                  tabIndex={reveal ? -1 : 0}
-                  aria-label={`Answer ${opt}`}
-                  onClick={() => handlePick(opt)}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      handlePick(opt);
-                    }
-                  }}
+          {isFrogGame ? (
+            <FrogRiver
+              round={round}
+              picked={picked}
+              roundNum={roundNum}
+              mode={activeGame === 'letterMatch' ? 'letters' : 'numbers'}
+              muted={muted}
+              onPick={handlePick}
+            />
+          ) : (
+            <>
+              {/* question card */}
+              <Box
+                sx={{
+                  bgcolor: withAlpha(palette.white, 0.85),
+                  border: `5px solid ${palette.white}`,
+                  borderRadius: '28px',
+                  boxShadow: `0 12px 30px ${withAlpha(palette.black, 0.12)}`,
+                  p: { xs: 2.5, sm: 4 },
+                  textAlign: 'center',
+                  mb: 3,
+                }}
+              >
+                <Typography
+                  key={roundNum}
                   sx={{
-                    cursor: reveal ? 'default' : 'pointer',
-                    userSelect: 'none',
-                    borderRadius: '20px',
-                    border: `4px solid ${border}`,
-                    background: bg,
-                    color: textColor,
-                    py: { xs: 2, sm: 2.5 },
-                    px: 1,
-                    textAlign: 'center',
-                    fontWeight: 900,
-                    fontSize: round.bigOptions
-                      ? { xs: '2rem', sm: '2.4rem' }
-                      : { xs: '1.1rem', sm: '1.3rem' },
-                    boxShadow:
-                      reveal && isAnswer
-                        ? `0 8px 0 ${palette.green650}`
-                        : `0 6px 0 ${withAlpha(palette.black, 0.12)}`,
-                    transition: 'transform 0.12s, box-shadow 0.12s',
-                    position: 'relative',
-                    minHeight: 64,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    animation:
-                      reveal && isAnswer ? 'pop 0.4s ease both' : 'none',
-                    '&:hover': reveal
-                      ? {}
-                      : {
-                          transform: 'translateY(-3px)',
-                          boxShadow: `0 9px 0 ${withAlpha(palette.black, 0.12)}`,
-                        },
-                    '&:focus-visible': {
-                      outline: `3px solid ${palette.purple675}`,
-                      outlineOffset: 2,
-                    },
+                    fontSize: round.displaySmall
+                      ? { xs: '1.4rem', sm: '1.7rem' }
+                      : { xs: '2.6rem', sm: '3.4rem' },
+                    fontWeight: round.displaySmall ? 800 : 900,
+                    lineHeight: 1.3,
+                    whiteSpace: 'pre-line',
+                    color: palette.slate950,
+                    mb: 1,
+                    animation: 'pop 0.35s ease both',
+                    wordBreak: 'break-word',
                   }}
                 >
-                  {opt}
-                  {reveal && isAnswer && (
+                  {round.display}
+                </Typography>
+                <Typography
+                  sx={{
+                    fontWeight: 700,
+                    color: palette.purple675,
+                    fontSize: '1.15rem',
+                  }}
+                >
+                  {round.prompt}
+                </Typography>
+              </Box>
+
+              {/* options */}
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: { xs: '1fr 1fr', sm: 'repeat(4, 1fr)' },
+                  gap: 2,
+                }}
+              >
+                {round.options.map(opt => {
+                  const isPicked = picked === opt;
+                  const isAnswer = opt === round.answer;
+                  const reveal = picked !== null;
+                  let bg = `linear-gradient(150deg, ${palette.white} 0%, ${palette.purple25} 100%)`;
+                  let border = palette.purple300;
+                  let textColor = palette.purple750;
+                  if (reveal && isAnswer) {
+                    bg = `linear-gradient(150deg, ${palette.green175} 0%, ${palette.green500} 100%)`;
+                    border = palette.green500;
+                    textColor = palette.white;
+                  } else if (reveal && isPicked && !isAnswer) {
+                    bg = `linear-gradient(150deg, ${palette.red225} 0%, ${palette.red325} 100%)`;
+                    border = palette.red325;
+                    textColor = palette.white;
+                  }
+                  return (
                     <Box
-                      aria-hidden
+                      key={opt}
+                      role="button"
+                      tabIndex={reveal ? -1 : 0}
+                      aria-label={`Answer ${opt}`}
+                      onClick={() => handlePick(opt)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          handlePick(opt);
+                        }
+                      }}
                       sx={{
-                        position: 'absolute',
-                        top: -10,
-                        right: -6,
-                        fontSize: '1.6rem',
-                        animation: 'burst 0.7s ease both',
+                        cursor: reveal ? 'default' : 'pointer',
+                        userSelect: 'none',
+                        borderRadius: '20px',
+                        border: `4px solid ${border}`,
+                        background: bg,
+                        color: textColor,
+                        py: { xs: 2, sm: 2.5 },
+                        px: 1,
+                        textAlign: 'center',
+                        fontWeight: 900,
+                        fontSize: round.bigOptions
+                          ? { xs: '2rem', sm: '2.4rem' }
+                          : { xs: '1.1rem', sm: '1.3rem' },
+                        boxShadow:
+                          reveal && isAnswer
+                            ? `0 8px 0 ${palette.green650}`
+                            : `0 6px 0 ${withAlpha(palette.black, 0.12)}`,
+                        transition: 'transform 0.12s, box-shadow 0.12s',
+                        position: 'relative',
+                        minHeight: 64,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        animation:
+                          reveal && isAnswer ? 'pop 0.4s ease both' : 'none',
+                        '&:hover': reveal
+                          ? {}
+                          : {
+                              transform: 'translateY(-3px)',
+                              boxShadow: `0 9px 0 ${withAlpha(palette.black, 0.12)}`,
+                            },
+                        '&:focus-visible': {
+                          outline: `3px solid ${palette.purple675}`,
+                          outlineOffset: 2,
+                        },
                       }}
                     >
-                      🎉
+                      {opt}
+                      {reveal && isAnswer && (
+                        <Box
+                          aria-hidden
+                          sx={{
+                            position: 'absolute',
+                            top: -10,
+                            right: -6,
+                            fontSize: '1.6rem',
+                            animation: 'burst 0.7s ease both',
+                          }}
+                        >
+                          🎉
+                        </Box>
+                      )}
                     </Box>
-                  )}
-                </Box>
-              );
-            })}
-          </Box>
+                  );
+                })}
+              </Box>
+            </>
+          )}
 
           {/* feedback */}
           <Box sx={{ minHeight: 48, mt: 2, textAlign: 'center' }}>
