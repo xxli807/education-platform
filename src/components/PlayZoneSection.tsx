@@ -13,6 +13,7 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import LetterTracing from './LetterTracing';
 import FrogRiver from './FrogRiver';
+import GiraffeTree from './GiraffeTree';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Level = 'year1' | 'year2';
@@ -25,7 +26,7 @@ type GameId =
   | 'missingLetter'
   | 'countTap'
   | 'addUp'
-  | 'rhyme'
+  | 'giraffeLetters'
   | 'shapes'
   | 'numberBonds'
   // Year 2 (challenge)
@@ -114,12 +115,12 @@ const GAMES_Y1: GameMeta[] = [
     color2: palette.teal375,
   },
   {
-    id: 'rhyme',
-    title: 'Rhyme Time',
-    emoji: '🎵',
-    blurb: 'Find words that rhyme',
-    color: palette.cyan950,
-    color2: palette.blue675,
+    id: 'giraffeLetters',
+    title: 'Giraffe Munch',
+    emoji: '🦒',
+    blurb: 'Feed the giraffe yummy letters!',
+    color: palette.amber625,
+    color2: palette.gold650,
   },
   {
     id: 'shapes',
@@ -258,20 +259,28 @@ const COUNT_EMOJIS = [
   '🐞',
 ];
 
-// words grouped by rhyme — answer comes from the same group, distractors from others
-const RHYME_GROUPS: string[][] = [
-  ['cat', 'hat', 'bat', 'mat', 'rat'],
-  ['dog', 'log', 'frog', 'fog'],
-  ['sun', 'run', 'bun', 'fun'],
-  ['bee', 'tree', 'key', 'sea'],
-  ['cake', 'lake', 'snake', 'rake'],
-  ['star', 'car', 'jar', 'far'],
-  ['night', 'light', 'kite', 'bite'],
-  ['ball', 'wall', 'tall', 'fall'],
-  ['ring', 'king', 'sing', 'wing'],
-  ['bug', 'rug', 'mug', 'hug'],
-  ['boat', 'coat', 'goat', 'float'],
-  ['pig', 'wig', 'dig', 'big'],
+// very easy first words for the 4-year-old's giraffe game (emoji + word)
+const EASY_WORDS: { emoji: string; word: string }[] = [
+  { emoji: '🐱', word: 'cat' },
+  { emoji: '🍎', word: 'apple' },
+  { emoji: '🐶', word: 'dog' },
+  { emoji: '☀️', word: 'sun' },
+  { emoji: '⚽', word: 'ball' },
+  { emoji: '🐟', word: 'fish' },
+  { emoji: '🎩', word: 'hat' },
+  { emoji: '🥚', word: 'egg' },
+  { emoji: '🥛', word: 'milk' },
+  { emoji: '⭐', word: 'star' },
+  { emoji: '🌳', word: 'tree' },
+  { emoji: '🦆', word: 'duck' },
+  { emoji: '🐮', word: 'cow' },
+  { emoji: '🐝', word: 'bee' },
+  { emoji: '🐷', word: 'pig' },
+  { emoji: '🚌', word: 'bus' },
+  { emoji: '🔑', word: 'key' },
+  { emoji: '🌙', word: 'moon' },
+  { emoji: '🧦', word: 'sock' },
+  { emoji: '🍌', word: 'banana' },
 ];
 
 const SHAPES: { emoji: string; name: string }[] = [
@@ -505,17 +514,20 @@ function makeRound(game: QuizGameId): Round {
         bigOptions: true,
       };
     }
-    case 'rhyme': {
-      const group = pick(RHYME_GROUPS);
-      const [target, answer] = shuffle(group);
-      // distractors: words from other groups (don't rhyme with target)
-      const otherWords = RHYME_GROUPS.filter(g => g !== group).flat();
-      const options = shuffle([answer, ...shuffle(otherWords).slice(0, 3)]);
+    case 'giraffeLetters': {
+      const item = pick(EASY_WORDS);
+      const first = item.word[0];
+      const options = uniqueOptions(
+        first,
+        ALPHABET.map(l => l.toLowerCase()),
+        4
+      );
       return {
-        display: `🎵 ${target}`,
-        prompt: `Which word rhymes with "${target}"?`,
+        display: `${item.emoji}\n${item.word}`,
+        prompt: `Which letter starts "${item.word}"?`,
         options,
-        answer,
+        answer: first,
+        bigOptions: true,
       };
     }
     case 'shapes': {
@@ -862,6 +874,7 @@ function PlayZoneSection() {
   const meta = activeGame ? ALL_GAMES.find(g => g.id === activeGame)! : null;
   // these two render as the animated frog-river scene instead of answer cards
   const isFrogGame = activeGame === 'letterMatch' || activeGame === 'countTap';
+  const isGiraffeGame = activeGame === 'giraffeLetters';
 
   return (
     <Box
@@ -1250,7 +1263,15 @@ function PlayZoneSection() {
             />
           </Box>
 
-          {isFrogGame ? (
+          {isGiraffeGame ? (
+            <GiraffeTree
+              round={round}
+              picked={picked}
+              roundNum={roundNum}
+              muted={muted}
+              onPick={handlePick}
+            />
+          ) : isFrogGame ? (
             <FrogRiver
               round={round}
               picked={picked}
