@@ -1,0 +1,149 @@
+name: PR Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  # re-run the human-review gate when someone approves
+  pull_request_review:
+    types: [submitted, dismissed]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: pr-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  risk:
+    name: Assess risk
+    runs-on: ubuntu-latest
+    outputs:
+      level: ${{ steps.assess.outputs.level }}
+      sensitive_files: ${{ steps.assess.outputs.sensitive_files }}
+    steps:
+      - name: Classify changed files
+        id: assess
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Auth/login surface — any touch here makes the PR high risk.
+          SENSITIVE='^(src/components/Login\.tsx|src/hooks/useAuth\.ts|scripts/hash-password\.mjs|public/auth\.json)$'
+          FILES=$(gh api "repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files" \
+            --paginate --jq '.[].filename')
+          HITS=$(echo "$FILES" | grep -E "$SENSITIVE" || true)
+          if [ -n "$HITS" ]; then
+            echo "level=high" >> "$GITHUB_OUTPUT"
+            {
+              echo "sensitive_files<<EOF"
+              echo "$HITS"
+              echo "EOF"
+            } >> "$GITHUB_OUTPUT"
+            echo "::warning::High-risk PR — touches auth files: $(echo "$HITS" | tr '\n' ' ')"
+          else
+            echo "level=low" >> "$GITHUB_OUTPUT"
+            echo "sensitive_files=" >> "$GITHUB_OUTPUT"
+          fi
+
+  mark-high-risk:
+    name: Mark as needing human review
+    needs: risk
+    if: needs.risk.outputs.level == 'high' && github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Label and comment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+          SENSITIVE_FILES: ${{ needs.risk.outputs.sensitive_files }}
+        run: |
+          gh label create needs-human-review \
+            --repo "$REPO" \
+            --color D93F0B \
+            --description "High-risk change (auth/login) — a human must review before merge" \
+            2>/dev/null || true
+          gh pr edit "$PR" --repo "$REPO" --add-label needs-human-review
+          gh pr comment "$PR" --repo "$REPO" --body "🔴 **Risk: HIGH** — this PR touches the login/auth surface:
+
+          \`\`\`
+          ${SENSITIVE_FILES}
+          \`\`\`
+
+          The **Require human review** check will stay red until a human approves this PR. Claude's automated review below is advisory only for high-risk changes."
+
+  claude-review:
+    name: Claude auto review
+    needs: risk
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: read
+      id-token: write
+    steps:
+      - name: Check for API key
+        id: key
+        run: |
+          if [ -n "${{ secrets.ANTHROPIC_API_KEY }}" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::ANTHROPIC_API_KEY secret is not set — skipping Claude auto review. Add it in Settings → Secrets and variables → Actions."
+          fi
+
+      - name: Checkout repository
+        if: steps.key.outputs.present == 'true'
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Claude review
+        if: steps.key.outputs.present == 'true'
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+            RISK LEVEL: ${{ needs.risk.outputs.level }}
+            SENSITIVE FILES TOUCHED: ${{ needs.risk.outputs.sensitive_files }}
+
+            Review this pull request. This is a kids' education app (React 19 +
+            MUI, iPad-first) built by a parent for their children.
+
+            - Focus on real defects: correctness bugs, broken touch/iPad
+              behavior, state bugs, and regressions to existing features.
+            - Colours must come from src/theme/palette.ts — flag raw hex/rgba
+              literals in components.
+            - RISK LEVEL high means auth files changed: scrutinise those lines
+              hardest (credential handling, hash comparison, localStorage
+              session logic) and say explicitly whether the auth behavior
+              changed. Do not approve on Claude's behalf — a human must review
+              high-risk PRs.
+            - Post your findings as a single PR review comment using
+              `gh pr comment`. Lead with a one-line verdict
+              (LGTM / minor issues / problems found) and the risk level.
+              Be concise; skip style nits.
+          claude_args: '--model claude-opus-4-8 --allowed-tools "Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh api repos/*)"'
+
+  human-review-gate:
+    name: Require human review
+    needs: risk
+    if: needs.risk.outputs.level == 'high'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for a human approval
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          APPROVALS=$(gh api "repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews" \
+            --paginate --jq '[.[] | select(.state == "APPROVED" and (.user.type == "User"))] | length')
+          if [ "$APPROVALS" -eq 0 ]; then
+            echo "::error::High-risk PR (touches login/auth) has no human approval yet. A person must review and approve before merging."
+            exit 1
+          fi
+          echo "Human approval found — gate passed."
