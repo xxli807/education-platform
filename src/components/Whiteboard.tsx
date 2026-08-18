@@ -1,5 +1,5 @@
 import { palette, withAlpha } from '../theme/palette';
-import { Box, Button, Typography } from '@mui/material';
+import { Box, IconButton, Typography } from '@mui/material';
 import {
   ExpandLess as ExpandLessIcon,
   EditNote as WhiteboardIcon,
@@ -7,16 +7,56 @@ import {
 } from '@mui/icons-material';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
+// Anchored bottom-right by default so the panel opens clear of a question
+// sitting at the top of the page. Position is remembered across pages/visits
+// (same key everywhere Whiteboard mounts) so a dragged spot sticks once a
+// child moves it out of the way.
+const POSITION_KEY = 'whiteboardPosition';
+const DEFAULT_POSITION = { bottom: 20, right: 16 };
+
+function loadPosition(): { bottom: number; right: number } {
+  try {
+    const saved = JSON.parse(localStorage.getItem(POSITION_KEY) || 'null');
+    if (
+      saved &&
+      typeof saved.bottom === 'number' &&
+      typeof saved.right === 'number'
+    ) {
+      return saved;
+    }
+  } catch {
+    /* ignore malformed saved position */
+  }
+  return DEFAULT_POSITION;
+}
+
+/** Keep the panel's anchor point on-screen (e.g. after rotating an iPad). */
+function clampPosition(pos: { bottom: number; right: number }) {
+  const maxBottom = Math.max(0, window.innerHeight - 60);
+  const maxRight = Math.max(0, window.innerWidth - 60);
+  return {
+    bottom: Math.min(Math.max(0, pos.bottom), maxBottom),
+    right: Math.min(Math.max(0, pos.right), maxRight),
+  };
+}
+
 function Whiteboard() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawing = useRef(false);
   const lastPos = useRef<{ x: number; y: number } | null>(null);
   const [expanded, setExpanded] = useState(false);
-  const [position, setPosition] = useState({ top: 80, right: 16 });
+  const [position, setPosition] = useState(() => clampPosition(loadPosition()));
   const [isDragging, setIsDragging] = useState(false);
-  const dragStart = useRef({ x: 0, y: 0, startTop: 0, startRight: 0 });
+  const dragStart = useRef({ x: 0, y: 0, startBottom: 0, startRight: 0 });
   const dragDistance = useRef(0);
   const DRAG_THRESHOLD = 10;
+
+  // keep the panel reachable if the viewport changes (e.g. iPad rotation)
+  useEffect(() => {
+    const onResize = () => setPosition(p => clampPosition(p));
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   const getPos = (
     e: React.MouseEvent | React.TouchEvent,
@@ -107,16 +147,23 @@ function Whiteboard() {
 
   const stopDrag = useCallback(() => {
     setIsDragging(false);
+    // persist wherever the child left it, so it stays put next time
+    setPosition(p => {
+      localStorage.setItem(POSITION_KEY, JSON.stringify(p));
+      return p;
+    });
   }, []);
 
   const handleDragMove = useCallback((clientX: number, clientY: number) => {
     const deltaX = clientX - dragStart.current.x;
     const deltaY = clientY - dragStart.current.y;
     dragDistance.current = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-    setPosition({
-      top: Math.max(0, dragStart.current.startTop + deltaY),
-      right: Math.max(0, dragStart.current.startRight - deltaX),
-    });
+    setPosition(
+      clampPosition({
+        bottom: dragStart.current.startBottom - deltaY,
+        right: dragStart.current.startRight - deltaX,
+      })
+    );
   }, []);
 
   const startDrag = (clientX: number, clientY: number) => {
@@ -124,7 +171,7 @@ function Whiteboard() {
     dragStart.current = {
       x: clientX,
       y: clientY,
-      startTop: position.top,
+      startBottom: position.bottom,
       startRight: position.right,
     };
     dragDistance.current = 0;
@@ -169,7 +216,7 @@ function Whiteboard() {
     <Box
       sx={{
         position: 'fixed',
-        top: position.top,
+        bottom: position.bottom,
         right: position.right,
         zIndex: 1200,
         display: 'flex',
@@ -227,8 +274,10 @@ function Whiteboard() {
       {expanded && (
         <Box
           sx={{
-            width: { xs: '80vw', sm: '45vw', md: '50vw' },
-            height: '90vh',
+            // narrow & tall (vertical) so it sits beside a question instead
+            // of covering it; drag the header to move it clear altogether
+            width: { xs: 190, sm: 230, md: 250 },
+            height: 'min(46vh, 380px)',
             display: 'flex',
             flexDirection: 'column',
             bgcolor: withAlpha(palette.navy950, 0.95),
@@ -257,7 +306,7 @@ function Whiteboard() {
               '&:active': { cursor: 'grabbing' },
             }}
           >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
               <WhiteboardIcon
                 sx={{ color: palette.amber450, fontSize: '1.1rem' }}
               />
@@ -265,59 +314,45 @@ function Whiteboard() {
                 sx={{
                   color: palette.amber450,
                   fontWeight: 'bold',
-                  fontSize: '0.9rem',
+                  fontSize: '0.8rem',
                 }}
               >
-                Whiteboard
+                Drag me ✋
               </Typography>
             </Box>
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <Button
+            <Box sx={{ display: 'flex', gap: 0.5 }}>
+              <IconButton
                 size="small"
-                startIcon={<EraseIcon sx={{ fontSize: '1rem !important' }} />}
                 onClick={erase}
+                aria-label="Clear the whiteboard"
                 sx={{
-                  borderRadius: '14px',
-                  textTransform: 'none',
-                  fontSize: '0.75rem',
-                  fontWeight: 'bold',
                   color: palette.amber450,
                   border: `1px solid ${withAlpha(palette.amber450, 0.4)}`,
-                  px: 1.5,
-                  py: 0.5,
-                  minWidth: 0,
+                  p: 0.5,
                   '&:hover': {
                     bgcolor: withAlpha(palette.amber450, 0.1),
                     borderColor: palette.amber450,
                   },
                 }}
               >
-                Clear
-              </Button>
-              <Button
+                <EraseIcon sx={{ fontSize: '1.05rem' }} />
+              </IconButton>
+              <IconButton
                 size="small"
-                startIcon={
-                  <ExpandLessIcon sx={{ fontSize: '1rem !important' }} />
-                }
                 onClick={() => setExpanded(false)}
+                aria-label="Minimize the whiteboard"
                 sx={{
-                  borderRadius: '14px',
-                  textTransform: 'none',
-                  fontSize: '0.75rem',
-                  fontWeight: 'bold',
                   color: palette.slate400,
                   border: `1px solid ${withAlpha(palette.slate400, 0.3)}`,
-                  px: 1.5,
-                  py: 0.5,
-                  minWidth: 0,
+                  p: 0.5,
                   '&:hover': {
                     bgcolor: withAlpha(palette.slate400, 0.1),
                     borderColor: palette.slate400,
                   },
                 }}
               >
-                Minimize
-              </Button>
+                <ExpandLessIcon sx={{ fontSize: '1.05rem' }} />
+              </IconButton>
             </Box>
           </Box>
 
