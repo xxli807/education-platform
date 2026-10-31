@@ -170,11 +170,44 @@ function QuestionView({
               fontSize: '1rem',
               mb: oneLine ? 0 : 1,
               fontWeight: 500,
+              // keep line breaks in prompts (bullet clues, number sequences)
+              whiteSpace: 'pre-line',
             }}
           >
             {q.n ? <NumberBadge n={q.n} /> : null}
             {q.prompt}
           </Typography>
+        )}
+
+        {q.type === 'mcq' && q.table && (
+          <Box
+            sx={{
+              display: 'inline-block',
+              px: 2,
+              py: 1,
+              mb: 1,
+              ml: 2,
+              borderRadius: '10px',
+              bgcolor: C.subBg,
+              border: `1px solid ${C.border}`,
+              overflowX: 'auto',
+              maxWidth: '100%',
+            }}
+          >
+            <Typography
+              component="pre"
+              sx={{
+                color: C.heading,
+                fontFamily: 'monospace',
+                fontSize: '1rem',
+                lineHeight: 1.6,
+                m: 0,
+                whiteSpace: 'pre',
+              }}
+            >
+              {q.table}
+            </Typography>
+          </Box>
         )}
 
         {q.type === 'mcq' && (

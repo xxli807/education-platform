@@ -22,6 +22,8 @@ export type TestQuestion =
        * instead of the prompt text; options then render as a row of letters.
        */
       image?: string;
+      /** Small monospace table shown under the prompt (e.g. data for a maths question). */
+      table?: string;
       /** Worked explanation shown after the test is finished. */
       explanation?: string;
       /** Picture of a worked explanation (relative to the public folder). */
