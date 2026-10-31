@@ -22,6 +22,10 @@ export type TestQuestion =
        * instead of the prompt text; options then render as a row of letters.
        */
       image?: string;
+      /** Worked explanation shown after the test is finished. */
+      explanation?: string;
+      /** Picture of a worked explanation (relative to the public folder). */
+      explanationImage?: string;
     }
   | {
       type: 'short';
@@ -57,6 +61,8 @@ export interface TestBlock {
   passage?: string;
   /** Optional monospace ASCII diagram of a visual pattern (sticks, straws, etc.). */
   diagram?: string;
+  /** Optional picture shown above the questions (e.g. a scanned reading passage). */
+  image?: string;
   /** Optional multi-line note / planning tips shown full-width above the questions. */
   note?: string;
   /** Default for the block's short questions: digits-only answers → numeric keypad. */
