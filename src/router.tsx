@@ -44,6 +44,7 @@ const MathsOlympiadSection = lazy(
   () => import('./components/MathsOlympiadSection')
 );
 const TestsSection = lazy(() => import('./components/TestsSection'));
+const OCSection = lazy(() => import('./components/OCSection'));
 
 // Root route
 const rootRoute = createRootRoute({
@@ -126,6 +127,13 @@ const testsRoute = createRoute({
   component: TestsSection,
 });
 
+const ocRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/oc',
+  beforeLoad: authGuard,
+  component: OCSection,
+});
+
 // Build route tree
 const routeTree = rootRoute.addChildren([
   loginRoute,
@@ -138,6 +146,7 @@ const routeTree = rootRoute.addChildren([
   playRoute,
   olympiadRoute,
   testsRoute,
+  ocRoute,
 ]);
 
 // Create router
