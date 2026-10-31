@@ -11,6 +11,8 @@ export interface OcAttempt {
   /** Seconds actually used (the full time limit if the timer ran out). */
   usedSec: number;
   minutes: number;
+  /** When this attempt's timer started — with practice + paper, unique per attempt. */
+  startedAt?: number;
   finishedAt: number;
   timedOut: boolean;
 }

@@ -45,6 +45,14 @@ function OCProgress({
     );
   }
 
+  // attempts for papers that were renamed or removed since
+  const known = new Set(
+    collection.practices.flatMap(pr =>
+      pr.papers.map(p => `${pr.label}.${p.id}`)
+    )
+  );
+  const orphans = history.filter(a => !known.has(`${a.practice}.${a.paperId}`));
+
   return (
     <>
       {collection.practices.flatMap(practice =>
@@ -88,7 +96,7 @@ function OCProgress({
                 const pct = Math.round((a.score / a.total) * 100);
                 return (
                   <Box
-                    key={a.finishedAt}
+                    key={`${a.startedAt ?? 0}.${a.finishedAt}.${i}`}
                     sx={{
                       display: 'grid',
                       gridTemplateColumns: {
@@ -139,6 +147,17 @@ function OCProgress({
             </Box>
           );
         })
+      )}
+      {orphans.length > 0 && (
+        <Typography sx={{ color: palette.gray950, fontSize: '0.9rem', mb: 1 }}>
+          Older attempts:{' '}
+          {orphans
+            .map(
+              a =>
+                `${a.practice} ${a.paperTitle} ${a.score}/${a.total} (${dateFmt.format(a.finishedAt)})`
+            )
+            .join(' · ')}
+        </Typography>
       )}
       <Typography sx={{ color: palette.gray950, fontSize: '0.85rem', mt: 1 }}>
         ⏰ = time ran out before the test was finished.

@@ -1,11 +1,11 @@
 import { palette, withAlpha } from '../theme/palette';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SaveIcon from '@mui/icons-material/Save';
 import { Box, IconButton, Typography, Tabs, Tab, Button } from '@mui/material';
 import type { TestQuestion } from '../data/testsContent';
-import type { OcCollection, OcPaper } from '../data/ocTypes';
+import type { OcCollection, OcPaper, OcPractice } from '../data/ocTypes';
 import {
   formatDuration,
   loadHistory,
@@ -15,6 +15,9 @@ import {
 import { AnswersContext, C, LETTERS } from './testShared';
 import { BlockView } from './testViews';
 import OCProgress from './OCProgress';
+
+/** Saved-answer prefix: label + paper id, not tab position, so reordering keeps answers. */
+const paperKey = (label: string, p: OcPaper) => `${label}.${p.id}`;
 
 /** Every question of a paper in order, with the id its answer is saved under. */
 function paperQuestions(paper: OcPaper, paperId: string) {
@@ -74,12 +77,49 @@ const primaryButtonSx = {
 
 const outlineButtonSx = { ...buttonSx, color: C.accent, borderColor: C.accent };
 
+/**
+ * Header countdown. Ticks on its own each second so the paper below doesn't
+ * re-render; the page itself finishes the test when the deadline passes.
+ */
+function Countdown({ deadline }: { deadline: number }) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, []);
+  const left = Math.max(0, Math.ceil((deadline - now) / 1000));
+  const tone =
+    left <= 60 ? palette.red550 : left <= 300 ? palette.amber950 : C.accent;
+  return (
+    <Box
+      role="timer"
+      aria-label={`${formatDuration(left)} left`}
+      sx={{
+        px: 1.5,
+        py: 0.5,
+        borderRadius: '12px',
+        border: `2px solid ${tone}`,
+        bgcolor: withAlpha(tone, 0.1),
+        color: tone,
+        fontWeight: 900,
+        fontSize: '1.1rem',
+        fontVariantNumeric: 'tabular-nums',
+      }}
+    >
+      ⏱ {formatDuration(left)}
+    </Box>
+  );
+}
+
 /** Shown before the timer starts, so the questions can't be previewed. */
 function StartPanel({
   paper,
+  savedBefore,
   onStart,
 }: {
   paper: OcPaper;
+  /** Answers saved before the timer existed; starting clears them. */
+  savedBefore: number;
   onStart: () => void;
 }) {
   const count = paperQuestions(paper, '').length;
@@ -98,6 +138,12 @@ function StartPanel({
         The timer starts when you tap Start and keeps going even if you leave
         this page. When time runs out the test finishes by itself.
       </Typography>
+      {savedBefore > 0 && (
+        <Typography sx={{ color: palette.amber950, fontWeight: 700, mb: 2 }}>
+          Starting clears the {savedBefore} answer
+          {savedBefore === 1 ? '' : 's'} saved from before.
+        </Typography>
+      )}
       <Button
         onClick={onStart}
         variant="contained"
@@ -202,6 +248,7 @@ function FinishPanel({
   answers,
   finished,
   usedSec,
+  timedOut,
   onFinish,
   onRestart,
 }: {
@@ -210,6 +257,7 @@ function FinishPanel({
   answers: Record<string, string>;
   finished: boolean;
   usedSec?: number;
+  timedOut: boolean;
   onFinish: () => void;
   onRestart: () => void;
 }) {
@@ -287,7 +335,7 @@ function FinishPanel({
       {usedSec !== undefined && (
         <Typography sx={{ color: palette.gray950, mb: 2 }}>
           Time used: {formatDuration(usedSec)} of {paper.minutes}:00
-          {usedSec >= paper.minutes * 60 ? ' — time ran out ⏰' : ''}
+          {timedOut ? ' — time ran out ⏰' : ''}
         </Typography>
       )}
       <Box
@@ -391,7 +439,8 @@ function OCSection({ collection }: { collection: OcCollection }) {
   const { practices, storageKey } = collection;
   const [tab, setTab] = useState(0);
   const [paperIdx, setPaperIdx] = useState(0);
-  const [now, setNow] = useState(() => Date.now());
+  // Bumped when a paper's deadline passes, so locks and auto-finish re-run.
+  const [clock, setClock] = useState(() => Date.now());
   const [answers, setAnswers] = useState<Record<string, string>>(() => {
     try {
       return JSON.parse(localStorage.getItem(storageKey) || '{}');
@@ -409,8 +458,6 @@ function OCSection({ collection }: { collection: OcCollection }) {
   const showProgress = tab === practices.length;
   const practice = practices[Math.min(tab, practices.length - 1)];
   const paper = practice.papers[paperIdx];
-  // Keyed by label + paper id, not tab position, so reordering keeps answers.
-  const paperKey = (label: string, p: OcPaper) => `${label}.${p.id}`;
   const paperId = paperKey(practice.label, paper);
 
   // Auto-save every pick: losing a half-done paper to a reload or the back
@@ -426,58 +473,91 @@ function OCSection({ collection }: { collection: OcCollection }) {
   useEffect(() => saveHistory(storageKey, history), [history, storageKey]);
 
   // Timer state lives with the answers so it survives reloads.
-  const startedAt = Number(answers[`${paperId}.startedAt`] || 0);
+  const startedOf = (id: string) => Number(answers[`${id}.startedAt`] || 0);
+  const isRunning = (id: string) =>
+    startedOf(id) > 0 && answers[`${id}.finished`] !== '1';
+  const deadlineOf = (id: string, p: OcPaper) =>
+    startedOf(id) + p.minutes * 60 * 1000;
+
+  const startedAt = startedOf(paperId);
   const finished = answers[`${paperId}.finished`] === '1';
   const usedRaw = answers[`${paperId}.usedSec`];
   const usedSec = usedRaw === undefined ? undefined : Number(usedRaw);
-  const running = startedAt > 0 && !finished;
-  const limitSec = paper.minutes * 60;
-  const remainingSec = running
-    ? limitSec - Math.max(0, Math.floor((now - startedAt) / 1000))
-    : limitSec;
+  const timedOut = answers[`${paperId}.timedOut`] === '1';
+  const running = isRunning(paperId);
+  // Answers lock the moment time is up, even before the auto-finish lands.
+  const open = running && clock < deadlineOf(paperId, paper);
 
-  useEffect(() => {
-    if (!running) return;
-    const id = window.setInterval(() => setNow(Date.now()), 1000);
-    return () => window.clearInterval(id);
-  }, [running]);
-
-  const finishPaper = (secondsUsed: number, timedOut: boolean) => {
-    if (finishing.current.has(paperId)) return;
-    finishing.current.add(paperId);
-    const used = Math.min(limitSec, Math.max(0, secondsUsed));
-    const { correct, questions } = scoreOf(paper, paperId, answers);
+  const finishPaper = (
+    entry: { practice: OcPractice; paper: OcPaper; id: string },
+    secondsUsed: number,
+    byTimeout: boolean
+  ) => {
+    if (finishing.current.has(entry.id)) return;
+    finishing.current.add(entry.id);
+    const limit = entry.paper.minutes * 60;
+    const used = Math.min(limit, Math.max(0, secondsUsed));
+    const started = startedOf(entry.id);
+    const { correct, questions } = scoreOf(entry.paper, entry.id, answers);
     setAnswers(prev => ({
       ...prev,
-      [`${paperId}.finished`]: '1',
-      [`${paperId}.usedSec`]: String(used),
+      [`${entry.id}.finished`]: '1',
+      [`${entry.id}.usedSec`]: String(used),
+      ...(byTimeout ? { [`${entry.id}.timedOut`]: '1' } : {}),
     }));
     setHistory(prev => [
       ...prev,
       {
-        practice: practice.label,
-        paperId: paper.id,
-        paperTitle: paper.title,
+        practice: entry.practice.label,
+        paperId: entry.paper.id,
+        paperTitle: entry.paper.title,
         score: correct,
         total: questions.length,
         usedSec: used,
-        minutes: paper.minutes,
-        finishedAt: timedOut ? startedAt + limitSec * 1000 : Date.now(),
-        timedOut,
+        minutes: entry.paper.minutes,
+        startedAt: started,
+        finishedAt: byTimeout ? started + limit * 1000 : Date.now(),
+        timedOut: byTimeout,
       },
     ]);
   };
 
-  // Time's up → finish automatically, like the real test.
+  // Time's up → finish automatically, like the real test — for every paper in
+  // this card, including ones not on screen. Then sleep until the next
+  // deadline (no per-second re-render of the whole paper).
   useEffect(() => {
-    if (running && remainingSec <= 0) finishPaper(limitSec, true);
+    const t = Date.now();
+    const runningPapers = practices.flatMap(pr =>
+      pr.papers
+        .map(p => ({ practice: pr, paper: p, id: paperKey(pr.label, p) }))
+        .filter(x => isRunning(x.id))
+    );
+    for (const x of runningPapers) {
+      if (deadlineOf(x.id, x.paper) <= t)
+        finishPaper(x, x.paper.minutes * 60, true);
+    }
+    const upcoming = runningPapers
+      .map(x => deadlineOf(x.id, x.paper))
+      .filter(d => d > t);
+    if (upcoming.length === 0) return;
+    const id = window.setTimeout(
+      () => setClock(Date.now()),
+      Math.min(...upcoming) - t + 50
+    );
+    return () => window.clearTimeout(id);
   });
 
   const handleStart = () => {
     finishing.current.delete(paperId);
     const t = Date.now();
-    setNow(t);
-    setAnswers(prev => ({ ...prev, [`${paperId}.startedAt`]: String(t) }));
+    setClock(t);
+    // a fresh timed attempt: drop anything saved for this paper before
+    setAnswers(prev => ({
+      ...Object.fromEntries(
+        Object.entries(prev).filter(([k]) => !k.startsWith(`${paperId}.`))
+      ),
+      [`${paperId}.startedAt`]: String(t),
+    }));
     scrollRef.current?.scrollTo({ top: 0 });
   };
 
@@ -501,18 +581,25 @@ function OCSection({ collection }: { collection: OcCollection }) {
     scrollRef.current?.scrollTo({ top: 0 });
   };
 
-  const ctx = {
-    get: (id: string) => answers[id] ?? '',
-    set: (id: string, value: string) => {
-      if (running) setAnswers(prev => ({ ...prev, [id]: value }));
-    },
-    locked: !running,
-  };
-
-  const { picked } = scoreOf(paper, paperId, answers);
-  const qIndex = new Map(
-    paperQuestions(paper, paperId).map((q, i) => [q.qid, i])
+  const ctx = useMemo(
+    () => ({
+      get: (id: string) => answers[id] ?? '',
+      set: (id: string, value: string) => {
+        if (open) setAnswers(prev => ({ ...prev, [id]: value }));
+      },
+      locked: !open,
+    }),
+    [answers, open]
   );
+
+  const { picked, questions: currentQuestions } = scoreOf(
+    paper,
+    paperId,
+    answers
+  );
+  // answers kept from the untimed version, mentioned on the start screen
+  const savedBefore = currentQuestions.filter(q => picked(q.qid)).length;
+  const qIndex = new Map(currentQuestions.map((q, i) => [q.qid, i]));
   const review = (q: TestQuestion, qid: string) => {
     const i = qIndex.get(qid);
     if (!finished || i === undefined) return null;
@@ -520,13 +607,6 @@ function OCSection({ collection }: { collection: OcCollection }) {
       <QuestionReview q={q} mine={picked(qid)} correct={paper.answers[i]} />
     );
   };
-
-  const timerTone =
-    remainingSec <= 60
-      ? palette.red550
-      : remainingSec <= 300
-        ? palette.amber950
-        : C.accent;
 
   return (
     <AnswersContext.Provider value={ctx}>
@@ -572,23 +652,7 @@ function OCSection({ collection }: { collection: OcCollection }) {
               {collection.title}
             </Typography>
             {!showProgress && running && (
-              <Box
-                role="timer"
-                aria-label={`${formatDuration(remainingSec)} left`}
-                sx={{
-                  px: 1.5,
-                  py: 0.5,
-                  borderRadius: '12px',
-                  border: `2px solid ${timerTone}`,
-                  bgcolor: withAlpha(timerTone, 0.1),
-                  color: timerTone,
-                  fontWeight: 900,
-                  fontSize: '1.1rem',
-                  fontVariantNumeric: 'tabular-nums',
-                }}
-              >
-                ⏱ {formatDuration(remainingSec)}
-              </Box>
+              <Countdown deadline={deadlineOf(paperId, paper)} />
             )}
             {savedFlash && (
               <Typography
@@ -744,6 +808,7 @@ function OCSection({ collection }: { collection: OcCollection }) {
                   <StartPanel
                     key={paperId}
                     paper={paper}
+                    savedBefore={savedBefore}
                     onStart={handleStart}
                   />
                 ) : (
@@ -765,8 +830,10 @@ function OCSection({ collection }: { collection: OcCollection }) {
                       answers={answers}
                       finished={finished}
                       usedSec={usedSec}
+                      timedOut={timedOut}
                       onFinish={() =>
                         finishPaper(
+                          { practice, paper, id: paperId },
                           Math.round((Date.now() - startedAt) / 1000),
                           false
                         )
