@@ -318,7 +318,7 @@ function OCSection() {
             bgcolor: palette.white,
             borderBottom: `1px solid ${C.border}`,
             boxShadow: `0 2px 8px ${withAlpha(palette.black, 0.08)}`,
-            px: { xs: 2, sm: 4, md: 6 },
+            px: { xs: 1, sm: 1.5, md: 6 },
             pt: 1.5,
           }}
         >
@@ -401,7 +401,7 @@ function OCSection() {
         >
           <Box
             sx={{
-              px: { xs: 2, sm: 4, md: 6 },
+              px: { xs: 1, sm: 1.5, md: 6 },
               py: 3,
               maxWidth: 980,
               mx: 'auto',

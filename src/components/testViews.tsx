@@ -348,7 +348,8 @@ export function BlockView({
     <Box
       sx={{
         mb: 3,
-        p: { xs: 2, sm: 3 },
+        // tight on phones / iPad portrait so reading text gets the width
+        p: { xs: 1.5, md: 3 },
         borderRadius: '16px',
         bgcolor: C.panel,
         border: `1px solid ${C.border}`,
@@ -421,7 +422,7 @@ export function BlockView({
               width: '100%',
               flex: { md: '0 0 45%' },
               maxWidth: { md: '45%' },
-              p: 2,
+              p: { xs: 1.5, md: 2 },
               borderRadius: '12px',
               bgcolor: C.subBg,
               border: `1px solid ${C.border}`,
