@@ -21,6 +21,7 @@ import {
   SportsEsports as PlayIcon,
   MilitaryTech as OlympiadIcon,
   Assignment as TestsIcon,
+  School as OCIcon,
   Logout as LogoutIcon,
 } from '@mui/icons-material';
 import { useCurrentUser, useLogoutMutation } from '../hooks/useAuth';
@@ -925,6 +926,58 @@ function Dashboard() {
                 sx={{ color: palette.blue225, fontStyle: 'italic' }}
               >
                 Tap to start a test ✏️
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* OC Card */}
+        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Card
+            sx={{
+              ...cardStyle,
+              background: `linear-gradient(135deg, ${palette.navy950} 0%, ${palette.blue950} 40%, ${palette.cyan950} 100%)`,
+              border: `3px solid ${palette.cyan775}`,
+              '&:hover': {
+                ...cardStyle['&:hover'],
+                borderColor: palette.cyan400,
+                boxShadow: `0 12px 36px ${withAlpha(palette.cyan775, 0.3)}`,
+              },
+            }}
+            onClick={() => navigate({ to: '/oc' })}
+          >
+            <CardContent
+              sx={{
+                textAlign: 'center',
+                p: 3,
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+              }}
+            >
+              <OCIcon sx={{ fontSize: 56, color: palette.cyan400, mb: 1 }} />
+              <Typography
+                variant="h5"
+                sx={{
+                  color: palette.blue100,
+                  fontWeight: 'bold',
+                  mb: 1,
+                  letterSpacing: '1px',
+                }}
+              >
+                OC 🎓
+              </Typography>
+              <Typography
+                sx={{ color: palette.cyan400, mb: 2, fontSize: '0.95rem' }}
+              >
+                Opportunity Class practice tests!
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{ color: palette.cyan400, fontStyle: 'italic' }}
+              >
+                Reading · Maths · Thinking ✏️
               </Typography>
             </CardContent>
           </Card>

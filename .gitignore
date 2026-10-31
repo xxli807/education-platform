@@ -65,3 +65,6 @@ Thumbs.db
 *.pid
 *.seed
 *.pid.lock
+
+# OC practice test source PDFs (content lives in src/data/ocContent.ts + public/oc)
+/oc/

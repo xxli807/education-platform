@@ -10,7 +10,19 @@
 // Transcription progress: Week 1 done. Weeks 2-4 + Sample Tests to follow.
 
 export type TestQuestion =
-  | { type: 'mcq'; n?: string; prompt: string; options: string[] }
+  | {
+      type: 'mcq';
+      n?: string;
+      prompt: string;
+      options: string[];
+      /** Lay the options out in one line (short words or bare A–E letters). */
+      row?: boolean;
+      /**
+       * Picture of the whole question (relative to the public folder) shown
+       * instead of the prompt text; options then render as a row of letters.
+       */
+      image?: string;
+    }
   | {
       type: 'short';
       n?: string;
