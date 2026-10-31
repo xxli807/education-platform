@@ -42,10 +42,11 @@ function NumberBadge({ n }: { n: string }) {
 
 /** A single small inline input used in place of a `__` blank. */
 function BlankInput({ id, numeric }: { id: string; numeric?: boolean }) {
-  const { get, set } = useAnswers();
+  const { get, set, locked } = useAnswers();
   const value = get(id);
   return (
     <TextField
+      disabled={locked}
       variant="outlined"
       size="small"
       value={value}
@@ -233,6 +234,7 @@ function QuestionView({
               const id = (q.inputs ?? 1) > 1 ? `${qid}-${i}` : qid;
               return (
                 <TextField
+                  disabled={locked}
                   key={i}
                   variant="outlined"
                   size="small"
@@ -255,6 +257,7 @@ function QuestionView({
 
       {q.type === 'long' && (
         <TextField
+          disabled={locked}
           variant="outlined"
           multiline
           minRows={8}
@@ -309,6 +312,7 @@ function QuestionView({
             Listen
           </Button>
           <TextField
+            disabled={locked}
             variant="outlined"
             size="small"
             placeholder="Write the word"

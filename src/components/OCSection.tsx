@@ -1,5 +1,5 @@
 import { palette, withAlpha } from '../theme/palette';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SaveIcon from '@mui/icons-material/Save';
@@ -93,7 +93,11 @@ function FinishPanel({
           {confirming ? (
             <>
               <Button
-                onClick={onFinish}
+                onClick={() => {
+                  // don't carry this confirm over into the "Start again" one
+                  setConfirming(false);
+                  onFinish();
+                }}
                 variant="contained"
                 sx={{
                   ...buttonSx,
@@ -250,10 +254,20 @@ function OCSection() {
 
   const papers = ocPractices[practice].papers;
   const paper = papers[subject];
-  const paperId = `${practice}.${paper.subject}`;
+  // Keyed by label, not tab position, so reordering practices keeps answers.
+  const paperId = `${ocPractices[practice].label}.${paper.subject}`;
+
+  // Auto-save every pick: losing a half-done 40-minute paper to a reload or
+  // the back button is worse than a few extra writes.
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(answers));
+    } catch {
+      // storage full / private mode — answers stay in memory for this visit
+    }
+  }, [answers]);
 
   const handleSave = () => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(answers));
     setSavedFlash(true);
     window.setTimeout(() => setSavedFlash(false), 1800);
   };
@@ -267,17 +281,13 @@ function OCSection() {
   const finishedKey = `${paperId}.finished`;
   const finished = answers[finishedKey] === '1';
 
-  const persist = (next: Record<string, string>) => {
-    setAnswers(next);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-  };
-
-  const handleFinish = () => persist({ ...answers, [finishedKey]: '1' });
+  const handleFinish = () =>
+    setAnswers(prev => ({ ...prev, [finishedKey]: '1' }));
 
   const handleRestart = () =>
-    persist(
+    setAnswers(prev =>
       Object.fromEntries(
-        Object.entries(answers).filter(([k]) => !k.startsWith(`${paperId}.`))
+        Object.entries(prev).filter(([k]) => !k.startsWith(`${paperId}.`))
       )
     );
 
