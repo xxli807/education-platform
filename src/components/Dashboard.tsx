@@ -23,6 +23,7 @@ import {
   Assignment as TestsIcon,
   School as OCIcon,
   HistoryEdu as OCPastIcon,
+  AutoAwesome as OCExtraIcon,
   Logout as LogoutIcon,
 } from '@mui/icons-material';
 import { useCurrentUser, useLogoutMutation } from '../hooks/useAuth';
@@ -1032,6 +1033,59 @@ function Dashboard() {
                 sx={{ color: palette.purple150, fontStyle: 'italic' }}
               >
                 Part 1 · Part 2 · 30 min each
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        {/* OC Extra Practice Card */}
+        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Card
+            sx={{
+              ...cardStyle,
+              background: `linear-gradient(135deg, ${palette.navy950} 0%, ${palette.teal875} 40%, ${palette.green575} 100%)`,
+              border: `3px solid ${palette.teal450}`,
+              '&:hover': {
+                ...cardStyle['&:hover'],
+                borderColor: palette.teal100,
+                boxShadow: `0 12px 36px ${withAlpha(palette.teal450, 0.3)}`,
+              },
+            }}
+            onClick={() => navigate({ to: '/oc-extra' })}
+          >
+            <CardContent
+              sx={{
+                textAlign: 'center',
+                p: 3,
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+              }}
+            >
+              <OCExtraIcon
+                sx={{ fontSize: 56, color: palette.teal100, mb: 1 }}
+              />
+              <Typography
+                variant="h5"
+                sx={{
+                  color: palette.blue100,
+                  fontWeight: 'bold',
+                  mb: 1,
+                  letterSpacing: '1px',
+                }}
+              >
+                OC Extra Practice ✨
+              </Typography>
+              <Typography
+                sx={{ color: palette.teal100, mb: 2, fontSize: '0.95rem' }}
+              >
+                Original OC-style sets (not official)
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{ color: palette.teal100, fontStyle: 'italic' }}
+              >
+                3 sets · Reading · Maths · Thinking
               </Typography>
             </CardContent>
           </Card>
