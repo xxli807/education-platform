@@ -1,5 +1,5 @@
 import { palette, withAlpha } from '../theme/palette';
-import { Fragment } from 'react';
+import { Fragment, type ReactNode } from 'react';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import {
   Box,
@@ -103,12 +103,15 @@ function QuestionView({
   qid,
   blockNumeric,
   lettered,
+  after,
 }: {
   q: TestQuestion;
   qid: string;
   blockNumeric?: boolean;
   /** Prefix options with A, B, C… so they can be matched to an answer key. */
   lettered?: boolean;
+  /** Extra content under the question, e.g. the review after a test. */
+  after?: ReactNode;
 }) {
   const { get, set, locked } = useAnswers();
   const inlineBlanks = q.type === 'short' && BLANK_RE.test(q.prompt);
@@ -121,208 +124,211 @@ function QuestionView({
   const oneLine = row && !image && !q.prompt;
 
   return (
-    <Box
-      sx={{
-        mb: 2,
-        ...(oneLine && {
-          display: 'flex',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-        }),
-      }}
-    >
-      {image ? (
-        // The picture already shows the question number, text and options.
-        <Box
-          component="img"
-          src={`${import.meta.env.BASE_URL}${image}`}
-          alt={`Question ${q.n ?? ''}`}
-          loading="lazy"
-          sx={{
-            display: 'block',
-            width: '100%',
-            maxWidth: 640,
-            height: 'auto',
-            mb: 1,
-          }}
-        />
-      ) : inlineBlanks ? (
-        <Box
-          sx={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            alignItems: 'center',
-            mb: 1,
-          }}
-        >
-          {q.n ? <NumberBadge n={q.n} /> : null}
-          <InlineBlanks prompt={q.prompt} qid={qid} numeric={numeric} />
-        </Box>
-      ) : (
-        <Typography
-          component={oneLine ? 'span' : 'p'}
-          sx={{
-            color: C.text,
-            fontSize: '1rem',
-            mb: oneLine ? 0 : 1,
-            fontWeight: 500,
-          }}
-        >
-          {q.n ? <NumberBadge n={q.n} /> : null}
-          {q.prompt}
-        </Typography>
-      )}
-
-      {q.type === 'mcq' && (
-        <RadioGroup
-          row={row}
-          sx={{ pl: oneLine ? 0 : 2, columnGap: row ? 1 : 0 }}
-          value={get(qid)}
-          onChange={(_, v) => set(qid, v)}
-        >
-          {q.options.map((opt, i) => (
-            <FormControlLabel
-              key={i}
-              value={String(i)}
-              disabled={locked}
-              control={
-                <Radio
-                  size="small"
-                  sx={{
-                    color: palette.slate400,
-                    // keep the child's pick visible after answers are locked
-                    '&.Mui-checked, &.Mui-checked.Mui-disabled': {
-                      color: C.accent,
-                    },
-                  }}
-                />
-              }
-              label={
-                <Typography sx={{ color: C.text, fontSize: '0.95rem' }}>
-                  {lettered && opt !== LETTERS[i] && (
-                    <Box
-                      component="span"
-                      sx={{ fontWeight: 700, color: C.accent, mr: 1 }}
-                    >
-                      {LETTERS[i]}
-                    </Box>
-                  )}
-                  {opt}
-                </Typography>
-              }
-            />
-          ))}
-        </RadioGroup>
-      )}
-
-      {q.type === 'short' && !inlineBlanks && (
-        <Box>
-          {q.example && (
-            <Typography
-              sx={{
-                color: palette.gray950,
-                fontStyle: 'italic',
-                fontSize: '0.95rem',
-                mb: 0.75,
-              }}
-            >
-              e.g. {q.example}
-            </Typography>
-          )}
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-            {Array.from({ length: q.inputs ?? 1 }).map((_, i) => {
-              const id = (q.inputs ?? 1) > 1 ? `${qid}-${i}` : qid;
-              return (
-                <TextField
-                  disabled={locked}
-                  key={i}
-                  variant="outlined"
-                  size="small"
-                  placeholder="Your answer"
-                  value={get(id)}
-                  onChange={e => set(id, e.target.value)}
-                  slotProps={
-                    numeric ? { htmlInput: numericInputProps } : undefined
-                  }
-                  sx={{
-                    width: (q.inputs ?? 1) > 1 ? 200 : 320,
-                    ...inputFieldSx,
-                  }}
-                />
-              );
-            })}
-          </Box>
-        </Box>
-      )}
-
-      {q.type === 'long' && (
-        <TextField
-          disabled={locked}
-          variant="outlined"
-          multiline
-          minRows={8}
-          fullWidth
-          placeholder="Write your answer here…"
-          value={get(qid)}
-          onChange={e => set(qid, e.target.value)}
-          sx={{
-            ...inputFieldSx,
-            '& .MuiOutlinedInput-root': {
-              ...inputFieldSx['& .MuiOutlinedInput-root'],
-              fontSize: '1rem',
-              lineHeight: 1.8,
-              alignItems: 'flex-start',
-            },
-            // Let the child drag the box taller; also auto-grows as they type.
-            '& textarea': { resize: 'vertical', overflow: 'auto' },
-          }}
-        />
-      )}
-
-      {q.type === 'dictation' && (
-        <Box
-          sx={{
+    <>
+      <Box
+        sx={{
+          mb: 2,
+          ...(oneLine && {
             display: 'flex',
             alignItems: 'center',
-            gap: 1.5,
             flexWrap: 'wrap',
-            mt: 0.5,
-          }}
-        >
-          <Button
-            onClick={() =>
-              speak(
-                `${q.word}. ${q.prompt.replace(/_{2,}/, q.word)}. ${q.word}.`
-              )
-            }
-            startIcon={<VolumeUpIcon />}
-            variant="outlined"
-            size="small"
+          }),
+        }}
+      >
+        {image ? (
+          // The picture already shows the question number, text and options.
+          <Box
+            component="img"
+            src={`${import.meta.env.BASE_URL}${image}`}
+            alt={`Question ${q.n ?? ''}`}
+            loading="lazy"
             sx={{
-              color: C.accent,
-              borderColor: withAlpha(C.accent, 0.6),
-              textTransform: 'none',
-              fontWeight: 700,
-              '&:hover': {
-                borderColor: C.accent,
-                bgcolor: withAlpha(C.accent, 0.08),
-              },
+              display: 'block',
+              width: '100%',
+              maxWidth: 640,
+              height: 'auto',
+              mb: 1,
+            }}
+          />
+        ) : inlineBlanks ? (
+          <Box
+            sx={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              mb: 1,
             }}
           >
-            Listen
-          </Button>
+            {q.n ? <NumberBadge n={q.n} /> : null}
+            <InlineBlanks prompt={q.prompt} qid={qid} numeric={numeric} />
+          </Box>
+        ) : (
+          <Typography
+            component={oneLine ? 'span' : 'p'}
+            sx={{
+              color: C.text,
+              fontSize: '1rem',
+              mb: oneLine ? 0 : 1,
+              fontWeight: 500,
+            }}
+          >
+            {q.n ? <NumberBadge n={q.n} /> : null}
+            {q.prompt}
+          </Typography>
+        )}
+
+        {q.type === 'mcq' && (
+          <RadioGroup
+            row={row}
+            sx={{ pl: oneLine ? 0 : 2, columnGap: row ? 1 : 0 }}
+            value={get(qid)}
+            onChange={(_, v) => set(qid, v)}
+          >
+            {q.options.map((opt, i) => (
+              <FormControlLabel
+                key={i}
+                value={String(i)}
+                disabled={locked}
+                control={
+                  <Radio
+                    size="small"
+                    sx={{
+                      color: palette.slate400,
+                      // keep the child's pick visible after answers are locked
+                      '&.Mui-checked, &.Mui-checked.Mui-disabled': {
+                        color: C.accent,
+                      },
+                    }}
+                  />
+                }
+                label={
+                  <Typography sx={{ color: C.text, fontSize: '0.95rem' }}>
+                    {lettered && opt !== LETTERS[i] && (
+                      <Box
+                        component="span"
+                        sx={{ fontWeight: 700, color: C.accent, mr: 1 }}
+                      >
+                        {LETTERS[i]}
+                      </Box>
+                    )}
+                    {opt}
+                  </Typography>
+                }
+              />
+            ))}
+          </RadioGroup>
+        )}
+
+        {q.type === 'short' && !inlineBlanks && (
+          <Box>
+            {q.example && (
+              <Typography
+                sx={{
+                  color: palette.gray950,
+                  fontStyle: 'italic',
+                  fontSize: '0.95rem',
+                  mb: 0.75,
+                }}
+              >
+                e.g. {q.example}
+              </Typography>
+            )}
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+              {Array.from({ length: q.inputs ?? 1 }).map((_, i) => {
+                const id = (q.inputs ?? 1) > 1 ? `${qid}-${i}` : qid;
+                return (
+                  <TextField
+                    disabled={locked}
+                    key={i}
+                    variant="outlined"
+                    size="small"
+                    placeholder="Your answer"
+                    value={get(id)}
+                    onChange={e => set(id, e.target.value)}
+                    slotProps={
+                      numeric ? { htmlInput: numericInputProps } : undefined
+                    }
+                    sx={{
+                      width: (q.inputs ?? 1) > 1 ? 200 : 320,
+                      ...inputFieldSx,
+                    }}
+                  />
+                );
+              })}
+            </Box>
+          </Box>
+        )}
+
+        {q.type === 'long' && (
           <TextField
             disabled={locked}
             variant="outlined"
-            size="small"
-            placeholder="Write the word"
+            multiline
+            minRows={8}
+            fullWidth
+            placeholder="Write your answer here…"
             value={get(qid)}
             onChange={e => set(qid, e.target.value)}
-            sx={{ width: 220, ...inputFieldSx }}
+            sx={{
+              ...inputFieldSx,
+              '& .MuiOutlinedInput-root': {
+                ...inputFieldSx['& .MuiOutlinedInput-root'],
+                fontSize: '1rem',
+                lineHeight: 1.8,
+                alignItems: 'flex-start',
+              },
+              // Let the child drag the box taller; also auto-grows as they type.
+              '& textarea': { resize: 'vertical', overflow: 'auto' },
+            }}
           />
-        </Box>
-      )}
-    </Box>
+        )}
+
+        {q.type === 'dictation' && (
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1.5,
+              flexWrap: 'wrap',
+              mt: 0.5,
+            }}
+          >
+            <Button
+              onClick={() =>
+                speak(
+                  `${q.word}. ${q.prompt.replace(/_{2,}/, q.word)}. ${q.word}.`
+                )
+              }
+              startIcon={<VolumeUpIcon />}
+              variant="outlined"
+              size="small"
+              sx={{
+                color: C.accent,
+                borderColor: withAlpha(C.accent, 0.6),
+                textTransform: 'none',
+                fontWeight: 700,
+                '&:hover': {
+                  borderColor: C.accent,
+                  bgcolor: withAlpha(C.accent, 0.08),
+                },
+              }}
+            >
+              Listen
+            </Button>
+            <TextField
+              disabled={locked}
+              variant="outlined"
+              size="small"
+              placeholder="Write the word"
+              value={get(qid)}
+              onChange={e => set(qid, e.target.value)}
+              sx={{ width: 220, ...inputFieldSx }}
+            />
+          </Box>
+        )}
+      </Box>
+      {after}
+    </>
   );
 }
 
@@ -339,10 +345,13 @@ export function BlockView({
   block,
   blockId,
   lettered,
+  renderAfter,
 }: {
   block: TestBlock;
   blockId: string;
   lettered?: boolean;
+  /** Extra content under each question (given the question and its answer id). */
+  renderAfter?: (q: TestQuestion, qid: string) => ReactNode;
 }) {
   return (
     <Box
@@ -452,12 +461,32 @@ export function BlockView({
                 qid={`${blockId}.${i}`}
                 blockNumeric={block.numeric}
                 lettered={lettered}
+                after={renderAfter?.(q, `${blockId}.${i}`)}
               />
             ))}
           </Box>
         </Box>
       ) : (
         <>
+          {block.image && (
+            // e.g. a reading passage kept as a picture of the original page
+            <Box
+              component="img"
+              src={`${import.meta.env.BASE_URL}${block.image}`}
+              alt={block.heading}
+              loading="lazy"
+              sx={{
+                display: 'block',
+                width: '100%',
+                maxWidth: 640,
+                height: 'auto',
+                mb: 2,
+                pb: 2,
+                borderBottom: `1px solid ${C.border}`,
+              }}
+            />
+          )}
+
           {block.diagram && (
             <Box
               sx={{
@@ -492,6 +521,7 @@ export function BlockView({
               qid={`${blockId}.${i}`}
               blockNumeric={block.numeric}
               lettered={lettered}
+              after={renderAfter?.(q, `${blockId}.${i}`)}
             />
           ))}
         </>

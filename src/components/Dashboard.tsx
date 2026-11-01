@@ -22,6 +22,7 @@ import {
   MilitaryTech as OlympiadIcon,
   Assignment as TestsIcon,
   School as OCIcon,
+  HistoryEdu as OCPastIcon,
   Logout as LogoutIcon,
 } from '@mui/icons-material';
 import { useCurrentUser, useLogoutMutation } from '../hooks/useAuth';
@@ -978,6 +979,59 @@ function Dashboard() {
                 sx={{ color: palette.cyan400, fontStyle: 'italic' }}
               >
                 Reading · Maths · Thinking ✏️
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        {/* OC Past Papers Card */}
+        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Card
+            sx={{
+              ...cardStyle,
+              background: `linear-gradient(135deg, ${palette.navy950} 0%, ${palette.purple825} 40%, ${palette.purple625} 100%)`,
+              border: `3px solid ${palette.purple350}`,
+              '&:hover': {
+                ...cardStyle['&:hover'],
+                borderColor: palette.purple150,
+                boxShadow: `0 12px 36px ${withAlpha(palette.purple350, 0.3)}`,
+              },
+            }}
+            onClick={() => navigate({ to: '/oc-past' })}
+          >
+            <CardContent
+              sx={{
+                textAlign: 'center',
+                p: 3,
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+              }}
+            >
+              <OCPastIcon
+                sx={{ fontSize: 56, color: palette.purple150, mb: 1 }}
+              />
+              <Typography
+                variant="h5"
+                sx={{
+                  color: palette.blue100,
+                  fontWeight: 'bold',
+                  mb: 1,
+                  letterSpacing: '1px',
+                }}
+              >
+                OC Past Papers 📜
+              </Typography>
+              <Typography
+                sx={{ color: palette.purple150, mb: 2, fontSize: '0.95rem' }}
+              >
+                Older official NSW sample test
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{ color: palette.purple150, fontStyle: 'italic' }}
+              >
+                Part 1 · Part 2 · 30 min each
               </Typography>
             </CardContent>
           </Card>
