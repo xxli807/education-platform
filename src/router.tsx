@@ -46,6 +46,7 @@ const MathsOlympiadSection = lazy(
 const TestsSection = lazy(() => import('./components/TestsSection'));
 const OCOfficialPage = lazy(() => import('./components/OCOfficialPage'));
 const OCPastPage = lazy(() => import('./components/OCPastPage'));
+const OCExtraPage = lazy(() => import('./components/OCExtraPage'));
 
 // Root route
 const rootRoute = createRootRoute({
@@ -142,6 +143,13 @@ const ocPastRoute = createRoute({
   component: OCPastPage,
 });
 
+const ocExtraRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/oc-extra',
+  beforeLoad: authGuard,
+  component: OCExtraPage,
+});
+
 // Build route tree
 const routeTree = rootRoute.addChildren([
   loginRoute,
@@ -156,6 +164,7 @@ const routeTree = rootRoute.addChildren([
   testsRoute,
   ocRoute,
   ocPastRoute,
+  ocExtraRoute,
 ]);
 
 // Create router
