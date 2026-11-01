@@ -21,10 +21,15 @@ import {
   SportsEsports as PlayIcon,
   MilitaryTech as OlympiadIcon,
   Assignment as TestsIcon,
+  School as OCIcon,
+  HistoryEdu as OCPastIcon,
+  AutoAwesome as OCExtraIcon,
   Logout as LogoutIcon,
+  Refresh as RefreshIcon,
 } from '@mui/icons-material';
 import { useCurrentUser, useLogoutMutation } from '../hooks/useAuth';
 import { db } from '../db/database';
+import { forceRefresh } from '../utils/forceRefresh';
 import type {
   MathSessionResult,
   ScienceSessionResult,
@@ -265,21 +270,49 @@ function Dashboard() {
         }}
       >
         <Box sx={{ textAlign: 'center', flex: 1 }}>
-          <Typography
-            variant="h3"
+          <Box
             sx={{
-              fontWeight: 900,
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              gap: 1.5,
               mb: 1,
-              background: `linear-gradient(90deg, ${palette.amber450}, ${palette.orange400}, ${palette.purple225}, ${palette.blue350})`,
-              backgroundClip: 'text',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              textShadow: 'none',
-              letterSpacing: '1px',
             }}
           >
-            Hello, {user?.username}! 👋
-          </Typography>
+            <Typography
+              variant="h3"
+              sx={{
+                fontWeight: 900,
+                background: `linear-gradient(90deg, ${palette.amber450}, ${palette.orange400}, ${palette.purple225}, ${palette.blue350})`,
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                textShadow: 'none',
+                letterSpacing: '1px',
+              }}
+            >
+              Hello, {user?.username}! 👋
+            </Typography>
+            <IconButton
+              onClick={forceRefresh}
+              aria-label="Refresh app"
+              title="Refresh app"
+              sx={{
+                bgcolor: withAlpha(palette.blue350, 0.2),
+                color: palette.blue350,
+                border: `2px solid ${palette.blue350}`,
+                borderRadius: '12px',
+                p: 1,
+                transition: 'all 0.2s',
+                '&:hover': {
+                  bgcolor: withAlpha(palette.blue350, 0.3),
+                  transform: 'scale(1.05)',
+                },
+              }}
+            >
+              <RefreshIcon sx={{ fontSize: 28 }} />
+            </IconButton>
+          </Box>
           <Typography
             variant="h5"
             sx={{
@@ -925,6 +958,164 @@ function Dashboard() {
                 sx={{ color: palette.blue225, fontStyle: 'italic' }}
               >
                 Tap to start a test ✏️
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* OC Card */}
+        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Card
+            sx={{
+              ...cardStyle,
+              background: `linear-gradient(135deg, ${palette.navy950} 0%, ${palette.blue950} 40%, ${palette.cyan950} 100%)`,
+              border: `3px solid ${palette.cyan775}`,
+              '&:hover': {
+                ...cardStyle['&:hover'],
+                borderColor: palette.cyan400,
+                boxShadow: `0 12px 36px ${withAlpha(palette.cyan775, 0.3)}`,
+              },
+            }}
+            onClick={() => navigate({ to: '/oc' })}
+          >
+            <CardContent
+              sx={{
+                textAlign: 'center',
+                p: 3,
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+              }}
+            >
+              <OCIcon sx={{ fontSize: 56, color: palette.cyan400, mb: 1 }} />
+              <Typography
+                variant="h5"
+                sx={{
+                  color: palette.blue100,
+                  fontWeight: 'bold',
+                  mb: 1,
+                  letterSpacing: '1px',
+                }}
+              >
+                OC 🎓
+              </Typography>
+              <Typography
+                sx={{ color: palette.cyan400, mb: 2, fontSize: '0.95rem' }}
+              >
+                Opportunity Class practice tests!
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{ color: palette.cyan400, fontStyle: 'italic' }}
+              >
+                Reading · Maths · Thinking ✏️
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        {/* OC Past Papers Card */}
+        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Card
+            sx={{
+              ...cardStyle,
+              background: `linear-gradient(135deg, ${palette.navy950} 0%, ${palette.purple825} 40%, ${palette.purple625} 100%)`,
+              border: `3px solid ${palette.purple350}`,
+              '&:hover': {
+                ...cardStyle['&:hover'],
+                borderColor: palette.purple150,
+                boxShadow: `0 12px 36px ${withAlpha(palette.purple350, 0.3)}`,
+              },
+            }}
+            onClick={() => navigate({ to: '/oc-past' })}
+          >
+            <CardContent
+              sx={{
+                textAlign: 'center',
+                p: 3,
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+              }}
+            >
+              <OCPastIcon
+                sx={{ fontSize: 56, color: palette.purple150, mb: 1 }}
+              />
+              <Typography
+                variant="h5"
+                sx={{
+                  color: palette.blue100,
+                  fontWeight: 'bold',
+                  mb: 1,
+                  letterSpacing: '1px',
+                }}
+              >
+                OC Past Papers 📜
+              </Typography>
+              <Typography
+                sx={{ color: palette.purple150, mb: 2, fontSize: '0.95rem' }}
+              >
+                Older official NSW sample test
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{ color: palette.purple150, fontStyle: 'italic' }}
+              >
+                Part 1 · Part 2 · 30 min each
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        {/* OC Extra Practice Card */}
+        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Card
+            sx={{
+              ...cardStyle,
+              background: `linear-gradient(135deg, ${palette.navy950} 0%, ${palette.teal875} 40%, ${palette.green575} 100%)`,
+              border: `3px solid ${palette.teal450}`,
+              '&:hover': {
+                ...cardStyle['&:hover'],
+                borderColor: palette.teal100,
+                boxShadow: `0 12px 36px ${withAlpha(palette.teal450, 0.3)}`,
+              },
+            }}
+            onClick={() => navigate({ to: '/oc-extra' })}
+          >
+            <CardContent
+              sx={{
+                textAlign: 'center',
+                p: 3,
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+              }}
+            >
+              <OCExtraIcon
+                sx={{ fontSize: 56, color: palette.teal100, mb: 1 }}
+              />
+              <Typography
+                variant="h5"
+                sx={{
+                  color: palette.blue100,
+                  fontWeight: 'bold',
+                  mb: 1,
+                  letterSpacing: '1px',
+                }}
+              >
+                OC Extra Practice ✨
+              </Typography>
+              <Typography
+                sx={{ color: palette.teal100, mb: 2, fontSize: '0.95rem' }}
+              >
+                Original OC-style sets (not official)
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{ color: palette.teal100, fontStyle: 'italic' }}
+              >
+                3 sets · Reading · Maths · Thinking
               </Typography>
             </CardContent>
           </Card>

@@ -10,7 +10,25 @@
 // Transcription progress: Week 1 done. Weeks 2-4 + Sample Tests to follow.
 
 export type TestQuestion =
-  | { type: 'mcq'; n?: string; prompt: string; options: string[] }
+  | {
+      type: 'mcq';
+      n?: string;
+      prompt: string;
+      options: string[];
+      /** Lay the options out in one line (short words or bare A–E letters). */
+      row?: boolean;
+      /**
+       * Picture of the whole question (relative to the public folder) shown
+       * instead of the prompt text; options then render as a row of letters.
+       */
+      image?: string;
+      /** Small monospace table shown under the prompt (e.g. data for a maths question). */
+      table?: string;
+      /** Worked explanation shown after the test is finished. */
+      explanation?: string;
+      /** Picture of a worked explanation (relative to the public folder). */
+      explanationImage?: string;
+    }
   | {
       type: 'short';
       n?: string;
@@ -45,6 +63,8 @@ export interface TestBlock {
   passage?: string;
   /** Optional monospace ASCII diagram of a visual pattern (sticks, straws, etc.). */
   diagram?: string;
+  /** Optional picture shown above the questions (e.g. a scanned reading passage). */
+  image?: string;
   /** Optional multi-line note / planning tips shown full-width above the questions. */
   note?: string;
   /** Default for the block's short questions: digits-only answers → numeric keypad. */

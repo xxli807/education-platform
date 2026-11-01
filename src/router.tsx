@@ -1,4 +1,5 @@
 import { lazy, Suspense } from 'react';
+import AppError from './components/AppError';
 import {
   createRouter,
   createRoute,
@@ -44,6 +45,9 @@ const MathsOlympiadSection = lazy(
   () => import('./components/MathsOlympiadSection')
 );
 const TestsSection = lazy(() => import('./components/TestsSection'));
+const OCOfficialPage = lazy(() => import('./components/OCOfficialPage'));
+const OCPastPage = lazy(() => import('./components/OCPastPage'));
+const OCExtraPage = lazy(() => import('./components/OCExtraPage'));
 
 // Root route
 const rootRoute = createRootRoute({
@@ -126,6 +130,27 @@ const testsRoute = createRoute({
   component: TestsSection,
 });
 
+const ocRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/oc',
+  beforeLoad: authGuard,
+  component: OCOfficialPage,
+});
+
+const ocPastRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/oc-past',
+  beforeLoad: authGuard,
+  component: OCPastPage,
+});
+
+const ocExtraRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/oc-extra',
+  beforeLoad: authGuard,
+  component: OCExtraPage,
+});
+
 // Build route tree
 const routeTree = rootRoute.addChildren([
   loginRoute,
@@ -138,12 +163,17 @@ const routeTree = rootRoute.addChildren([
   playRoute,
   olympiadRoute,
   testsRoute,
+  ocRoute,
+  ocPastRoute,
+  ocExtraRoute,
 ]);
 
 // Create router
 export const router = createRouter({
   routeTree,
   history: createHashHistory(),
+  // Static import: the error screen must load even when page chunks can't.
+  defaultErrorComponent: AppError,
 });
 
 // Register router for type safety
