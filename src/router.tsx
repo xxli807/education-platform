@@ -1,4 +1,5 @@
 import { lazy, Suspense } from 'react';
+import AppError from './components/AppError';
 import {
   createRouter,
   createRoute,
@@ -171,6 +172,8 @@ const routeTree = rootRoute.addChildren([
 export const router = createRouter({
   routeTree,
   history: createHashHistory(),
+  // Static import: the error screen must load even when page chunks can't.
+  defaultErrorComponent: AppError,
 });
 
 // Register router for type safety

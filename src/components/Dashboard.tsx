@@ -25,9 +25,11 @@ import {
   HistoryEdu as OCPastIcon,
   AutoAwesome as OCExtraIcon,
   Logout as LogoutIcon,
+  Refresh as RefreshIcon,
 } from '@mui/icons-material';
 import { useCurrentUser, useLogoutMutation } from '../hooks/useAuth';
 import { db } from '../db/database';
+import { forceRefresh } from '../utils/forceRefresh';
 import type {
   MathSessionResult,
   ScienceSessionResult,
@@ -268,21 +270,49 @@ function Dashboard() {
         }}
       >
         <Box sx={{ textAlign: 'center', flex: 1 }}>
-          <Typography
-            variant="h3"
+          <Box
             sx={{
-              fontWeight: 900,
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              gap: 1.5,
               mb: 1,
-              background: `linear-gradient(90deg, ${palette.amber450}, ${palette.orange400}, ${palette.purple225}, ${palette.blue350})`,
-              backgroundClip: 'text',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              textShadow: 'none',
-              letterSpacing: '1px',
             }}
           >
-            Hello, {user?.username}! 👋
-          </Typography>
+            <Typography
+              variant="h3"
+              sx={{
+                fontWeight: 900,
+                background: `linear-gradient(90deg, ${palette.amber450}, ${palette.orange400}, ${palette.purple225}, ${palette.blue350})`,
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                textShadow: 'none',
+                letterSpacing: '1px',
+              }}
+            >
+              Hello, {user?.username}! 👋
+            </Typography>
+            <IconButton
+              onClick={forceRefresh}
+              aria-label="Refresh app"
+              title="Refresh app"
+              sx={{
+                bgcolor: withAlpha(palette.blue350, 0.2),
+                color: palette.blue350,
+                border: `2px solid ${palette.blue350}`,
+                borderRadius: '12px',
+                p: 1,
+                transition: 'all 0.2s',
+                '&:hover': {
+                  bgcolor: withAlpha(palette.blue350, 0.3),
+                  transform: 'scale(1.05)',
+                },
+              }}
+            >
+              <RefreshIcon sx={{ fontSize: 28 }} />
+            </IconButton>
+          </Box>
           <Typography
             variant="h5"
             sx={{
