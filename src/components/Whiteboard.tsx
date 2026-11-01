@@ -149,7 +149,11 @@ function Whiteboard() {
     setIsDragging(false);
     // persist wherever the child left it, so it stays put next time
     setPosition(p => {
-      localStorage.setItem(POSITION_KEY, JSON.stringify(p));
+      try {
+        localStorage.setItem(POSITION_KEY, JSON.stringify(p));
+      } catch {
+        // storage full / private mode — the panel just won't remember its spot
+      }
       return p;
     });
   }, []);
