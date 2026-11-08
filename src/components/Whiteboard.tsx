@@ -4,6 +4,7 @@ import {
   ExpandLess as ExpandLessIcon,
   EditNote as WhiteboardIcon,
   Delete as EraseIcon,
+  DragIndicator as GripIcon,
 } from '@mui/icons-material';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -42,6 +43,7 @@ function clampPosition(pos: { bottom: number; right: number }) {
 
 function Whiteboard() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const drawing = useRef(false);
   const lastPos = useRef<{ x: number; y: number } | null>(null);
   const [expanded, setExpanded] = useState(false);
@@ -57,6 +59,23 @@ function Whiteboard() {
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, []);
+
+  // When opened (or after a rotation), nudge the panel so all of it is on
+  // screen — the open panel is much bigger than the closed button.
+  useEffect(() => {
+    if (!expanded) return;
+    const fit = () => {
+      const rect = panelRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      setPosition(p => ({
+        bottom: rect.top < 0 ? Math.max(0, p.bottom + rect.top) : p.bottom,
+        right: rect.left < 0 ? Math.max(0, p.right + rect.left) : p.right,
+      }));
+    };
+    fit();
+    window.addEventListener('resize', fit);
+    return () => window.removeEventListener('resize', fit);
+  }, [expanded]);
 
   const getPos = (
     e: React.MouseEvent | React.TouchEvent,
@@ -181,12 +200,19 @@ function Whiteboard() {
     dragDistance.current = 0;
   };
 
+  // Taps on the header's buttons (Clear / Minimize) must not start a drag —
+  // preventDefault on touchstart would also cancel their click on iPad.
+  const onButton = (e: React.SyntheticEvent) =>
+    !!(e.target as HTMLElement).closest('button');
+
   const startMouseDrag = (e: React.MouseEvent) => {
+    if (onButton(e)) return;
     e.preventDefault();
     startDrag(e.clientX, e.clientY);
   };
 
   const startTouchDrag = (e: React.TouchEvent) => {
+    if (onButton(e)) return;
     e.preventDefault();
     const touch = e.touches[0];
     startDrag(touch.clientX, touch.clientY);
@@ -277,11 +303,12 @@ function Whiteboard() {
 
       {expanded && (
         <Box
+          ref={panelRef}
           sx={{
-            // narrow & tall (vertical) so it sits beside a question instead
-            // of covering it; drag the header to move it clear altogether
-            width: { xs: 190, sm: 230, md: 250 },
-            height: 'min(46vh, 380px)',
+            // tall (vertical) panel with room to work a sum out; drag the
+            // header to move it clear of the question
+            width: { xs: 260, sm: 360, md: 380 },
+            height: 'min(56vh, 560px)',
             display: 'flex',
             flexDirection: 'column',
             bgcolor: withAlpha(palette.navy950, 0.95),
@@ -299,8 +326,9 @@ function Whiteboard() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              px: 2,
-              py: 1,
+              // finger-sized drag bar
+              minHeight: 52,
+              px: 1.5,
               borderBottom: `1px solid ${withAlpha(palette.amber450, 0.25)}`,
               bgcolor: withAlpha(palette.amber450, 0.07),
               flexShrink: 0,
@@ -311,20 +339,21 @@ function Whiteboard() {
             }}
           >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+              <GripIcon sx={{ color: palette.amber450, fontSize: '1.5rem' }} />
               <WhiteboardIcon
-                sx={{ color: palette.amber450, fontSize: '1.1rem' }}
+                sx={{ color: palette.amber450, fontSize: '1.2rem' }}
               />
               <Typography
                 sx={{
                   color: palette.amber450,
                   fontWeight: 'bold',
-                  fontSize: '0.8rem',
+                  fontSize: '0.95rem',
                 }}
               >
                 Drag me ✋
               </Typography>
             </Box>
-            <Box sx={{ display: 'flex', gap: 0.5 }}>
+            <Box sx={{ display: 'flex', gap: 1 }}>
               <IconButton
                 size="small"
                 onClick={erase}
@@ -332,14 +361,14 @@ function Whiteboard() {
                 sx={{
                   color: palette.amber450,
                   border: `1px solid ${withAlpha(palette.amber450, 0.4)}`,
-                  p: 0.5,
+                  p: 1,
                   '&:hover': {
                     bgcolor: withAlpha(palette.amber450, 0.1),
                     borderColor: palette.amber450,
                   },
                 }}
               >
-                <EraseIcon sx={{ fontSize: '1.05rem' }} />
+                <EraseIcon sx={{ fontSize: '1.3rem' }} />
               </IconButton>
               <IconButton
                 size="small"
@@ -348,14 +377,14 @@ function Whiteboard() {
                 sx={{
                   color: palette.slate400,
                   border: `1px solid ${withAlpha(palette.slate400, 0.3)}`,
-                  p: 0.5,
+                  p: 1,
                   '&:hover': {
                     bgcolor: withAlpha(palette.slate400, 0.1),
                     borderColor: palette.slate400,
                   },
                 }}
               >
-                <ExpandLessIcon sx={{ fontSize: '1.05rem' }} />
+                <ExpandLessIcon sx={{ fontSize: '1.3rem' }} />
               </IconButton>
             </Box>
           </Box>
