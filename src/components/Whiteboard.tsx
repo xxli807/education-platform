@@ -31,6 +31,45 @@ function loadPosition(): { bottom: number; right: number } {
   return DEFAULT_POSITION;
 }
 
+// Size the child picked with the corner grip (like a textarea's resize
+// handle). Unset until they first resize, so the default stays responsive.
+const SIZE_KEY = 'whiteboardSize';
+const MIN_SIZE = { width: 240, height: 240 };
+const SCREEN_MARGIN = 8;
+
+type PanelSize = { width: number; height: number };
+type Corner = 'topLeft' | 'bottomRight';
+
+function loadSize(): PanelSize | null {
+  try {
+    const saved = JSON.parse(localStorage.getItem(SIZE_KEY) || 'null');
+    if (
+      saved &&
+      typeof saved.width === 'number' &&
+      typeof saved.height === 'number'
+    ) {
+      return saved;
+    }
+  } catch {
+    /* ignore malformed saved size */
+  }
+  return null;
+}
+
+/** Never smaller than usable, never bigger than the screen. */
+function clampSize(size: PanelSize): PanelSize {
+  return {
+    width: Math.min(
+      Math.max(MIN_SIZE.width, size.width),
+      window.innerWidth - 2 * SCREEN_MARGIN
+    ),
+    height: Math.min(
+      Math.max(MIN_SIZE.height, size.height),
+      window.innerHeight - 2 * SCREEN_MARGIN
+    ),
+  };
+}
+
 /** Keep the panel's anchor point on-screen (e.g. after rotating an iPad). */
 function clampPosition(pos: { bottom: number; right: number }) {
   const maxBottom = Math.max(0, window.innerHeight - 60);
@@ -41,6 +80,69 @@ function clampPosition(pos: { bottom: number; right: number }) {
   };
 }
 
+/** Finger-sized corner handle for resizing the open panel. */
+function ResizeGrip({
+  corner,
+  onStart,
+}: {
+  corner: Corner;
+  onStart: (corner: Corner, clientX: number, clientY: number) => void;
+}) {
+  const top = corner === 'topLeft';
+  return (
+    <Box
+      role="button"
+      aria-label={`Drag to resize the whiteboard (${top ? 'top-left' : 'bottom-right'} corner)`}
+      onMouseDown={e => {
+        e.preventDefault();
+        e.stopPropagation();
+        onStart(corner, e.clientX, e.clientY);
+      }}
+      onTouchStart={e => {
+        e.preventDefault();
+        e.stopPropagation();
+        onStart(corner, e.touches[0].clientX, e.touches[0].clientY);
+      }}
+      sx={{
+        position: 'absolute',
+        ...(top ? { left: 0, top: 0 } : { right: 0, bottom: 0 }),
+        width: 44,
+        height: 44,
+        zIndex: 1,
+        cursor: 'nwse-resize',
+        touchAction: 'none',
+        display: 'flex',
+        alignItems: top ? 'flex-start' : 'flex-end',
+        justifyContent: top ? 'flex-start' : 'flex-end',
+        p: '6px',
+        [top ? 'borderBottomRightRadius' : 'borderTopLeftRadius']: '14px',
+        bgcolor: withAlpha(palette.navy950, 0.85),
+      }}
+    >
+      <svg
+        width="22"
+        height="22"
+        viewBox="0 0 22 22"
+        aria-hidden
+        style={top ? { transform: 'rotate(180deg)' } : undefined}
+      >
+        {[6, 12, 18].map(o => (
+          <line
+            key={o}
+            x1={22 - o}
+            y1={21}
+            x2={21}
+            y2={22 - o}
+            stroke={palette.amber450}
+            strokeWidth="2.5"
+            strokeLinecap="round"
+          />
+        ))}
+      </svg>
+    </Box>
+  );
+}
+
 function Whiteboard() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -49,13 +151,30 @@ function Whiteboard() {
   const [expanded, setExpanded] = useState(false);
   const [position, setPosition] = useState(() => clampPosition(loadPosition()));
   const [isDragging, setIsDragging] = useState(false);
+  const [size, setSize] = useState<PanelSize | null>(() => {
+    const saved = loadSize();
+    return saved && clampSize(saved);
+  });
+  const [isResizing, setIsResizing] = useState(false);
+  const resizeStart = useRef({
+    corner: 'bottomRight' as Corner,
+    x: 0,
+    y: 0,
+    width: 0,
+    height: 0,
+    bottom: 0,
+    right: 0,
+  });
   const dragStart = useRef({ x: 0, y: 0, startBottom: 0, startRight: 0 });
   const dragDistance = useRef(0);
   const DRAG_THRESHOLD = 10;
 
   // keep the panel reachable if the viewport changes (e.g. iPad rotation)
   useEffect(() => {
-    const onResize = () => setPosition(p => clampPosition(p));
+    const onResize = () => {
+      setPosition(p => clampPosition(p));
+      setSize(s => s && clampSize(s));
+    };
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, []);
@@ -140,28 +259,33 @@ function Whiteboard() {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
   };
 
+  // Match the canvas bitmap to its on-screen size whenever the panel changes
+  // size, copying the drawing across so resizing never wipes the working.
   useEffect(() => {
     if (!expanded) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const size = () => {
-      const { width, height } = canvas.getBoundingClientRect();
-      if (width > 0 && height > 0) {
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.fillStyle = palette.white;
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
-        }
-      }
+    const fitCanvas = () => {
+      const width = Math.round(canvas.clientWidth);
+      const height = Math.round(canvas.clientHeight);
+      if (width <= 0 || height <= 0) return;
+      if (width === canvas.width && height === canvas.height) return;
+      const copy = document.createElement('canvas');
+      copy.width = canvas.width;
+      copy.height = canvas.height;
+      copy.getContext('2d')?.drawImage(canvas, 0, 0);
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      ctx.fillStyle = palette.white;
+      ctx.fillRect(0, 0, width, height);
+      ctx.drawImage(copy, 0, 0);
     };
-    const t = setTimeout(size, 50);
-    window.addEventListener('resize', size);
-    return () => {
-      clearTimeout(t);
-      window.removeEventListener('resize', size);
-    };
+    fitCanvas();
+    const observer = new ResizeObserver(fitCanvas);
+    observer.observe(canvas);
+    return () => observer.disconnect();
   }, [expanded]);
 
   const stopDrag = useCallback(() => {
@@ -242,6 +366,89 @@ function Whiteboard() {
     };
   }, [isDragging, handleDragMove, stopDrag]);
 
+  // Corner grips, like a textarea's resize handle. The opposite corner stays
+  // put: the top-left grip grows the panel up/left (where there is room when
+  // it sits in its default bottom-right spot), the bottom-right grip grows it
+  // down/right.
+  const startResize = (corner: Corner, clientX: number, clientY: number) => {
+    const rect = panelRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    resizeStart.current = {
+      corner,
+      x: clientX,
+      y: clientY,
+      width: rect.width,
+      height: rect.height,
+      bottom: position.bottom,
+      right: position.right,
+    };
+    setIsResizing(true);
+  };
+
+  useEffect(() => {
+    if (!isResizing) return;
+    const move = (clientX: number, clientY: number) => {
+      const start = resizeStart.current;
+      if (start.corner === 'topLeft') {
+        const next = clampSize({
+          width: start.width - (clientX - start.x),
+          height: start.height - (clientY - start.y),
+        });
+        // stay on screen: the bottom-right corner doesn't move
+        setSize({
+          width: Math.min(
+            next.width,
+            window.innerWidth - start.right - SCREEN_MARGIN
+          ),
+          height: Math.min(
+            next.height,
+            window.innerHeight - start.bottom - SCREEN_MARGIN
+          ),
+        });
+        return;
+      }
+      const next = clampSize({
+        width: start.width + clientX - start.x,
+        height: start.height + clientY - start.y,
+      });
+      setSize(next);
+      setPosition({
+        bottom: Math.max(0, start.bottom - (next.height - start.height)),
+        right: Math.max(0, start.right - (next.width - start.width)),
+      });
+    };
+    const onMouseMove = (e: MouseEvent) => move(e.clientX, e.clientY);
+    const onTouchMove = (e: TouchEvent) => {
+      e.preventDefault();
+      move(e.touches[0].clientX, e.touches[0].clientY);
+    };
+    const end = () => {
+      setIsResizing(false);
+      try {
+        setSize(s => {
+          if (s) localStorage.setItem(SIZE_KEY, JSON.stringify(s));
+          return s;
+        });
+        setPosition(p => {
+          localStorage.setItem(POSITION_KEY, JSON.stringify(p));
+          return p;
+        });
+      } catch {
+        // storage full / private mode — the size just won't be remembered
+      }
+    };
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('touchmove', onTouchMove, { passive: false });
+    document.addEventListener('mouseup', end);
+    document.addEventListener('touchend', end);
+    return () => {
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('touchmove', onTouchMove);
+      document.removeEventListener('mouseup', end);
+      document.removeEventListener('touchend', end);
+    };
+  }, [isResizing]);
+
   return (
     <Box
       sx={{
@@ -307,8 +514,9 @@ function Whiteboard() {
           sx={{
             // tall (vertical) panel with room to work a sum out; drag the
             // header to move it clear of the question
-            width: { xs: 260, sm: 360, md: 380 },
-            height: 'min(56vh, 560px)',
+            width: size ? size.width : { xs: 260, sm: 360, md: 380 },
+            height: size ? size.height : 'min(56vh, 560px)',
+            position: 'relative',
             display: 'flex',
             flexDirection: 'column',
             bgcolor: withAlpha(palette.navy950, 0.95),
@@ -328,7 +536,8 @@ function Whiteboard() {
               justifyContent: 'space-between',
               // finger-sized drag bar
               minHeight: 52,
-              px: 1.5,
+              pl: '50px',
+              pr: 1.5,
               borderBottom: `1px solid ${withAlpha(palette.amber450, 0.25)}`,
               bgcolor: withAlpha(palette.amber450, 0.07),
               flexShrink: 0,
@@ -418,9 +627,12 @@ function Whiteboard() {
                 flexShrink: 0,
               }}
             >
-              draw with finger or mouse
+              draw with finger or mouse · drag a corner to resize
             </Typography>
           </Box>
+
+          <ResizeGrip corner="topLeft" onStart={startResize} />
+          <ResizeGrip corner="bottomRight" onStart={startResize} />
         </Box>
       )}
     </Box>
