@@ -13,7 +13,7 @@ import {
   type OcAttempt,
 } from '../utils/ocHistory';
 import { AnswersContext, C, LETTERS } from './testShared';
-import { BlockView } from './testViews';
+import { BlockView, Countdown } from './testViews';
 import OCProgress from './OCProgress';
 
 /** Saved-answer prefix: label + paper id, not tab position, so reordering keeps answers. */
@@ -76,40 +76,6 @@ const primaryButtonSx = {
 };
 
 const outlineButtonSx = { ...buttonSx, color: C.accent, borderColor: C.accent };
-
-/**
- * Header countdown. Ticks on its own each second so the paper below doesn't
- * re-render; the page itself finishes the test when the deadline passes.
- */
-function Countdown({ deadline }: { deadline: number }) {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const id = window.setInterval(() => setNow(Date.now()), 1000);
-    return () => window.clearInterval(id);
-  }, []);
-  const left = Math.max(0, Math.ceil((deadline - now) / 1000));
-  const tone =
-    left <= 60 ? palette.red550 : left <= 300 ? palette.amber950 : C.accent;
-  return (
-    <Box
-      role="timer"
-      aria-label={`${formatDuration(left)} left`}
-      sx={{
-        px: 1.5,
-        py: 0.5,
-        borderRadius: '12px',
-        border: `2px solid ${tone}`,
-        bgcolor: withAlpha(tone, 0.1),
-        color: tone,
-        fontWeight: 900,
-        fontSize: '1.1rem',
-        fontVariantNumeric: 'tabular-nums',
-      }}
-    >
-      ⏱ {formatDuration(left)}
-    </Box>
-  );
-}
 
 /** Shown before the timer starts, so the questions can't be previewed. */
 function StartPanel({

@@ -1,16 +1,149 @@
 import { palette, withAlpha } from '../theme/palette';
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SaveIcon from '@mui/icons-material/Save';
 import { Box, IconButton, Typography, Tabs, Tab, Button } from '@mui/material';
-import { testBooks, type TestDay } from '../data/testsContent';
+import { testBooks, type TestBlock, type TestDay } from '../data/testsContent';
+import { legacyTestIds } from '../data/testsLegacyIds';
 import { AnswersContext, C } from './testShared';
-import { BlockView } from './testViews';
+import { BlockView, Countdown } from './testViews';
 
-const STORAGE_KEY = 'testsAnswers';
+// Answers are keyed by week/day/section/question number, so adding questions
+// to a section never shifts saved answers onto the wrong question.
+const STORAGE_KEY = 'testsAnswersV2';
+// Older position-based answers (book.week.day.block.question[-suffix]).
+const LEGACY_KEY = 'testsAnswers';
 
-function DayView({ day, dayId }: { day: TestDay; dayId: string }) {
+function loadAnswers(): Record<string, string> {
+  try {
+    const current = localStorage.getItem(STORAGE_KEY);
+    if (current) return JSON.parse(current);
+    const legacy = JSON.parse(localStorage.getItem(LEGACY_KEY) || '{}');
+    const moved: Record<string, string> = {};
+    for (const [key, value] of Object.entries(legacy)) {
+      const m = key.match(/^(\d+\.\d+\.\d+\.\d+\.\d+)(.*)$/);
+      const stable = m && legacyTestIds[m[1]];
+      if (stable) moved[stable + m[2]] = value as string;
+    }
+    return moved;
+  } catch {
+    return {};
+  }
+}
+
+// When each timer was started (ms), keyed by week/day/section. Saved straight
+// away so a timer keeps going if Lucas leaves the page.
+const TIMERS_KEY = 'testsTimersV1';
+
+function loadTimers(): Record<string, number> {
+  try {
+    return JSON.parse(localStorage.getItem(TIMERS_KEY) || '{}');
+  } catch {
+    return {};
+  }
+}
+
+interface Section {
+  key: string;
+  label: string;
+  minutes: number;
+}
+
+/**
+ * The timed book page a block belongs to. Several blocks can share one page
+ * (e.g. a maths day's Test Your Skills), so they share one timer. Times are
+ * the ones printed on the book's stopwatch badges.
+ */
+function sectionOf(day: TestDay, block: TestBlock): Section {
+  const h = block.heading;
+  if (day.title.startsWith('Writing'))
+    return { key: h, label: 'Writing', minutes: 40 };
+  if (h.startsWith('Reading'))
+    return { key: h, label: h.replace(/^Reading:\s*/, ''), minutes: 15 };
+  const real = /Real Test|incorrect word/.test(h);
+  const subject = h.startsWith('Spelling')
+    ? 'Spelling'
+    : h.startsWith('Grammar')
+      ? 'Grammar'
+      : '';
+  const kind = real ? 'Real Test' : 'Test Your Skills';
+  const label = subject ? `${subject} — ${kind}` : kind;
+  return { key: label, label, minutes: subject && !real ? 15 : 20 };
+}
+
+function SectionTimer({
+  section,
+  startedAt,
+  onStart,
+  onReset,
+}: {
+  section: Section;
+  startedAt?: number;
+  onStart: () => void;
+  onReset: () => void;
+}) {
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: 1.5,
+        mb: 2,
+        px: 2,
+        py: 1.25,
+        borderRadius: '14px',
+        bgcolor: withAlpha(C.accent, 0.06),
+        border: `1px dashed ${withAlpha(C.accent, 0.5)}`,
+      }}
+    >
+      <Typography sx={{ color: C.heading, fontWeight: 800, flex: 1 }}>
+        ⏱ {section.label} · {section.minutes} min
+      </Typography>
+      {startedAt ? (
+        <>
+          <Countdown deadline={startedAt + section.minutes * 60_000} />
+          <Button
+            onClick={onReset}
+            size="small"
+            sx={{ color: C.accent, fontWeight: 700, textTransform: 'none' }}
+          >
+            Reset
+          </Button>
+        </>
+      ) : (
+        <Button
+          onClick={onStart}
+          variant="contained"
+          sx={{
+            bgcolor: C.accent,
+            fontWeight: 700,
+            textTransform: 'none',
+            borderRadius: '12px',
+            '&:hover': { bgcolor: C.heading },
+          }}
+        >
+          Start timer
+        </Button>
+      )}
+    </Box>
+  );
+}
+
+function DayView({
+  day,
+  dayId,
+  weekLabel,
+  timers,
+  setTimer,
+}: {
+  day: TestDay;
+  dayId: string;
+  weekLabel: string;
+  timers: Record<string, number>;
+  setTimer: (id: string, startedAt?: number) => void;
+}) {
   return (
     <Box sx={{ mb: 4 }}>
       <Typography
@@ -25,9 +158,31 @@ function DayView({ day, dayId }: { day: TestDay; dayId: string }) {
       >
         {day.day}: {day.title}
       </Typography>
-      {day.blocks.map((block, i) => (
-        <BlockView key={i} block={block} blockId={`${dayId}.${i}`} />
-      ))}
+      {day.blocks.map((block, i) => {
+        const section = sectionOf(day, block);
+        const first =
+          i === 0 || sectionOf(day, day.blocks[i - 1]).key !== section.key;
+        const timerId = `${weekLabel}/${day.day}/${section.key}`;
+        return (
+          <Fragment key={i}>
+            {first && (
+              <SectionTimer
+                section={section}
+                startedAt={timers[timerId]}
+                onStart={() => setTimer(timerId, Date.now())}
+                onReset={() => setTimer(timerId)}
+              />
+            )}
+            <BlockView
+              block={block}
+              blockId={`${dayId}.${i}`}
+              questionId={(q, qi) =>
+                `${weekLabel}/${day.day}/${block.heading}/${q.n ?? `#${qi}`}`
+              }
+            />
+          </Fragment>
+        );
+      })}
     </Box>
   );
 }
@@ -36,23 +191,47 @@ function TestsSection() {
   const navigate = useNavigate();
   const [book, setBook] = useState(0);
   const [tab, setTab] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, string>>(() => {
-    try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-    } catch {
-      return {};
-    }
-  });
+  const [answers, setAnswers] = useState<Record<string, string>>(loadAnswers);
   const [savedFlash, setSavedFlash] = useState(false);
+  const [timers, setTimers] = useState<Record<string, number>>(loadTimers);
 
   const weeks = testBooks[book].weeks;
   const week = weeks[tab];
 
   const handleSave = () => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(answers));
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(answers));
+    } catch {
+      // storage full / private mode — answers stay in memory for this visit
+    }
     setSavedFlash(true);
     window.setTimeout(() => setSavedFlash(false), 1800);
   };
+
+  const setTimer = (id: string, startedAt?: number) =>
+    setTimers(prev => {
+      const next = { ...prev };
+      if (startedAt) next[id] = startedAt;
+      else delete next[id];
+      try {
+        localStorage.setItem(TIMERS_KEY, JSON.stringify(next));
+      } catch {
+        // storage unavailable — the timer still runs for this visit
+      }
+      return next;
+    });
+
+  // The most recently started timer in this week, shown in the fixed header
+  // so it stays in view while Lucas scrolls through the questions.
+  const running = Object.entries(timers)
+    .filter(([id]) => id.startsWith(`${week.label}/`))
+    .sort((a, b) => b[1] - a[1])[0];
+  const runningMinutes = running
+    ? week.days
+        .flatMap(d => d.blocks.map(b => ({ d, s: sectionOf(d, b) })))
+        .find(({ d, s }) => running[0] === `${week.label}/${d.day}/${s.key}`)?.s
+        .minutes
+    : undefined;
 
   const ctx = {
     get: (id: string) => answers[id] ?? '',
@@ -98,10 +277,14 @@ function TestsSection() {
             </IconButton>
             <Typography
               variant="h5"
-              sx={{ fontWeight: 900, color: C.heading, flex: 1 }}
+              noWrap
+              sx={{ fontWeight: 900, color: C.heading, flex: 1, minWidth: 0 }}
             >
               📝 Tests
             </Typography>
+            {running && runningMinutes && (
+              <Countdown deadline={running[1] + runningMinutes * 60_000} />
+            )}
             {savedFlash && (
               <Typography
                 sx={{
@@ -226,7 +409,14 @@ function TestsSection() {
               </Typography>
             ) : (
               week.days.map((day, i) => (
-                <DayView key={i} day={day} dayId={`${book}.${tab}.${i}`} />
+                <DayView
+                  key={i}
+                  day={day}
+                  dayId={`${book}.${tab}.${i}`}
+                  weekLabel={week.label}
+                  timers={timers}
+                  setTimer={setTimer}
+                />
               ))
             )}
           </Box>

@@ -1,5 +1,5 @@
 import { palette, withAlpha } from '../theme/palette';
-import { Fragment, type ReactNode } from 'react';
+import { Fragment, useEffect, useState, type ReactNode } from 'react';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import {
   Box,
@@ -11,6 +11,7 @@ import {
   Radio,
 } from '@mui/material';
 import type { TestQuestion, TestBlock } from '../data/testsContent';
+import { formatDuration } from '../utils/ocHistory';
 import { C, LETTERS, useAnswers } from './testShared';
 
 // Shared renderers for worksheet-style test pages (Tests card, OC card).
@@ -81,14 +82,20 @@ function InlineBlanks({
     <>
       {parts.map((part, i) => (
         <Fragment key={i}>
-          {part && (
-            <Typography
-              component="span"
-              sx={{ color: C.text, fontSize: '1rem' }}
-            >
-              {part}
-            </Typography>
-          )}
+          {/* a "\n" in the prompt starts a new line (e.g. an equation under its question) */}
+          {part.split('\n').map((line, j) => (
+            <Fragment key={j}>
+              {j > 0 && <Box sx={{ flexBasis: '100%', height: 4 }} />}
+              {line && (
+                <Typography
+                  component="span"
+                  sx={{ color: C.text, fontSize: '1rem' }}
+                >
+                  {line}
+                </Typography>
+              )}
+            </Fragment>
+          ))}
           {i < parts.length - 1 && (
             <BlankInput id={`${qid}-b${i}`} numeric={numeric} />
           )}
@@ -177,6 +184,25 @@ function QuestionView({
             {q.n ? <NumberBadge n={q.n} /> : null}
             {q.prompt}
           </Typography>
+        )}
+
+        {q.figure && (
+          <Box
+            component="img"
+            src={`${import.meta.env.BASE_URL}${q.figure}`}
+            alt={q.figureAlt ?? 'Picture for this question'}
+            loading="lazy"
+            sx={{
+              display: 'block',
+              width: '100%',
+              maxWidth: q.figureWidth ?? 420,
+              height: 'auto',
+              mb: 1.5,
+              ml: { xs: 0, sm: 2 },
+              borderRadius: '8px',
+              bgcolor: palette.white,
+            }}
+          />
         )}
 
         {q.type === 'mcq' && q.table && (
@@ -379,13 +405,18 @@ export function BlockView({
   blockId,
   lettered,
   renderAfter,
+  questionId,
 }: {
   block: TestBlock;
   blockId: string;
   lettered?: boolean;
   /** Extra content under each question (given the question and its answer id). */
   renderAfter?: (q: TestQuestion, qid: string) => ReactNode;
+  /** Answer id for each question (defaults to `${blockId}.${index}`). */
+  questionId?: (q: TestQuestion, index: number) => string;
 }) {
+  const qidOf = (q: TestQuestion, i: number) =>
+    questionId ? questionId(q, i) : `${blockId}.${i}`;
   return (
     <Box
       sx={{
@@ -491,10 +522,10 @@ export function BlockView({
               <QuestionView
                 key={i}
                 q={q}
-                qid={`${blockId}.${i}`}
+                qid={qidOf(q, i)}
                 blockNumeric={block.numeric}
                 lettered={lettered}
-                after={renderAfter?.(q, `${blockId}.${i}`)}
+                after={renderAfter?.(q, qidOf(q, i))}
               />
             ))}
           </Box>
@@ -511,7 +542,7 @@ export function BlockView({
               sx={{
                 display: 'block',
                 width: '100%',
-                maxWidth: 640,
+                maxWidth: block.imageWidth ?? 640,
                 height: 'auto',
                 mb: 2,
                 pb: 2,
@@ -551,14 +582,48 @@ export function BlockView({
             <QuestionView
               key={i}
               q={q}
-              qid={`${blockId}.${i}`}
+              qid={qidOf(q, i)}
               blockNumeric={block.numeric}
               lettered={lettered}
-              after={renderAfter?.(q, `${blockId}.${i}`)}
+              after={renderAfter?.(q, qidOf(q, i))}
             />
           ))}
         </>
       )}
+    </Box>
+  );
+}
+
+/**
+ * Header countdown. Ticks on its own each second so the paper below doesn't
+ * re-render; the page itself finishes the test when the deadline passes.
+ */
+export function Countdown({ deadline }: { deadline: number }) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, []);
+  const left = Math.max(0, Math.ceil((deadline - now) / 1000));
+  const tone =
+    left <= 60 ? palette.red550 : left <= 300 ? palette.amber950 : C.accent;
+  return (
+    <Box
+      role="timer"
+      aria-label={`${formatDuration(left)} left`}
+      sx={{
+        px: 1.5,
+        py: 0.5,
+        borderRadius: '12px',
+        border: `2px solid ${tone}`,
+        bgcolor: withAlpha(tone, 0.1),
+        color: tone,
+        fontWeight: 900,
+        fontSize: '1.1rem',
+        fontVariantNumeric: 'tabular-nums',
+      }}
+    >
+      {left === 0 ? '⏰ Time’s up!' : `⏱ ${formatDuration(left)}`}
     </Box>
   );
 }
