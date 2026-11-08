@@ -6,6 +6,7 @@ import SaveIcon from '@mui/icons-material/Save';
 import { Box, IconButton, Typography, Tabs, Tab, Button } from '@mui/material';
 import { testBooks, type TestBlock, type TestDay } from '../data/testsContent';
 import { legacyTestIds } from '../data/testsLegacyIds';
+import { formatDuration } from '../utils/ocHistory';
 import { AnswersContext, C } from './testShared';
 import { BlockView, Countdown } from './testViews';
 
@@ -32,13 +33,26 @@ function loadAnswers(): Record<string, string> {
   }
 }
 
-// When each timer was started (ms), keyed by week/day/section. Saved straight
-// away so a timer keeps going if Lucas leaves the page.
+// When each timer was started and stopped (ms), keyed by week/day/section.
+// Saved straight away so a timer keeps going if Lucas leaves the page.
 const TIMERS_KEY = 'testsTimersV1';
 
-function loadTimers(): Record<string, number> {
+interface SectionClock {
+  start: number;
+  /** Set when Lucas taps Stop; the time taken is stop − start. */
+  stop?: number;
+}
+
+function loadTimers(): Record<string, SectionClock> {
   try {
-    return JSON.parse(localStorage.getItem(TIMERS_KEY) || '{}');
+    const saved = JSON.parse(localStorage.getItem(TIMERS_KEY) || '{}');
+    const timers: Record<string, SectionClock> = {};
+    for (const [id, value] of Object.entries(saved)) {
+      // The first version saved just the start time.
+      timers[id] =
+        typeof value === 'number' ? { start: value } : (value as SectionClock);
+    }
+    return timers;
   } catch {
     return {};
   }
@@ -72,17 +86,27 @@ function sectionOf(day: TestDay, block: TestBlock): Section {
   return { key: label, label, minutes: subject && !real ? 15 : 20 };
 }
 
+const timerButtonSx = {
+  color: C.accent,
+  fontWeight: 700,
+  textTransform: 'none',
+};
+
 function SectionTimer({
   section,
-  startedAt,
+  clock,
   onStart,
+  onStop,
   onReset,
 }: {
   section: Section;
-  startedAt?: number;
+  clock?: SectionClock;
   onStart: () => void;
+  onStop: () => void;
   onReset: () => void;
 }) {
+  const limit = section.minutes * 60;
+  const taken = clock?.stop ? (clock.stop - clock.start) / 1000 : 0;
   return (
     <Box
       sx={{
@@ -101,14 +125,38 @@ function SectionTimer({
       <Typography sx={{ color: C.heading, fontWeight: 800, flex: 1 }}>
         ⏱ {section.label} · {section.minutes} min
       </Typography>
-      {startedAt ? (
+      {clock?.stop ? (
         <>
-          <Countdown deadline={startedAt + section.minutes * 60_000} />
-          <Button
-            onClick={onReset}
-            size="small"
-            sx={{ color: C.accent, fontWeight: 700, textTransform: 'none' }}
+          <Typography
+            sx={{
+              color: taken > limit ? palette.amber950 : palette.green500,
+              fontWeight: 800,
+              fontVariantNumeric: 'tabular-nums',
+            }}
           >
+            ✅ Done in {formatDuration(taken)}
+            {taken > limit && ` (${formatDuration(taken - limit)} over)`}
+          </Typography>
+          <Button onClick={onReset} size="small" sx={timerButtonSx}>
+            Reset
+          </Button>
+        </>
+      ) : clock ? (
+        <>
+          <Countdown deadline={clock.start + limit * 1000} />
+          <Button
+            onClick={onStop}
+            variant="outlined"
+            size="small"
+            sx={{
+              ...timerButtonSx,
+              borderColor: C.accent,
+              borderRadius: '12px',
+            }}
+          >
+            Stop
+          </Button>
+          <Button onClick={onReset} size="small" sx={timerButtonSx}>
             Reset
           </Button>
         </>
@@ -141,8 +189,8 @@ function DayView({
   day: TestDay;
   dayId: string;
   weekLabel: string;
-  timers: Record<string, number>;
-  setTimer: (id: string, startedAt?: number) => void;
+  timers: Record<string, SectionClock>;
+  setTimer: (id: string, clock?: SectionClock) => void;
 }) {
   return (
     <Box sx={{ mb: 4 }}>
@@ -168,8 +216,11 @@ function DayView({
             {first && (
               <SectionTimer
                 section={section}
-                startedAt={timers[timerId]}
-                onStart={() => setTimer(timerId, Date.now())}
+                clock={timers[timerId]}
+                onStart={() => setTimer(timerId, { start: Date.now() })}
+                onStop={() =>
+                  setTimer(timerId, { ...timers[timerId], stop: Date.now() })
+                }
                 onReset={() => setTimer(timerId)}
               />
             )}
@@ -193,7 +244,8 @@ function TestsSection() {
   const [tab, setTab] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>(loadAnswers);
   const [savedFlash, setSavedFlash] = useState(false);
-  const [timers, setTimers] = useState<Record<string, number>>(loadTimers);
+  const [timers, setTimers] =
+    useState<Record<string, SectionClock>>(loadTimers);
 
   const weeks = testBooks[book].weeks;
   const week = weeks[tab];
@@ -208,10 +260,10 @@ function TestsSection() {
     window.setTimeout(() => setSavedFlash(false), 1800);
   };
 
-  const setTimer = (id: string, startedAt?: number) =>
+  const setTimer = (id: string, clock?: SectionClock) =>
     setTimers(prev => {
       const next = { ...prev };
-      if (startedAt) next[id] = startedAt;
+      if (clock) next[id] = clock;
       else delete next[id];
       try {
         localStorage.setItem(TIMERS_KEY, JSON.stringify(next));
@@ -221,11 +273,11 @@ function TestsSection() {
       return next;
     });
 
-  // The most recently started timer in this week, shown in the fixed header
-  // so it stays in view while Lucas scrolls through the questions.
+  // The most recently started timer still running in this week, shown in the
+  // fixed header so it stays in view while Lucas scrolls through the questions.
   const running = Object.entries(timers)
-    .filter(([id]) => id.startsWith(`${week.label}/`))
-    .sort((a, b) => b[1] - a[1])[0];
+    .filter(([id, clock]) => id.startsWith(`${week.label}/`) && !clock.stop)
+    .sort((a, b) => b[1].start - a[1].start)[0];
   const runningMinutes = running
     ? week.days
         .flatMap(d => d.blocks.map(b => ({ d, s: sectionOf(d, b) })))
@@ -283,7 +335,9 @@ function TestsSection() {
               📝 Tests
             </Typography>
             {running && runningMinutes && (
-              <Countdown deadline={running[1] + runningMinutes * 60_000} />
+              <Countdown
+                deadline={running[1].start + runningMinutes * 60_000}
+              />
             )}
             {savedFlash && (
               <Typography
