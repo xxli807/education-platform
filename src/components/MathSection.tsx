@@ -47,8 +47,16 @@ import SectionContainer from './SectionContainer';
 
 type MathMode = 'practice' | 'olympiad' | 'multiplication' | 'division';
 
-const PRACTICE_PER_GROUP = 8;
-const OLYMPIAD_COUNT = 12;
+// Every tab is one short page of 10 questions so a set is quick to finish.
+const SET_SIZE = 10;
+// Practice Mix splits its 10 across the three levels.
+const PRACTICE_COUNTS = { standard: 4, advanced: 3, challenge: 3 } as const;
+
+// Sets saved before the 10-question pages were longer (24 / 64 / 12); start
+// those afresh once instead of reloading a long page.
+const SET_SIZE_KEY = 'mathSetSize';
+const savedSetIsCurrent = () =>
+  localStorage.getItem(SET_SIZE_KEY) === String(SET_SIZE);
 
 const encouragingCorrect = [
   'Awesome! 🌟',
@@ -211,22 +219,12 @@ function generateLevelQuestions(
 }
 
 function generatePracticeQuestions(): Question[] {
-  return [
-    ...generateLevelQuestions('standard', PRACTICE_PER_GROUP, 1),
-    ...generateLevelQuestions(
-      'advanced',
-      PRACTICE_PER_GROUP,
-      1 + PRACTICE_PER_GROUP
-    ),
-    ...generateLevelQuestions(
-      'challenge',
-      PRACTICE_PER_GROUP,
-      1 + PRACTICE_PER_GROUP * 2
-    ),
-  ];
+  return PRACTICE_SECTIONS.flatMap(sec =>
+    generateLevelQuestions(sec.key, PRACTICE_COUNTS[sec.key], sec.range[0])
+  );
 }
 
-// Full times table 2×2 → 9×9, in order (commutative pairs repeat the facts).
+// Every times-table fact 2×2 → 9×9 (a set draws 10 of them at random).
 function generateMultiplicationQuestions(): Question[] {
   const qs: Question[] = [];
   let id = 1;
@@ -238,7 +236,7 @@ function generateMultiplicationQuestions(): Question[] {
   return qs;
 }
 
-// Inverse division facts, biggest first: 81 ÷ 9 down to 4 ÷ 2.
+// Every inverse division fact 81 ÷ 9 → 4 ÷ 2 (a set draws 10 at random).
 function generateDivisionQuestions(): Question[] {
   const facts: { dividend: number; divisor: number; quotient: number }[] = [];
   for (let q = 2; q <= 9; q++) {
@@ -254,30 +252,25 @@ function generateDivisionQuestions(): Question[] {
   }));
 }
 
-// Fisher–Yates shuffle, then renumber ids 1..n to match the new order.
-function shuffleQuestions(qs: Question[]): Question[] {
+// Fisher–Yates shuffle, keep the first `count`, renumber ids 1..n.
+function pickRandom(qs: Question[], count: number): Question[] {
   const a = [...qs];
   for (let i = a.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [a[i], a[j]] = [a[j], a[i]];
   }
-  return a.map((q, i) => ({ ...q, id: i + 1 }));
+  return a.slice(0, count).map((q, i) => ({ ...q, id: i + 1 }));
 }
 
-// `randomize` shuffles the drill order (used by "More Questions"); the first
-// view of Times Tables / Division stays in its natural 2×2→9×9 / 81÷9→4÷2 order.
-function questionsForMode(m: MathMode, randomize = false): Question[] {
+// A fresh 10-question set for a tab ("More Questions" draws a new one).
+function questionsForMode(m: MathMode): Question[] {
   switch (m) {
     case 'olympiad':
-      return generateOlympiadQuestions(OLYMPIAD_COUNT);
-    case 'multiplication': {
-      const qs = generateMultiplicationQuestions();
-      return randomize ? shuffleQuestions(qs) : qs;
-    }
-    case 'division': {
-      const qs = generateDivisionQuestions();
-      return randomize ? shuffleQuestions(qs) : qs;
-    }
+      return generateOlympiadQuestions(SET_SIZE);
+    case 'multiplication':
+      return pickRandom(generateMultiplicationQuestions(), SET_SIZE);
+    case 'division':
+      return pickRandom(generateDivisionQuestions(), SET_SIZE);
     default:
       return generatePracticeQuestions();
   }
@@ -331,21 +324,21 @@ const PRACTICE_SECTIONS: {
     label: 'Standard',
     emoji: '⭐',
     color: palette.orange275,
-    range: [1, PRACTICE_PER_GROUP],
+    range: [1, 4],
   },
   {
     key: 'advanced',
     label: 'Advanced',
     emoji: '🌟',
     color: palette.blue425,
-    range: [PRACTICE_PER_GROUP + 1, PRACTICE_PER_GROUP * 2],
+    range: [5, 7],
   },
   {
     key: 'challenge',
     label: 'Challenge',
     emoji: '🔥',
     color: palette.red425,
-    range: [PRACTICE_PER_GROUP * 2 + 1, PRACTICE_PER_GROUP * 3],
+    range: [8, 10],
   },
 ];
 
@@ -362,24 +355,24 @@ function MathSection() {
   });
   const [questions, setQuestions] = useState<Question[]>(() => {
     const saved = localStorage.getItem('mathQuestions');
-    if (saved) return JSON.parse(saved);
+    if (saved && savedSetIsCurrent()) return JSON.parse(saved);
     const savedMode =
       (localStorage.getItem('mathMode') as MathMode | null) || 'practice';
     return questionsForMode(savedMode);
   });
   const [answers, setAnswers] = useState<{ [key: number]: string }>(() => {
     const saved = localStorage.getItem('mathAnswers');
-    return saved ? JSON.parse(saved) : {};
+    return saved && savedSetIsCurrent() ? JSON.parse(saved) : {};
   });
   // per-section reveal / timing (keys: standard|advanced|challenge|olympiad)
   const [revealed, setRevealed] = useState<Record<string, boolean>>(() => {
     const saved = localStorage.getItem('mathRevealed');
-    return saved ? JSON.parse(saved) : {};
+    return saved && savedSetIsCurrent() ? JSON.parse(saved) : {};
   });
   const [sectionStart, setSectionStart] = useState<Record<string, number>>(
     () => {
       const saved = localStorage.getItem('mathSectionStart');
-      if (saved) return JSON.parse(saved);
+      if (saved && savedSetIsCurrent()) return JSON.parse(saved);
       const m =
         localStorage.getItem('mathMode') === 'olympiad'
           ? 'olympiad'
@@ -395,7 +388,7 @@ function MathSection() {
   const [sectionTime, setSectionTime] = useState<Record<string, number | null>>(
     () => {
       const saved = localStorage.getItem('mathSectionTime');
-      return saved ? JSON.parse(saved) : {};
+      return saved && savedSetIsCurrent() ? JSON.parse(saved) : {};
     }
   );
   const [showHistory, setShowHistory] = useState(false);
@@ -410,7 +403,7 @@ function MathSection() {
     [key: number]: string;
   }>(() => {
     const saved = localStorage.getItem('mathFeedbackMessages');
-    return saved ? JSON.parse(saved) : {};
+    return saved && savedSetIsCurrent() ? JSON.parse(saved) : {};
   });
 
   useEffect(() => {
@@ -419,6 +412,7 @@ function MathSection() {
 
   useEffect(() => {
     localStorage.setItem('mathQuestions', JSON.stringify(questions));
+    localStorage.setItem(SET_SIZE_KEY, String(SET_SIZE));
   }, [questions]);
 
   useEffect(() => {
@@ -573,15 +567,15 @@ function MathSection() {
   const regenerateSection = useCallback(
     (key: SectionKey) => {
       // single-section modes (olympiad / multiplication / division) reset the whole
-      // set; "More Questions" randomizes the drill order each time
+      // set; "More Questions" draws a fresh random 10 each time
       if (key !== 'standard' && key !== 'advanced' && key !== 'challenge') {
-        resetSession(questionsForMode(key, true), key);
+        resetSession(questionsForMode(key), key);
         return;
       }
       const sec = PRACTICE_SECTIONS.find(s => s.key === key)!;
       const fresh = generateLevelQuestions(
         sec.key,
-        PRACTICE_PER_GROUP,
+        PRACTICE_COUNTS[sec.key],
         sec.range[0]
       );
       setQuestions(prev =>
