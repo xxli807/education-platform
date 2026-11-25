@@ -31,7 +31,7 @@ import SessionReviewDialog, {
   type ReviewQuestion,
 } from './SessionReviewDialog';
 import ConfirmDeleteDialog from './ConfirmDeleteDialog';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Question } from '../types';
 import { db } from '../db/database';
 import type { MathSessionResult } from '../db/database';
@@ -47,16 +47,17 @@ import SectionContainer from './SectionContainer';
 
 type MathMode = 'practice' | 'olympiad' | 'multiplication' | 'division';
 
-// Every tab is one short page of 10 questions so a set is quick to finish.
-const SET_SIZE = 10;
-// Practice Mix splits its 10 across the three levels.
-const PRACTICE_COUNTS = { standard: 4, advanced: 3, challenge: 3 } as const;
+// Questions are shown 8 to a page (two rows of four on an iPad) so each page
+// is quick to finish; Back / Next move through the rest of the set.
+const PAGE_SIZE = 8;
+const OLYMPIAD_COUNT = PAGE_SIZE * 2;
 
-// Sets saved before the 10-question pages were longer (24 / 64 / 12); start
-// those afresh once instead of reloading a long page.
-const SET_SIZE_KEY = 'mathSetSize';
+// Sets saved by the earlier 10-question version have a different shape;
+// start those afresh once instead of loading them into the pages.
+const SET_VERSION_KEY = 'mathSetSize';
+const SET_VERSION = 'pages-of-8';
 const savedSetIsCurrent = () =>
-  localStorage.getItem(SET_SIZE_KEY) === String(SET_SIZE);
+  localStorage.getItem(SET_VERSION_KEY) === SET_VERSION;
 
 const encouragingCorrect = [
   'Awesome! 🌟',
@@ -220,11 +221,11 @@ function generateLevelQuestions(
 
 function generatePracticeQuestions(): Question[] {
   return PRACTICE_SECTIONS.flatMap(sec =>
-    generateLevelQuestions(sec.key, PRACTICE_COUNTS[sec.key], sec.range[0])
+    generateLevelQuestions(sec.key, PAGE_SIZE, sec.range[0])
   );
 }
 
-// Every times-table fact 2×2 → 9×9 (a set draws 10 of them at random).
+// Full times table 2×2 → 9×9, in order: each page of 8 is one table.
 function generateMultiplicationQuestions(): Question[] {
   const qs: Question[] = [];
   let id = 1;
@@ -236,7 +237,7 @@ function generateMultiplicationQuestions(): Question[] {
   return qs;
 }
 
-// Every inverse division fact 81 ÷ 9 → 4 ÷ 2 (a set draws 10 at random).
+// Inverse division facts, biggest first: 81 ÷ 9 down to 4 ÷ 2.
 function generateDivisionQuestions(): Question[] {
   const facts: { dividend: number; divisor: number; quotient: number }[] = [];
   for (let q = 2; q <= 9; q++) {
@@ -252,25 +253,30 @@ function generateDivisionQuestions(): Question[] {
   }));
 }
 
-// Fisher–Yates shuffle, keep the first `count`, renumber ids 1..n.
-function pickRandom(qs: Question[], count: number): Question[] {
+// Fisher–Yates shuffle, then renumber ids 1..n to match the new order.
+function shuffleQuestions(qs: Question[]): Question[] {
   const a = [...qs];
   for (let i = a.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [a[i], a[j]] = [a[j], a[i]];
   }
-  return a.slice(0, count).map((q, i) => ({ ...q, id: i + 1 }));
+  return a.map((q, i) => ({ ...q, id: i + 1 }));
 }
 
-// A fresh 10-question set for a tab ("More Questions" draws a new one).
-function questionsForMode(m: MathMode): Question[] {
+// `randomize` shuffles the drill order (used by "More Questions"); the first
+// view of Times Tables / Division stays in its natural 2×2→9×9 / 81÷9→4÷2 order.
+function questionsForMode(m: MathMode, randomize = false): Question[] {
   switch (m) {
     case 'olympiad':
-      return generateOlympiadQuestions(SET_SIZE);
-    case 'multiplication':
-      return pickRandom(generateMultiplicationQuestions(), SET_SIZE);
-    case 'division':
-      return pickRandom(generateDivisionQuestions(), SET_SIZE);
+      return generateOlympiadQuestions(OLYMPIAD_COUNT);
+    case 'multiplication': {
+      const qs = generateMultiplicationQuestions();
+      return randomize ? shuffleQuestions(qs) : qs;
+    }
+    case 'division': {
+      const qs = generateDivisionQuestions();
+      return randomize ? shuffleQuestions(qs) : qs;
+    }
     default:
       return generatePracticeQuestions();
   }
@@ -296,6 +302,20 @@ function mathOptions(correct: number): string[] {
   }
   return [ans, ...[...wrong]].map(String).sort(() => Math.random() - 0.5);
 }
+
+const pagerButtonSx = {
+  borderRadius: '25px',
+  px: 3,
+  py: 1.2,
+  fontSize: '1rem',
+  fontWeight: 'bold',
+  textTransform: 'none',
+  color: palette.gray400,
+  borderColor: withAlpha(palette.white, 0.4),
+  borderWidth: 2,
+  '&:hover': { borderColor: palette.white, borderWidth: 2 },
+  '&.Mui-disabled': { borderWidth: 2 },
+};
 
 const darkCard = {
   borderRadius: '16px',
@@ -324,26 +344,35 @@ const PRACTICE_SECTIONS: {
     label: 'Standard',
     emoji: '⭐',
     color: palette.orange275,
-    range: [1, 4],
+    range: [1, PAGE_SIZE],
   },
   {
     key: 'advanced',
     label: 'Advanced',
     emoji: '🌟',
     color: palette.blue425,
-    range: [5, 7],
+    range: [PAGE_SIZE + 1, PAGE_SIZE * 2],
   },
   {
     key: 'challenge',
     label: 'Challenge',
     emoji: '🔥',
     color: palette.red425,
-    range: [8, 10],
+    range: [PAGE_SIZE * 2 + 1, PAGE_SIZE * 3],
   },
 ];
 
-const sectionsForMode = (m: MathMode): SectionKey[] =>
-  m === 'practice' ? ['standard', 'advanced', 'challenge'] : [m];
+// Practice Mix has one level per page; the other tabs split their set into
+// pages of 8. Each page is checked, timed and saved on its own, under this key.
+const pageKeyFor = (m: MathMode, page: number): string =>
+  m === 'practice'
+    ? (PRACTICE_SECTIONS[page]?.key ?? 'standard')
+    : `${m}-${page + 1}`;
+
+const pageCountFor = (m: MathMode, questionCount: number) =>
+  m === 'practice'
+    ? PRACTICE_SECTIONS.length
+    : Math.max(1, Math.ceil(questionCount / PAGE_SIZE));
 
 function MathSection() {
   const [mode, setMode] = useState<MathMode>(() => {
@@ -377,12 +406,7 @@ function MathSection() {
         localStorage.getItem('mathMode') === 'olympiad'
           ? 'olympiad'
           : 'practice';
-      const now = Date.now();
-      const o: Record<string, number> = {};
-      sectionsForMode(m as MathMode).forEach(k => {
-        o[k] = now;
-      });
-      return o;
+      return { [pageKeyFor(m as MathMode, 0)]: Date.now() };
     }
   );
   const [sectionTime, setSectionTime] = useState<Record<string, number | null>>(
@@ -406,13 +430,23 @@ function MathSection() {
     return saved && savedSetIsCurrent() ? JSON.parse(saved) : {};
   });
 
+  const [page, setPage] = useState(() => {
+    const saved = Number(localStorage.getItem('mathPage'));
+    return savedSetIsCurrent() && saved > 0 ? saved : 0;
+  });
+  const questionsTopRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     localStorage.setItem('mathMode', mode);
   }, [mode]);
 
   useEffect(() => {
+    localStorage.setItem('mathPage', String(page));
+  }, [page]);
+
+  useEffect(() => {
     localStorage.setItem('mathQuestions', JSON.stringify(questions));
-    localStorage.setItem(SET_SIZE_KEY, String(SET_SIZE));
+    localStorage.setItem(SET_VERSION_KEY, SET_VERSION);
   }, [questions]);
 
   useEffect(() => {
@@ -480,12 +514,8 @@ function MathSection() {
     setFeedbackMessages({});
     setRevealed({});
     setSectionTime({});
-    const now = Date.now();
-    const starts: Record<string, number> = {};
-    sectionsForMode(m).forEach(k => {
-      starts[k] = now;
-    });
-    setSectionStart(starts);
+    setPage(0);
+    setSectionStart({ [pageKeyFor(m, 0)]: Date.now() });
   }, []);
 
   const handleModeChange = useCallback(
@@ -501,24 +531,10 @@ function MathSection() {
     setAnswers(prev => ({ ...prev, [id]: value }));
   }, []);
 
-  // Questions belonging to a section key.
-  const questionsForSection = useCallback(
-    (key: SectionKey): Question[] => {
-      const sec = PRACTICE_SECTIONS.find(s => s.key === key);
-      // single-section modes (olympiad / multiplication / division) span every question
-      if (!sec) return questions;
-      return questions.filter(
-        q => q.id >= sec.range[0] && q.id <= sec.range[1]
-      );
-    },
-    [questions]
-  );
-
-  // Check answers for a single section: reveal, give feedback, record the time,
-  // and save a history result tagged with that section's difficulty.
+  // Check answers for one page: reveal, give feedback, record the time, and
+  // save a history result tagged with the page's difficulty.
   const checkSection = useCallback(
-    async (key: SectionKey) => {
-      const qs = questionsForSection(key);
+    async (key: string, qs: Question[], difficulty: SectionKey) => {
       if (!qs.length) return;
       const start = sectionStart[key] ?? Date.now();
       const elapsed = Math.round((Date.now() - start) / 1000);
@@ -548,7 +564,7 @@ function MathSection() {
       );
 
       await db.mathSessionResults.add({
-        difficulty: key === 'olympiad' ? 'olympiad' : key,
+        difficulty,
         totalQuestions: qs.length,
         correctCount: count,
         score: Math.round((count / qs.length) * 100),
@@ -560,24 +576,20 @@ function MathSection() {
 
       loadHistory();
     },
-    [questionsForSection, sectionStart, answers, countCorrect]
+    [sectionStart, answers, countCorrect]
   );
 
   // Get fresh questions for a single section without touching the others.
   const regenerateSection = useCallback(
     (key: SectionKey) => {
       // single-section modes (olympiad / multiplication / division) reset the whole
-      // set; "More Questions" draws a fresh random 10 each time
+      // set; "More Questions" randomizes the drill order each time
       if (key !== 'standard' && key !== 'advanced' && key !== 'challenge') {
-        resetSession(questionsForMode(key), key);
+        resetSession(questionsForMode(key, true), key);
         return;
       }
       const sec = PRACTICE_SECTIONS.find(s => s.key === key)!;
-      const fresh = generateLevelQuestions(
-        sec.key,
-        PRACTICE_COUNTS[sec.key],
-        sec.range[0]
-      );
+      const fresh = generateLevelQuestions(sec.key, PAGE_SIZE, sec.range[0]);
       setQuestions(prev =>
         prev.map(q =>
           q.id >= sec.range[0] && q.id <= sec.range[1]
@@ -598,6 +610,63 @@ function MathSection() {
     },
     [resetSession]
   );
+
+  const pageCount = pageCountFor(mode, questions.length);
+  const currentPage = Math.min(page, pageCount - 1);
+
+  // Move to another page; its timer starts now unless it was already begun.
+  const goToPage = (next: number) => {
+    const key = pageKeyFor(mode, next);
+    const range =
+      mode === 'practice'
+        ? PRACTICE_SECTIONS[next].range
+        : [next * PAGE_SIZE + 1, (next + 1) * PAGE_SIZE];
+    const begun = questions.some(
+      q => q.id >= range[0] && q.id <= range[1] && answers[q.id]
+    );
+    if (!revealed[key] && !begun) {
+      setSectionStart(prev => ({ ...prev, [key]: Date.now() }));
+    }
+    setPage(next);
+    questionsTopRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const pager = (label: string) =>
+    pageCount > 1 && (
+      <Box
+        sx={{
+          mt: 1,
+          mb: 3,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 2,
+        }}
+      >
+        <Button
+          variant="outlined"
+          onClick={() => goToPage(currentPage - 1)}
+          disabled={currentPage === 0}
+          sx={pagerButtonSx}
+        >
+          ◀ Back
+        </Button>
+        <Typography
+          sx={{ color: palette.gray400, fontWeight: 'bold', minWidth: 120 }}
+          textAlign="center"
+        >
+          {label} · {currentPage + 1} of {pageCount}
+        </Typography>
+        <Button
+          variant="outlined"
+          onClick={() => goToPage(currentPage + 1)}
+          disabled={currentPage === pageCount - 1}
+          sx={pagerButtonSx}
+        >
+          Next ▶
+        </Button>
+      </Box>
+    );
 
   const renderQuestionCard = (question: Question, revealed: boolean) => {
     const isCorrect =
@@ -895,9 +964,10 @@ function MathSection() {
       )}
 
       {/* Question Grids */}
+      <Box ref={questionsTopRef} sx={{ scrollMarginTop: 16 }} />
       {mode === 'practice' ? (
         <Box>
-          {PRACTICE_SECTIONS.map(section => {
+          {[PRACTICE_SECTIONS[currentPage]].map(section => {
             const sectionQuestions = questions.filter(
               q => q.id >= section.range[0] && q.id <= section.range[1]
             );
@@ -977,7 +1047,9 @@ function MathSection() {
                 >
                   <Button
                     variant="contained"
-                    onClick={() => checkSection(section.key)}
+                    onClick={() =>
+                      checkSection(section.key, sectionQuestions, section.key)
+                    }
                     disabled={isRevealed}
                     sx={{
                       borderRadius: '25px',
@@ -1025,13 +1097,18 @@ function MathSection() {
               </Box>
             );
           })}
+          {pager('Level')}
         </Box>
       ) : (
         (() => {
-          const key = mode as SectionKey;
+          const key = pageKeyFor(mode, currentPage);
+          const pageQuestions = questions.slice(
+            currentPage * PAGE_SIZE,
+            (currentPage + 1) * PAGE_SIZE
+          );
           const isRevealed = !!revealed[key];
-          const correct = countCorrect(questions);
-          const total = questions.length;
+          const correct = countCorrect(pageQuestions);
+          const total = pageQuestions.length;
           const tTaken = sectionTime[key];
           const allRight = isRevealed && correct === total;
           return (
@@ -1083,14 +1160,16 @@ function MathSection() {
                 </Box>
               )}
               <Grid container spacing={3}>
-                {questions.map(q => renderQuestionCard(q, isRevealed))}
+                {pageQuestions.map(q => renderQuestionCard(q, isRevealed))}
               </Grid>
               <Box
                 sx={{ mt: 3, mb: 3, display: 'flex', gap: 2, flexWrap: 'wrap' }}
               >
                 <Button
                   variant="contained"
-                  onClick={() => checkSection(key)}
+                  onClick={() =>
+                    checkSection(key, pageQuestions, mode as SectionKey)
+                  }
                   disabled={isRevealed}
                   sx={{
                     borderRadius: '25px',
@@ -1112,7 +1191,7 @@ function MathSection() {
                 </Button>
                 <Button
                   variant="contained"
-                  onClick={() => regenerateSection(key)}
+                  onClick={() => regenerateSection(mode as SectionKey)}
                   sx={{
                     borderRadius: '25px',
                     px: 4,
@@ -1128,6 +1207,7 @@ function MathSection() {
                   🔄 More Questions
                 </Button>
               </Box>
+              {pager('Page')}
             </Box>
           );
         })()
